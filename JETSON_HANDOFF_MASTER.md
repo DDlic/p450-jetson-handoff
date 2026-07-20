@@ -2,223 +2,214 @@
 
 最後更新：2026-07-20（Asia/Taipei）
 
-這份文件供 Ubuntu Codex CLI 或其他 AI 接手 P450 機載 Jetson Xavier NX 的系統重建工作。請以目前停點為起點，不要重新猜硬體型號、不要重複已完成的步驟，也不要在未確認輸出前直接刷機。
+## 目前狀態
 
-## 1. 專案目標
+Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 刷寫，並已由 eMMC 成功進入 Ubuntu 圖形介面。
 
-AMOV P450 無人機整合：
+目前不要重新刷 QSPI、不要重新刷 SD，也不要覆蓋原本的 128 GB 舊 microSD。
+
+## 專案目標
+
+AMOV P450 整合：
 
 - Pixhawk 6C
 - PX4 v1.14.3
 - Jetson Xavier NX
-- ROS 2 Humble
-- `px4_msgs`、`px4_ros_com`
-- Micro XRCE-DDS Agent
-- 後續 Offboard 起降測試
+- JetPack 5.1.4／Ubuntu 20.04 宿主
+- Ubuntu 22.04／ROS 2 Humble ARM64 容器
+- Micro XRCE-DDS Agent、`px4_msgs`、`px4_ros_com`
+- 後續 Offboard 起降與飛行資料擷取
 
-建議的最終架構：
+建議架構：
 
 ```text
 Jetson Xavier NX
-└─ JetPack 5.1.4 / Ubuntu 20.04 宿主
-   ├─ Wi-Fi AP / SSH
-   ├─ Pixhawk USB 或 UART
-   ├─ Micro XRCE-DDS Agent
-   └─ ARM64 Docker
-      └─ Ubuntu 22.04 / ROS 2 Humble
-         ├─ px4_msgs
-         ├─ px4_ros_com
-         └─ Offboard 節點
+└─ JetPack 5.1.4 / Ubuntu 20.04（eMMC）
+   ├─ NVIDIA kernel、CUDA、Wi-Fi、USB、UART
+   ├─ Docker
+   └─ Ubuntu 22.04 / ROS 2 Humble ARM64 container
+      ├─ Micro XRCE-DDS Agent
+      ├─ px4_msgs
+      ├─ px4_ros_com
+      └─ Offboard 節點
 ```
 
-注意：這不是在 Xavier NX 上使用 JetPack 6。Xavier NX 的官方支援路線是 JetPack 5 / Ubuntu 20.04；Ubuntu 22.04 / ROS 2 Humble 放在容器內。
+## 已確認硬體身份
 
-## 2. 已確認的硬體身份
-
-已由原系統的 `/proc/device-tree`、model 與 compatible 輸出確認：
+目前以 Recovery EEPROM 與成功刷寫日志為準：
 
 ```text
-Model: NVIDIA Jetson Xavier NX Developer Kit
-Module: P3668-0000
-Carrier: P3509-0000
-SoC: Tegra194
-Device tree: tegra194-p3668-all-p3509-0000.dts
+Board ID: 3668
+Board version: 301
+Board SKU: 0001
+Board revision: G.0
+SoC: Tegra 194
+Carrier/device-tree family: P3509-0000
 ```
 
-曾看到的 compatible 包含：
+實際模組是 P3668-0001 eMMC 版本。先前交接文件根據舊系統 device-tree 記載的 P3668-0000 microSD 判斷已被新的 Recovery EEPROM 證據取代；後續不得再使用舊判斷。
+
+NVIDIA 對應的刷寫設定：
 
 ```text
-nvidia,p3668-0000
-nvidia,p3509-0000+p3668-0000
-nvidia,tegra194
+正確：jetson-xavier-nx-devkit-emmc
+儲存目標：mmcblk0p1
+不要使用：jetson-xavier-nx-devkit-qspi 作為完整系統刷寫設定
 ```
 
-結論：這是 P3668-0000 microSD 開發版，不是 P3668-0001／P3668-0003 eMMC 生產版。
-
-UEFI Boot Manager 顯示 `UEFI eMMC Device` 不足以證明實體模組有 eMMC；料號 `P3668-0000` 才是關鍵判斷依據。
-
-NVIDIA 對應設定：
+## 主機與 BSP
 
 ```text
-正確：jetson-xavier-nx-devkit
-錯誤：jetson-xavier-nx-devkit-emmc
+Host: Ubuntu 22.04.5 LTS x86_64
+BSP: Jetson Linux R35.6.0
+BSP path: /home/wilson/nvidia/JP514/Linux_for_Tegra
+Rootfs archive: /home/wilson/下載/Tegra_Linux_Sample-Root-Filesystem_R35.6.0_aarch64.tbz2
 ```
 
-## 3. 舊系統狀態
-
-原本 128 GB microSD 卡內容：
+主機已安裝：
 
 ```text
-Ubuntu 18.04.6 LTS
-L4T R32.4.4
-JetPack 4 時代
-Kernel 4.9.140-tegra
-root: /dev/mmcblk0p1
+python-is-python3
+python -> Python 3.10.12
 ```
 
-這張舊卡要保留，除非使用者明確同意格式化或重新燒錄。
+## 已完成工作
 
-目前 QSPI 已升到 JetPack 5 / R35 世代後，舊 R32 卡無法啟動是預期的版本不相容，不代表舊卡損壞。NVIDIA 文件指出，從 JetPack 5 回到 JetPack 4 必須重新刷回舊版 bootloader。
+### 1. 修復 BSP rootfs
 
-## 4. 新系統與桌機資料
+原本 `Linux_for_Tegra/rootfs` 不完整，`etc` 是錯誤的普通檔案，且缺少 `bin`、`lib` 等目錄，導致完整 system image 無法可靠產生。
 
-Ubuntu 刷機桌機：
+已重新解壓官方 R35.6.0 sample rootfs，並完成：
+
+```bash
+sudo ./apply_binaries.sh
+```
+
+結果：
 
 ```text
-Ubuntu 22.04.5 LTS
-x86_64
-user: wilson
-root filesystem: /dev/nvme0n1p5
-可用空間約 338 GB
+L4T BSP package installation completed!
+Success!
 ```
 
-桌機檔案：
+### 2. QSPI-only 刷寫
+
+曾完成 QSPI-only 刷寫，確認 R35.6.0 UEFI、BCT、bootloader 與相關韌體可寫入 QSPI。
+
+修復 Python 後，`qspi_bootblob_ver.txt` 已產生有效 CRC32：
 
 ```text
-BSP archive:
-/home/wilson/下載/Jetson_Linux_R35.6.0_aarch64.tbz2
-
-預期 BSP 目錄:
-/home/wilson/nvidia/JP514/Linux_for_Tegra
+BYTES:85 CRC32:9DE52483
 ```
 
-下載的 BSP 大小約 732 MB。
+### 3. 判定 eMMC 儲存媒體
 
-目前先維持桌機 Ubuntu 22.04，不要重灌或降版。若 R35.6.0 刷寫腳本在 22.04 發生明確相容性錯誤，再考慮 Ubuntu 20.04 Live USB。
-
-## 5. SD 映像資料
-
-Windows 上準備的官方映像：
+UEFI Shell 執行 `map -r` 時顯示：
 
 ```text
-JP514-xnx-sd-card-image_b11
+eMMC(0x0)
+FS2:
+BLK0 ～ BLK13
 ```
 
-壓縮檔內的映像檔名稱：
+進入 `FS2:` 後可看到完整舊 Linux rootfs，表示 eMMC 不是空白媒體。舊 eMMC rootfs 與新的 R35.6.0 QSPI 不匹配，因此無法正常啟動。
+
+### 4. eMMC 完整刷寫
+
+使用：
+
+```bash
+cd ~/nvidia/JP514/Linux_for_Tegra
+sudo ./flash.sh jetson-xavier-nx-devkit-emmc mmcblk0p1 \
+  2>&1 | tee ~/xavier_nx_emmc_clean.log
+```
+
+日志確認：
 
 ```text
-sd-blob
+Name: jetson-xavier-nx-devkit-emmc
+flash_l4t_t194_spi_emmc_p3668.xml
+system.img built successfully.
+Writing partition APP with system.img
+Writing partition esp with esp.img
+Flashing completed
+*** The target t186ref has been flashed successfully. ***
+Coldbooting the device
 ```
 
-Windows 顯示的大小約：
+完成後 Jetson 已由 eMMC 進入 Ubuntu 圖形介面。
+
+## 失敗原因總結
+
+先前無法開機不是單一 SD 卡故障，主要原因為：
+
+1. 實際硬體 SKU 是 P3668-0001 eMMC 版本。
+2. 先前只刷 QSPI，沒有寫入 eMMC 的 APP/rootfs。
+3. eMMC 內原有舊版 Linux，與 R35.6.0 bootloader 不匹配。
+4. BSP rootfs 原先不完整。
+5. 主機原先缺少 `python` 命令，造成 QSPI CRC32 欄位空白。
+
+## 舊 SD 卡與映像
+
+- 原本 128 GB 舊 microSD 保留，不得格式化。
+- JP514 SD 映像測試屬於歷史排查，不是目前開機媒體。
+- 目前成功開機來源是 eMMC，不要重新插入 SD 來判斷本次 eMMC 是否正常。
+
+## Ubuntu 初次開機後驗證
+
+完成 Ubuntu 初始設定後，在 Jetson 執行：
+
+```bash
+cat /etc/nv_tegra_release
+cat /etc/os-release
+uname -a
+findmnt /
+lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINTS
+```
+
+預期：
 
 ```text
-17,633,280 KB
+L4T R35.6.0
+Ubuntu 20.04
+Kernel 5.10.216-tegra
+根檔案系統位於 eMMC
 ```
 
-這是 JetPack 5.1.4 Xavier NX SD 映像，不是一般 Ubuntu ARM64 映像，也不是 Orin 映像。
+## 後續工作順序
 
-曾使用 balenaEtcher 將映像寫入 Kingston 512 GB microSD，Etcher 顯示「燒錄成功」。但先前畫面不清楚是否另外完成 Validate，因此若問題持續，需區分「寫入完成」與「驗證成功」。
+1. 驗證 L4T、Ubuntu、Kernel 與 eMMC root device。
+2. 驗證 Ethernet、Wi-Fi、SSH 與重開機後網路恢復。
+3. 連接 Pixhawk 6C，確認 USB/UART 裝置與權限。
+4. 建立 Ubuntu 22.04／ROS 2 Humble ARM64 容器。
+5. 安裝與測試 Micro XRCE-DDS Agent。
+6. 建置 `px4_msgs`、`px4_ros_com`。
+7. 驗證 `/fmu/out/*` topic 與 PX4 ULog。
+8. 無槳測試 Kill Switch、定高、定點、EKF 與失聯處置。
+9. 最後才進行起飛、短暫停留、降落與 Offboard 測試。
 
-## 6. QSPI 與 UEFI 現況
+## 相關日志
 
-曾用 Ubuntu 22.04 桌機搭配 R35.6.0 BSP 進行 QSPI-only 刷寫，使用方向為：
+日志因 `.gitignore` 排除，保留在主機：
 
 ```text
-P3668-0000 + P3509-0000
-R35.6.0
-QSPI-only
+/home/wilson/xavier_nx_qspi_rerun.log
+/home/wilson/xavier_nx_qspi_clean.log
+/home/wilson/xavier_nx_emmc_clean.log
 ```
 
-刷寫後能看到：
+週報摘要見 `P450_PROGRESS_2026-07-20.md`。
 
-```text
-Jetson UEFI firmware
-version 6.0-37391689
-built on 2024-08-28
-```
+## 安全規則
 
-這表示 QSPI 至少已能啟動 R35.6.0 UEFI。畫面中的 `WARNING: Test Key is used` 對開發板屬正常警告，不是故障原因。
-
-## 7. 目前開機故障
-
-插入 Kingston 512 GB JP5 SD 卡後：
-
-- UEFI 能偵測到 GPT 分割區。
-- UEFI Shell 執行 `map -r` 曾列出 `BLK0` 到 `BLK11`。
-- 沒有出現可用的 `FS0:`。
-- Boot Manager 顯示 `UEFI eMMC Device`、`UEFI NVIDIA eMMC Kernel Boot`、PXE／HTTP boot 與 `UEFI Shell`。
-- 選擇本機兩個 boot 項目後都回到 Boot Manager。
-- `L4T Boot Mode` 已設為 `ExtLinux`。
-- `OS chain A status` 已設為 `Normal`。
-- 之後會看到 `Error: Could not detect network connection.`
-
-這是本機開機失敗後進入 PXE／HTTP 網路開機 fallback，不是目前 Wi-Fi AP 測試結果。
-
-## 8. 容量判斷
-
-512 GB 並沒有被 NVIDIA 文件列為禁止容量。官方 R35.6.0 只列出完整 JetPack 建議至少 64 GB，沒有列出 512 GB 上限。
-
-但是：
-
-- 如果 128 GB 只是原本的 Ubuntu 18.04/R32 卡，它不能作為 JP5 容量測試。
-- 只有把同一個 JP514 `sd-blob` 映像燒到 128 GB 後仍失敗，才可把 512 GB 容量因素排除。
-
-不要為了測容量而格式化原本的 128 GB 舊卡，除非使用者明確同意。
-
-## 9. 目前停點與下一步
-
-目前應回到 Ubuntu 22.04 桌機，重新從只讀檢查開始：
-
-1. 確認桌機是 Ubuntu 22.04 / x86_64。
-2. 確認 R35.6.0 BSP 路徑存在。
-3. 確認 `jetson-xavier-nx-devkit-qspi.conf` 和相關 symlink 指向正確 P3509/P3668 設定。
-4. 使用之前已成功進入 Recovery 的同一種硬體方法，不要自行猜 J14 腳位。
-5. `lsusb` 確認 `0955:7e19`。
-6. 保存舊 log，重新刷 QSPI-only，建立新的 log。
-7. QSPI 成功後才插入 JP514 SD 卡測試。
-
-第一階段命令請見 `JETSON_HANDOFF_COMMANDS.md`。目前不要直接執行 `flash.sh`，先貼出設定檔與 symlink 輸出。
-
-## 10. 不可做的事
-
-- 不要使用 `jetson-xavier-nx-devkit-emmc`。
-- 不要使用 Orin BSP 或 Orin SD 映像。
-- 不要把一般 Ubuntu 22.04 ARM64 ISO 燒進 NX。
-- 不要在舊系統內使用不存在的 `/dev/mtd0` 方法。
-- 不要執行 `do-release-upgrade`。
-- 不要格式化原本 128 GB 舊卡。
-- 不要在未確認載板實體標示前短接未知 J14 腳位。
-- 不要在未確認輸出前直接進行完整 QSPI+SD 或整機 flash。
-- 不要重複修改已正確的 `ExtLinux` 和 `OS chain A Normal`。
-
-## 11. 後續驗證順序
-
-系統成功開機後：
-
-1. Ubuntu / L4T / kernel / root device
-2. Wi-Fi AP 與 SSH
-3. Pixhawk USB/UART
-4. Micro XRCE-DDS Agent
-5. ROS 2 Humble container
-6. `/fmu/out/*` topic 與 ULog
-7. 無槳 Kill Switch
-8. 定高、定點、氣壓計、震動與 EKF 資料
-9. 自動起飛、短暫停留、降落
-10. 最後才做更複雜的 Offboard 航點或軌跡
+- 不要使用 Orin BSP 或 Orin 映像。
+- 不要執行舊系統內的 `/dev/mtd0` QSPI 寫入方法。
+- 不要格式化 128 GB 舊 microSD。
+- 不要在未確認儲存目標前執行完整刷寫。
+- 飛行測試前必須拆槳或固定機體。
 
 ## 官方參考
 
-- [NVIDIA Xavier NX 模組與刷寫設定](https://docs.nvidia.com/jetson/archives/r35.1/DeveloperGuide/text/IN/QuickStart.html)
-- [NVIDIA Xavier NX SD 卡與 JetPack 4→5 升級](https://docs.nvidia.com/jetson/archives/r35.5.0/DeveloperGuide/SD/FlashingSupport.html)
-- [NVIDIA R35.6.0 Release Notes](https://docs.nvidia.com/jetson/archives/r35.6.0/ReleaseNotes/Jetson_Linux_Release_Notes_r35.6.0.pdf)
+- [NVIDIA Jetson Linux Quick Start](https://docs.nvidia.com/jetson/l4t/Tegra%20Linux%20Driver%20Package%20Development%20Guide/quick_start.html)
+- [NVIDIA Jetson Linux R35.6.0 Rootfs](https://docs.nvidia.com/jetson/l4t/Tegra%20Linux%20Driver%20Package%20Development%20Guide/rootfs_custom.html)
+- [NVIDIA Jetson Linux R35.6.0 Flashing Support](https://docs.nvidia.com/jetson/archives/r35.6.0/DeveloperGuide/SD/FlashingSupport.html)

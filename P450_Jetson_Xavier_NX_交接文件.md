@@ -1,12 +1,12 @@
 # AMOV P450／Jetson Xavier NX 專案交接文件
 
-更新日期：2026-07-16
+更新日期：2026-07-20
 
 ## 給接手 GPT 的指示
 
-請從本文件的「目前停點」繼續，不要重新從硬體辨識開始，也不要要求使用者重新猜密碼。
+本文件保留早期排查內容；目前權威狀態請先閱讀 `JETSON_HANDOFF_MASTER.md` 與 `P450_PROGRESS_2026-07-20.md`。不要重新猜硬體型號，也不要重複已完成的刷機。
 
-目前已停止所有刷機與硬體操作。下一個目標是在 Ubuntu 桌機上，透過 Force Recovery 只更新 Xavier NX 的 QSPI；確認成功後，再使用已燒錄好的 Kingston 512 GB SD 卡開機。
+目前已完成 BSP rootfs 修復、QSPI 刷寫與 eMMC 完整刷寫，Jetson 已由 eMMC 成功進入 Ubuntu 圖形介面。後續工作是驗證 Ubuntu、網路、Pixhawk、ROS 2 與 PX4。
 
 不要讓使用者在舊系統執行 `flash_eraseall /dev/mtd0`，因為目前舊系統沒有 `/dev/mtd0`。
 
@@ -25,12 +25,12 @@
 
 ```text
 模組：Jetson Xavier NX Developer Kit
-模組料號：P3668-0000
+模組料號：P3668-0001
 參考載板：P3509-0000
 SoC：Tegra194
 ```
 
-已從 `/proc/device-tree/model` 和 `compatible` 確認：
+歷史舊系統的 `/proc/device-tree/model` 和 `compatible` 曾顯示：
 
 ```text
 NVIDIA Jetson Xavier NX Developer Kit
@@ -38,7 +38,7 @@ nvidia,p3509-0000+p3668-0000
 nvidia,tegra194
 ```
 
-不是 Orin NX、Nano、TX2 或 AGX Xavier。
+Recovery EEPROM 與成功刷寫日志後續確認 Board ID 3668、SKU 0001、revision G.0；目前以 P3668-0001 eMMC 身份為準，舊 P3668-0000 判斷已過時。
 
 ## 登入資料
 
@@ -74,15 +74,27 @@ NVMe：目前沒有偵測到
 - Kingston 512 GB microSD 已完成燒錄；Etcher 完整 Validate 狀態尚未另外記錄。
 - 原本 128 GB SD 卡仍保留，沒有覆寫。
 
-### QSPI 檔案
+### 刷寫完成狀態
 
-已下載：
+已使用 R35.6.0 BSP 完成 QSPI 與 eMMC 刷寫：
 
 ```text
-Jetson_Xavier_NX_QSPI_35.1.tbz2
+JetPack 5.1.4／L4T R35.6.0
 ```
 
-此檔案尚未寫入，也尚未在 NX 上使用。
+完整 eMMC 刷寫命令：
+
+```bash
+sudo ./flash.sh jetson-xavier-nx-devkit-emmc mmcblk0p1
+```
+
+結果：
+
+```text
+system.img built successfully.
+Flashing completed
+*** The target t186ref has been flashed successfully. ***
+```
 
 ## QSPI 診斷結果
 
@@ -155,26 +167,27 @@ Hard blocked：yes
 
 這表示舊系統在重灌前就已有 Wi-Fi 硬體封鎖問題。這不是目前 QSPI 主線，重灌後再驗證 Wi-Fi AP／基地台即可，不要讓此問題阻塞刷機。
 
-## 目前停點
+## 歷史排查與目前停點
 
 ```text
-Windows：Kingston 512 GB SD 卡已燒錄完成
+Windows：Kingston 512 GB SD 卡曾燒錄測試，非目前開機來源
 舊 128 GB SD 卡：仍保留
-舊 NX：仍是 Ubuntu 18.04／L4T R32.4.4
-QSPI：尚未更新
-Ubuntu 桌機：已可使用，版本為 Ubuntu 22.04
-JetPack 5 BSP：尚未確認是否已下載與解壓縮
+舊 eMMC rootfs：已被 R35.6.0 eMMC 刷寫覆蓋
+QSPI：已更新成功
+eMMC：已完成 APP、kernel、recovery、ESP 與韌體分割區刷寫
+Ubuntu 桌機：Ubuntu 22.04，已完成刷寫作業
+Jetson：已成功進入 Ubuntu 圖形介面
 ```
 
 目前不要：
 
 - 不要再執行 `/dev/mtd0` 指令。
 - 不要格式化 128 GB 舊卡。
-- 不要把 Kingston 新卡插回 NX 期待它直接解決 QSPI。
+- 不要把 SD 卡當成目前 eMMC 開機問題的解決方案。
 - 不要選 Orin NX／Orin Nano 的 BSP 或刷機設定。
 - 不要在 QSPI 完成前進行飛行測試。
 
-## 下一步：Ubuntu 主機更新 QSPI
+## 歷史步驟：Ubuntu 主機更新 QSPI（已完成，不要重複）
 
 ### 1. 下載匹配 BSP
 
@@ -307,4 +320,4 @@ Jetson Xavier NX
 
 ## 給下一個 GPT 的最短摘要
 
-這是一台已確認為 P3668-0000 + P3509-0000 的 Jetson Xavier NX Developer Kit。舊卡是 Ubuntu 18.04.6／L4T R32.4.4／Kernel 4.9.140-tegra，根目錄在 128 GB microSD。Kingston 512 GB 已用 `JP514-xnx-sd-card-image_b11.zip` 燒錄完成。舊系統沒有 `/dev/mtd0`，`/proc/mtd` 只有標題，dmesg 沒有 QSPI/MTD 初始化，因此不能用舊系統直接 `flashcp`。Ubuntu 22.04 桌機現在可用；下一步是在桌機下載 Jetson Linux 35.6.1 BSP，讓 NX 進 Force Recovery，使用 P3509-0000 + P3668-0000 的 QSPI-only 設定更新 QSPI。確認 QSPI 成功後才插入 Kingston 卡開機。不要重刷舊卡、不要使用 Orin 設定、不要再死磕舊系統 Wi-Fi。
+這是一台由 Recovery EEPROM 確認為 P3668-0001／P3509-0000 的 Jetson Xavier NX eMMC 版本。舊 128 GB microSD 是 Ubuntu 18.04.6／L4T R32.4.4／Kernel 4.9.140-tegra，仍須保留。Ubuntu 22.04 桌機已完成 R35.6.0 rootfs 修復、Python/CRC32 修復、QSPI 刷寫與 `jetson-xavier-nx-devkit-emmc mmcblk0p1` 完整 eMMC 刷寫；Jetson 現已進入 Ubuntu。後續進行 Ubuntu、網路、Pixhawk、ROS 2、Micro XRCE-DDS 與 PX4 驗證，不要重刷舊卡、不要使用 Orin 設定、不要使用 `/dev/mtd0` 舊方法。

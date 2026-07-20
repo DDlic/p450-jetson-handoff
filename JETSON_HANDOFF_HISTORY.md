@@ -1,110 +1,159 @@
-# Jetson Xavier NX 工作歷程與已排除事項
+# Jetson Xavier NX 工作歷程
 
-## 時間線
+最後更新：2026-07-20（Asia/Taipei）
 
-### 原始系統
+## 原始系統與保存資料
 
-- AMOV P450 使用 Jetson Xavier NX。
-- 原系統 Ubuntu 18.04.6、L4T R32.4.4、Kernel 4.9.140-tegra。
-- 原本 128 GB microSD 卡保留。
+- P450 原本使用 Jetson Xavier NX。
+- 原本保存的 128 GB microSD 是 Ubuntu 18.04.6／L4T R32.4.4／JetPack 4 世代。
+- 128 GB 舊卡未格式化，仍須保留。
+- 另有 Kingston 512 GB JP5 SD 映像測試紀錄，但它不是本次成功開機來源。
 
-### 硬體確認
+## 初期判斷與修正
 
-由 `/proc/device-tree/model` 與 compatible 確認：
+初期依舊系統 device-tree 將裝置判定為 P3668-0000 microSD 版本，因此先執行了 `jetson-xavier-nx-devkit-qspi` QSPI-only 刷寫，並嘗試從 SD 啟動。
 
-```text
-NVIDIA Jetson Xavier NX Developer Kit
-P3668-0000
-P3509-0000
-Tegra194
-```
-
-因此不是 Orin NX、Nano、TX2、AGX Xavier，也不是 P3668-0001／P3668-0003 eMMC 生產模組。
-
-### 系統方案決定
-
-曾考慮 Ubuntu 22.04 原生安裝、論壇強制升級、ROS 2 Humble 原生與容器方案。
-
-最後決定：
+後續 Recovery EEPROM 輸出反覆顯示：
 
 ```text
-JetPack 5.1.4 / Ubuntu 20.04 宿主
-+ Ubuntu 22.04 / ROS 2 Humble ARM64 container
+Board ID(3668) version(301) sku(0001) revision(G.0)
 ```
 
-理由：保留 Xavier NX 官方硬體驅動、Wi-Fi、USB、UART、CUDA 與 JetPack 5 穩定性；ROS 2 Humble 放在容器內。
+UEFI `map -r` 也顯示 `eMMC(0x0)` 與 `FS2:`。進入 `FS2:` 後可看到完整 Linux rootfs。這些是比舊 device-tree 更直接的硬體與儲存媒體證據，因此更正為 P3668-0001 eMMC 版本。
 
-### SD 映像
-
-- 官方套件：`JP514-xnx-sd-card-image_b11`
-- 內含：`sd-blob`
-- 影像大小約 17,633,280 KB
-- 已使用 balenaEtcher 寫入 Kingston 512 GB microSD
-- Etcher 顯示燒錄成功，但是否完成獨立 Validate 尚未明確保存。
-
-### QSPI
-
-- Ubuntu 22.04 桌機可用，x86_64。
-- R35.6.0 BSP 已下載，約 732 MB。
-- 預期位置：`~/nvidia/JP514/Linux_for_Tegra`。
-- 曾執行 QSPI-only 刷寫。
-- 刷後看到 `Jetson UEFI firmware version 6.0-37391689`，表示 R35.6.0 UEFI 能啟動。
-
-### 開機失敗
-
-插入 JP5 SD 後：
-
-- UEFI 可看到 SD/GPT 區塊，`map -r` 有 BLK0～BLK11。
-- `UEFI eMMC Device` 和 `UEFI NVIDIA eMMC Kernel Boot` 都回到 Boot Manager。
-- `L4T Boot Mode: ExtLinux` 已正確。
-- `OS chain A status: Normal` 已正確。
-- 之後出現 PXE/HTTP 網路開機 fallback。
-
-## 已排除或不可誤判的事項
-
-### 不是因為 eMMC 版本
-
-P3668-0000 是 microSD 開發版。UEFI 顯示 eMMC 字樣不是實體模組判斷依據。
-
-### 不是因為用了 Etcher
-
-NVIDIA 官方對 Xavier NX SD image 也建議使用 Etcher。
-
-### 512 GB 尚未被證明是問題
-
-官方沒有列 512 GB 為禁止容量。只有將同一個 JP5 image 寫到 64/128 GB 測試卡後，才可排除卡容量／卡片控制器相容性。
-
-### 原本 128 GB 舊卡不能當成 JP5 測試
-
-原卡是 R32/JetPack 4。現在 QSPI 是 R35/JetPack 5；舊卡回到 Boot Manager 屬於版本不匹配，不能推論 512 GB 有問題。
-
-## 當前最合理的診斷樹
+NVIDIA 對應設定由：
 
 ```text
-R35.6.0 UEFI 可以啟動
-        ↓
-UEFI 可以看到 SD GPT/BLK
-        ↓
-若 JP5 SD 仍無法 boot
-        ├─ 128 GB 是舊 R32 卡？→ 不能作為容量測試
-        ├─ 128 GB 也燒同一 JP5 image？→ 容量因素大致排除
-        ├─ Etcher 未完成 Validate？→ 重新驗證映像/卡
-        ├─ QSPI log 有錯誤？→ 重新刷 QSPI
-        └─ QSPI log 成功且多張 JP5 卡都失敗？→ 檢查 SD boot image/完整 QSPI+SD 流程
+jetson-xavier-nx-devkit-qspi
 ```
 
-## 後續飛行相關需求
+更正為完整 eMMC 刷寫：
 
-系統開機後優先驗證：
+```text
+jetson-xavier-nx-devkit-emmc mmcblk0p1
+```
 
-1. Wi-Fi AP 可建立、可連線、重開機後可恢復。
-2. SSH 可從 Windows 筆電連入。
-3. Pixhawk USB 或 UART 可被辨識。
-4. Micro XRCE-DDS Agent 可與 PX4 通訊。
-5. ROS 2 可持續取得 `/fmu/out/*`。
-6. 儲存 PX4 ULog。
-7. 無槳測試內部 RC Kill Switch。
-8. 抓取定高／定點模式資料，分析氣壓計、震動、EKF、GPS 與控制輸出。
-9. 第一次自動飛行只做起飛、短暫停留、降落。
+## 刷寫時間線
 
-不要一開始就做複雜航點或長時間飛行。
+### 1. Recovery 確認
+
+主機成功辨識：
+
+```text
+0955:7e19 NVIDIA Corp. APX
+```
+
+### 2. 初次 QSPI 刷寫
+
+初次 QSPI-only 流程最後成功，但發現：
+
+- `python` 命令不存在。
+- `qspi_bootblob_ver.txt` 的 CRC32 欄位空白。
+- rootfs 只有不完整檔案，`etc` 不是目錄。
+- `rootfs/lib`、`rootfs/bin` 等內容缺失。
+
+因此初次結果不能作為完整系統刷寫的準備完成證明。
+
+### 3. 修復主機與 rootfs
+
+安裝：
+
+```bash
+sudo apt-get install -y python-is-python3
+```
+
+重新解壓官方 R35.6.0 sample rootfs，接著執行：
+
+```bash
+sudo ./apply_binaries.sh
+```
+
+结果：
+
+```text
+L4T BSP package installation completed!
+Success!
+```
+
+### 4. 清理後 QSPI 刷寫
+
+```bash
+sudo ./flash.sh jetson-xavier-nx-devkit-qspi internal \
+  2>&1 | tee ~/xavier_nx_qspi_clean.log
+```
+
+结果：
+
+```text
+Flashing completed
+*** The target t186ref has been flashed successfully. ***
+```
+
+同时產生有效 CRC32：
+
+```text
+BYTES:85 CRC32:9DE52483
+```
+
+### 5. UEFI 開機排查
+
+UEFI Shell：
+
+```text
+map -r
+FS2:
+dir
+```
+
+`FS2:` 顯示 `bin`、`boot`、`etc`、`usr`、`var` 等 Linux rootfs，確認 eMMC 內已有舊系統。新的 R35.6.0 QSPI 與舊 eMMC rootfs 不匹配，因此 Boot Manager 中的舊 boot 項目無法成功啟動。
+
+### 6. 正確 eMMC 完整刷寫
+
+```bash
+sudo ./flash.sh jetson-xavier-nx-devkit-emmc mmcblk0p1 \
+  2>&1 | tee ~/xavier_nx_emmc_clean.log
+```
+
+日志確認：
+
+```text
+Name: jetson-xavier-nx-devkit-emmc
+flash_l4t_t194_spi_emmc_p3668.xml
+system.img built successfully.
+Writing partition APP with system.img
+Writing partition esp with esp.img
+Flashing completed
+*** The target t186ref has been flashed successfully. ***
+```
+
+### 7. 最終結果
+
+刷寫程序執行 `Coldbooting the device` 後，移除 Recovery USB、保持供電，Jetson 已進入 Ubuntu 圖形介面。
+
+## 已排除事項
+
+- 不是單純 SD 卡容量問題。
+- 不是 Etcher 本身造成的本次 eMMC 開機問題。
+- 不是 QSPI 燒錄失敗；QSPI 與 eMMC 完整刷寫均有成功訊息。
+- `Warning: pub_key.key is not found` 是未熔斷開發板使用測試金鑰時的非致命警告。
+- `gzip: kernel/Image: not in gzip format` 與 DT overlay warning 在成功流程中出現，未阻止刷寫。
+
+## 目前進度
+
+已完成：
+
+- BSP rootfs 修復
+- Python/CRC32 修復
+- QSPI 刷寫
+- eMMC system image 產生
+- eMMC 完整刷寫
+- Ubuntu 圖形介面開機
+
+待完成：
+
+- L4T／Kernel／root device 驗證
+- Wi-Fi、Ethernet、SSH
+- Pixhawk 6C USB/UART
+- ROS 2 Humble ARM64 容器
+- Micro XRCE-DDS Agent
+- PX4 topic、ULog 與無槳飛行前測試

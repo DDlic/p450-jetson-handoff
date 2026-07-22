@@ -180,3 +180,26 @@ ros2 doctor
 - 尚未完成 ROS 2 topic 與 ULog 驗證前，不進行自動起飛。
 - 首次自動飛行只規劃起飛、短暫停留、降落，確認訊息抓取正常後才進下一階段。
 - 不要格式化舊 128 GB 卡，不要使用 Orin BSP 或一般 Ubuntu ISO。
+
+## 2026-07-22 後續硬體與儲存檢查
+
+### 內建側邊 SD 卡槽
+
+- 目前系統仍由 eMMC `/dev/mmcblk0p1` 開機。
+- 原本 active SD controller 為 disabled；已建立並安裝可回退的 force-probe device tree，`/boot/extlinux/extlinux.conf` 目前預設 `sd-force`，並保留 `sd-enabled`、`original` 兩個回退項目。force-probe 會移除 card-detect GPIO，並以 `non-removable` 方式讓控制器嘗試探測；尚待下一次重開機驗證。
+- 使用一般 card-detect 模式測試 128 GB 與 512 GB 卡時，`mmc1` host 可見，但沒有 `/dev/mmcblk1`；`PG.07` card-detect 讀值持續為 high，而該訊號是 active-low。20 秒按壓卡片測試也沒有改變讀值，因此目前不能歸因於容量或檔案系統。
+
+### USB Hub 讀卡機
+
+- 512 GB 卡插入 USB Hub 讀卡機後可正常辨識為 `/dev/sda`，容量約 500 GB，包含 `sda1` 至 `sda22`。
+- 只讀掛載後確認卡內是 Ubuntu 20.04.6、L4T R35.6.0 的 Jetson 映像；檢查完成後已卸載，沒有對卡片寫入。
+- `fdisk -l`／`sgdisk -v` 顯示 GPT 備份表的 self-pointer 不在裝置末端，符合約 16 GB Jetson 映像複製到 512 GB 媒體的現象。尚未執行 GPT 修復，也不應在未確認資料用途前執行 `sgdisk -e`、格式化、分割區調整或重新刷寫。
+
+### USB 手機網路
+
+- 最近一次重開機後，USB RNDIS 網路可快速建立連線；介面名稱可能在 `usb0`、`usb1` 間變化，應以 NetworkManager 實際狀態為準。
+- 先前開機後短暫無法連線，判斷與 USB Hub／RNDIS enumeration 時序有關；目前尚未重現相同延遲。
+
+### 後續驗證界線
+
+下一次重開機只驗證 force-probe 是否讓側邊卡出現 `/dev/mmcblk1`，並確認 root 仍是 `/dev/mmcblk0p1`。在結果明確前，不從 SD 開機、不修改 GPT、不格式化任何 SD 卡。

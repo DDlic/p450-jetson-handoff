@@ -160,3 +160,28 @@ Flashing completed
 - 不要把 `jetson-xavier-nx-devkit-qspi` 當作完整 eMMC 系統刷寫設定。
 - 不要在未確認裝置名稱前使用 `dd`、Etcher 或其他整碟寫入工具。
 - 不要把密碼、token、`.pem`、`.key` 或大型映像提交到 Git。
+
+## H. 最新 SD 與 USB 讀卡機檢查
+
+目前安全確認結果：eMMC `/dev/mmcblk0p1` 是開機 root；側邊 SD 控制器的 `mmc1` host 已啟用，但在一般 card-detect 模式下，128 GB 與 512 GB 卡都沒有出現 `/dev/mmcblk1`。已安裝的 force-probe 設定會在下一次開機預設使用 `sd-force`，但仍需開機後驗證：
+
+```bash
+cat /boot/extlinux/extlinux.conf
+lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS,MODEL
+findmnt /
+sudo dmesg | grep -Ei 'mmc|sdhci|mmcblk|card|gpio'
+```
+
+512 GB 卡經 USB 讀卡機目前可辨識為約 500 GB 的 `/dev/sda`，並可讀到 R35.6.0 Jetson 映像。該卡顯示 GPT 備份表未在裝置末端的警告，可能是小容量映像複製到大容量卡造成；在確認資料與開機需求前，不要執行以下任何寫入操作：
+
+```text
+fdisk 的自動修復、sgdisk -e、格式化、分割區調整、dd 或重新刷寫。
+```
+
+USB 手機網路最近一次重開機後已快速連線；檢查時請以實際出現的 `usb0`／`usb1` 介面為準：
+
+```bash
+nmcli device status
+ip -br addr
+ip route
+```

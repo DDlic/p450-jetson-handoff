@@ -10,6 +10,16 @@ ROS 2 離線包已在 Ubuntu 桌機完成只讀檢查；目前選定先在 Ubunt
 
 目前不要重新刷 QSPI、不要重新刷 SD，也不要覆蓋原本的 128 GB 舊 microSD。
 
+### 2026-07-22 最新硬體檢查
+
+- 目前根檔案系統仍是 eMMC `/dev/mmcblk0p1`，沒有把任何 SD 卡設為開機 root。
+- 內建側邊 SD 控制器已透過 `/boot/extlinux/extlinux.conf` 的 `sd-force` 預設項目啟用；同一份設定保留 `sd-enabled` 與 `original` 回退項目。force-probe device tree 已安裝，但尚待下一次重開機驗證。
+- 在一般 card-detect 模式下，側邊槽插入 128 GB 與 512 GB 卡都沒有產生 `/dev/mmcblk1`。`mmc1` host 存在，但 `PG.07` card-detect 腳位持續為 high（該訊號為 active-low）。這表示目前不能把問題判定為容量或檔案系統問題。
+- 512 GB 卡經 USB Hub 內的讀卡機可正常辨識為 `/dev/sda`，容量約 500 GB；可讀到 Ubuntu 20.04.6 與 L4T R35.6.0，檔案系統未留在掛載狀態。`sgdisk -v`／`fdisk` 顯示 GPT 備份表沒有位於裝置末端，符合小容量 Jetson 映像複製到較大媒體的情況；目前未執行修復或寫入。
+- USB 手機網路在最近一次重開機後可快速連線。USB RNDIS 介面名稱可能是 `usb0` 或 `usb1`，不可在腳本中硬編碼其中一個名稱。
+
+上述 SD force-probe 設定只用於偵測側邊卡，不改變 eMMC 開機來源。驗證前不要執行 `dd`、格式化、`sgdisk -e` 或任何會寫入 512 GB 卡的修復命令。
+
 ## 專案目標
 
 AMOV P450 整合：

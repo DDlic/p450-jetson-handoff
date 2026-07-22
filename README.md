@@ -8,6 +8,10 @@ Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 eMMC 完整刷寫，並�
 
 目前硬體判定以 Recovery EEPROM 為準：P3668-0001、eMMC、Board ID 3668、SKU 0001。
 
+2026-07-22 最新檢查：系統目前仍由 eMMC `/dev/mmcblk0p1` 開機。內建 SD 控制器已透過可回退的 force-probe device tree 啟用，但在一般 card-detect 模式下，128 GB 與 512 GB 卡都沒有出現 `/dev/mmcblk1`；下一次重開機需再驗證 force-probe。512 GB 卡經 USB 讀卡機可辨識為約 500 GB 的 `/dev/sda`，並確認內容是 JetPack 5.1.4／L4T R35.6.0 映像；該卡的 GPT 備份表位置有警告，目前未修復、未寫入。
+
+USB 手機網路在最近一次重開機後可快速連線；目前 ROS 2 Foxy 尚未安裝。
+
 ## 閱讀順序
 
 1. `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`

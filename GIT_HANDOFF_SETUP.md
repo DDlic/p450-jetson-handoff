@@ -23,6 +23,7 @@ git pull --ff-only
 先閱讀：
 
 ```bash
+less P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md
 less JETSON_HANDOFF_MASTER.md
 less P450_PROGRESS_2026-07-20.md
 less JETSON_HANDOFF_COMMANDS.md

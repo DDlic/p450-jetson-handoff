@@ -1,6 +1,6 @@
 # Jetson Xavier NX 目前命令與後續作業
 
-最後更新：2026-07-20（Asia/Taipei）
+最後更新：2026-07-22（Asia/Taipei）
 
 目前 Jetson 已由 eMMC 成功進入 Ubuntu。以下命令是開機後驗證與 P450 後續作業，不要重新執行已完成的刷寫命令。
 
@@ -61,20 +61,56 @@ groups
 
 若使用 UART，先確認實際載板腳位、電壓與線序，不要直接猜測 P450 的 UART header。
 
-## D. ROS 2 Humble 容器方向
+## D. ROS 2 Foxy 離線安裝
 
-目標是保留 JetPack 5／Ubuntu 20.04 宿主，將 ROS 2 Humble 放在 ARM64 容器內。先確認 Docker：
+目前 USB bundle 的目標是 Ubuntu 20.04 Focal、ARM64、JetPack 5／L4T R35.6.0，與 NX 宿主相符。先確認 NX 環境：
 
 ```bash
-docker --version
-docker info
+cat /etc/os-release
+dpkg --print-architecture
+uname -m
 ```
 
-不要在 Xavier NX 宿主直接執行 Ubuntu 20.04 → 22.04 `do-release-upgrade`，以免破壞 NVIDIA 驅動、CUDA、GUI 或 kernel 套件。
+必須確認為 Ubuntu 20.04、`arm64`、`aarch64`。將 USB 的 `ROS2` 目錄重新複製到 NX 的 `~/Downloads/ROS2`，不要沿用先前已截短的副本。
+
+先驗證曾出錯的套件：
+
+```bash
+cd ~/Downloads/ROS2
+stat -c '%n %s bytes' deb/git_2.25.1-1ubuntu3_arm64.deb
+sha256sum deb/git_2.25.1-1ubuntu3_arm64.deb
+dpkg-deb --info deb/git_2.25.1-1ubuntu3_arm64.deb | sed -n '1,20p'
+```
+
+預期大小為 `1456282 bytes`，SHA256 為：
+
+```text
+c637afbaf34e2bffe59fac5f0e0a622026e85729f267ce0ef99353a5e52d5f34
+```
+
+確認後才執行離線安裝：
+
+```bash
+cd ~/Downloads/ROS2
+sudo apt install --no-download --no-install-recommends ./deb/*.deb \
+  2>&1 | tee ~/ros2_foxy_offline_install.log
+```
+
+不要執行 `apt update` 或 `apt --fix-broken install`。若再次出現 `Invalid archive`，立即停止並記錄套件檔名、大小與 SHA256；若是 missing package，保留完整錯誤輸出，不要用網路修復。
+
+安裝完成後：
+
+```bash
+source /opt/ros/foxy/setup.bash
+ros2 --help
+ros2 doctor
+```
+
+這份包是 Foxy，不是 Humble。只有當後續專案明確要求 Humble 時，才另行處理 ARM64 Humble 容器；不要對 JetPack 宿主執行 `do-release-upgrade`。
 
 ## E. Micro XRCE-DDS 與 PX4 驗證順序
 
-1. 建立或安裝 ARM64 ROS 2 Humble 容器。
+1. 確認 ROS 2 Foxy 原生環境可執行。
 2. 建置 `px4_msgs`。
 3. 建置 `px4_ros_com`。
 4. 啟動 Micro XRCE-DDS Agent。

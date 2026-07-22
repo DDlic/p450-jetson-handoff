@@ -38,7 +38,7 @@ Ubuntu 桌機 Codex CLI 請先閱讀本文件，再處理 ROS 2 離線安裝。
 - 先不使用 Docker，降低延遲、即時性與硬體存取的不確定性。
 - 只有需要對接學長的 ROS 2 Humble 專案時，再處理 Humble 相容性。
 - PX4 v1.14 的 `px4_msgs` 使用 `release/1.14` 分支。
-- `px4_ros_com` 使用 `release/v1.14` 分支；不要使用不存在的 `release/1.14` 分支。
+- `px4_ros_com` 使用 `release/1.14` 分支；USB 內的來源說明與封存檔均以此版本為準。
 - Micro XRCE-DDS Agent 暫定使用 v2.4.2。
 
 ## NX 上的離線安裝包
@@ -63,7 +63,7 @@ SHA256SUMS.txt
 
 ```text
 px4_msgs release/1.14
-px4_ros_com release/v1.14
+px4_ros_com release/1.14
 Micro-XRCE-DDS-Agent v2.4.2
 ```
 
@@ -84,30 +84,48 @@ Invalid archive member header
 Could not read meta data from .../deb/git_2.25.1-1ubuntu3_arm64.deb
 ```
 
-目前確認該檔案大小為：
+筆電當時傳到 NX 的副本大小為：
 
 ```text
 537262 bytes（約 525 KB）
 ```
 
-因此 `git_2.25.1-1ubuntu3_arm64.deb` 疑似不完整或已損壞。尚未完成 ROS 2 安裝。
+因此當時 NX 內的 `git_2.25.1-1ubuntu3_arm64.deb` 是截短副本；不能據此判定 USB 原始包損壞。尚未完成 ROS 2 安裝。
+
+Ubuntu 桌機目前已對 USB 原始檔完成只讀檢查：
+
+```text
+大小：1456282 bytes
+檔案格式：Debian binary package (format 2.0)
+SHA256：c637afbaf34e2bffe59fac5f0e0a622026e85729f267ce0ef99353a5e52d5f34
+```
+
+USB 的 360 個 `.deb` 與 manifest 完全相符；SHA256 清單中除清單檔自身的自我雜湊項目外，其餘 379 個檔案均通過。問題判斷已由「原始包損壞」修正為「複製到 NX 的檔案被截短或未使用目前 USB 版本」。
+
+另外，bundle README 的安裝指令未關閉 Recommends；離線環境可能因 `apt-utils` 或 `python3-dulwich` 等未收錄的建議套件中止，後續使用：
+
+```bash
+sudo apt install --no-download --no-install-recommends ./deb/*.deb
+```
 
 不要執行 `apt --fix-broken install`，因為 NX 沒有 Internet，可能會嘗試下載套件。
 
 ## Ubuntu 桌機接手工作
 
-### 1. 修復 git 套件
+### 1. 重新複製並驗證 git 套件
 
-在有 Internet 的 Ubuntu 桌機或 Windows 電腦確認同名檔案大小。若原始檔也只有 537262 bytes，重新取得 Ubuntu 20.04 Focal ARM64 的有效套件：
+不要重新下載或修改整個 bundle。從目前已驗證的 USB `ROS2/deb` 重新複製到 NX 的 `~/Downloads/ROS2/deb/`，覆蓋先前截短的同名檔案。
 
 ```text
 git_2.25.1-1ubuntu3_arm64.deb
 ```
 
-確認下載內容是 Debian 套件，不是 HTML 錯誤頁面；重新產生 SHA256 後，將有效檔案放回 NX：
+在 NX 確認：
 
 ```text
-/home/p450/Downloads/ROS2/deb/
+大小：1456282 bytes
+SHA256：c637afbaf34e2bffe59fac5f0e0a622026e85729f267ce0ef99353a5e52d5f34
+dpkg-deb --info 可正常讀取
 ```
 
 ### 2. 重新執行 NX 的離線安裝
@@ -116,10 +134,17 @@ git_2.25.1-1ubuntu3_arm64.deb
 
 ```bash
 cd ~/Downloads/ROS2
-sudo apt install --no-download ./deb/*.deb
+cat /etc/os-release
+dpkg --print-architecture
+uname -m
+stat -c '%n %s bytes' deb/git_2.25.1-1ubuntu3_arm64.deb
+sha256sum deb/git_2.25.1-1ubuntu3_arm64.deb
+dpkg-deb --info deb/git_2.25.1-1ubuntu3_arm64.deb | sed -n '1,20p'
+sudo apt install --no-download --no-install-recommends ./deb/*.deb \
+  2>&1 | tee ~/ros2_foxy_offline_install.log
 ```
 
-若出現其他 `Invalid archive`，記錄檔名，回桌機重新取得該套件；不要繼續執行其他修復指令。
+預期系統為 Ubuntu 20.04、`arm64`、`aarch64`。若出現其他 `Invalid archive`，記錄檔名、大小與 SHA256，停止安裝；不要執行 `apt update` 或 `apt --fix-broken install`。
 
 ### 3. 基礎 ROS 2 驗證
 
@@ -128,6 +153,7 @@ sudo apt install --no-download ./deb/*.deb
 ```bash
 source /opt/ros/foxy/setup.bash
 ros2 --help
+ros2 doctor
 ```
 
 基礎環境確認後，才建立 workspace、解壓 `px4_msgs` 並進行 colcon build。

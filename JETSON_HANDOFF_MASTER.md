@@ -1,10 +1,12 @@
 # AMOV P450 Jetson Xavier NX 交接總覽
 
-最後更新：2026-07-20（Asia/Taipei）
+最後更新：2026-07-22（Asia/Taipei）
 
 ## 目前狀態
 
 Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 刷寫，並已由 eMMC 成功進入 Ubuntu 圖形介面。
+
+ROS 2 離線包已在 Ubuntu 桌機完成只讀檢查；目前選定先在 Ubuntu 20.04 宿主原生安裝 ROS 2 Foxy。
 
 目前不要重新刷 QSPI、不要重新刷 SD，也不要覆蓋原本的 128 GB 舊 microSD。
 
@@ -16,7 +18,8 @@ AMOV P450 整合：
 - PX4 v1.14.3
 - Jetson Xavier NX
 - JetPack 5.1.4／Ubuntu 20.04 宿主
-- Ubuntu 22.04／ROS 2 Humble ARM64 容器
+- ROS 2 Foxy 原生離線環境（目前方案）
+- Ubuntu 22.04／ROS 2 Humble ARM64 容器（只有需要 Humble 專案時才評估）
 - Micro XRCE-DDS Agent、`px4_msgs`、`px4_ros_com`
 - 後續 Offboard 起降與飛行資料擷取
 
@@ -26,12 +29,12 @@ AMOV P450 整合：
 Jetson Xavier NX
 └─ JetPack 5.1.4 / Ubuntu 20.04（eMMC）
    ├─ NVIDIA kernel、CUDA、Wi-Fi、USB、UART
-   ├─ Docker
-   └─ Ubuntu 22.04 / ROS 2 Humble ARM64 container
-      ├─ Micro XRCE-DDS Agent
-      ├─ px4_msgs
-      ├─ px4_ros_com
-      └─ Offboard 節點
+   ├─ ROS 2 Foxy（原生、離線安裝）
+   │  ├─ Micro XRCE-DDS Agent
+   │  ├─ px4_msgs
+   │  ├─ px4_ros_com
+   │  └─ Offboard 節點
+   └─ 可選：Ubuntu 22.04 / ROS 2 Humble ARM64 container
 ```
 
 ## 已確認硬體身份
@@ -176,17 +179,32 @@ Kernel 5.10.216-tegra
 根檔案系統位於 eMMC
 ```
 
+## ROS 2 離線包現況
+
+USB 內的 `ROS2` bundle 與 Jetson 目前系統相容：目標為 Ubuntu 20.04 Focal、ARM64、JetPack 5／L4T R35.6.0。實際檢查結果為 360 個 Debian 套件（261 個 arm64、99 個 all），manifest 與檔案數量一致。
+
+USB 上的 `git_2.25.1-1ubuntu3_arm64.deb` 為有效 Debian 套件，大小 1,456,282 bytes，SHA256 為：
+
+```text
+c637afbaf34e2bffe59fac5f0e0a622026e85729f267ce0ef99353a5e52d5f34
+```
+
+筆電先前在 NX 使用的 537,262-byte 檔案是截短副本，不是 USB 原始檔。後續必須從 USB 重新複製，並在 NX 上用 `stat`、`sha256sum`、`dpkg-deb --info` 驗證後才安裝。安裝指令需加入 `--no-install-recommends`，避免離線環境因未收錄的建議套件中止。
+
+這份包是 ROS 2 Foxy，不是 Humble；不要在 Ubuntu 22.04 或 x86_64 環境安裝。
+
 ## 後續工作順序
 
 1. 驗證 L4T、Ubuntu、Kernel 與 eMMC root device。
 2. 驗證 Ethernet、Wi-Fi、SSH 與重開機後網路恢復。
-3. 連接 Pixhawk 6C，確認 USB/UART 裝置與權限。
-4. 建立 Ubuntu 22.04／ROS 2 Humble ARM64 容器。
-5. 安裝與測試 Micro XRCE-DDS Agent。
-6. 建置 `px4_msgs`、`px4_ros_com`。
+3. 從 USB 重新複製 ROS 2 Foxy 離線包至 eMMC，完成完整性驗證。
+4. 原生安裝並驗證 ROS 2 Foxy。
+5. 建置 Micro XRCE-DDS Agent、`px4_msgs`、`px4_ros_com`。
+6. 連接 Pixhawk 6C，確認 USB/UART、uXRCE-DDS 參數與通道。
 7. 驗證 `/fmu/out/*` topic 與 PX4 ULog。
 8. 無槳測試 Kill Switch、定高、定點、EKF 與失聯處置。
-9. 最後才進行起飛、短暫停留、降落與 Offboard 測試。
+9. 若學長專案強制要求 Humble，再另行建立 ARM64 Humble 容器；不升級宿主 Ubuntu。
+10. 最後才進行起飛、短暫停留、降落與 Offboard 測試。
 
 ## 相關日志
 

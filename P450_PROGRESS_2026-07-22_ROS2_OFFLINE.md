@@ -1,8 +1,38 @@
 # AMOV P450：2026-07-22 ROS 2 離線安裝與桌機接手狀態
 
-更新日期：2026-07-22（Asia/Taipei）
+更新日期：2026-07-23（Asia/Taipei）
 
 Ubuntu 桌機 Codex CLI 請先閱讀本文件，再處理 ROS 2 離線安裝。
+
+## 本週目標與目前先決條件（2026-07-23）
+
+本週大目標是先使用 Jetson 宿主上的原生 ROS 2 Foxy 完成一次自動飛行實驗，第一階段範圍限定為起飛、短暫停留、降落。
+
+在此之前先完成 Pixhawk 飛控與 NX 的直接通訊測試，通過後才進行 ROS 2/uXRCE-DDS 整合。測試順序為：
+
+```text
+Pixhawk ↔ NX USB 或已確認腳位的 UART
+        ↓
+ROS 2 Foxy 離線安裝與基礎驗證
+        ↓
+uXRCE-DDS Agent、px4_msgs、px4_ros_com
+        ↓
+/fmu/out/* 與控制流程無槳驗證
+        ↓
+一次自動飛行：起飛、短暫停留、降落
+```
+
+目前已知的 QGC TCP/MAVLink 路徑是 P450 Wi-Fi → TCP/MAVLink → Pixhawk；它不等於 NX 已完成 USB/UART 或 uXRCE-DDS 通訊。先前檢查時 NX 沒有看到 `/dev/ttyACM*` 或 `/dev/ttyUSB*`，因此 Pixhawk↔NX 仍列為待測項目。
+
+## 2026-07-23 Pixhawk ↔ NX 通訊初檢
+
+本次只讀檢查在 Pixhawk 尚未被 NX 偵測的狀態下完成：
+
+- `lsusb` 可看到 USB Hub、Genesys 讀卡機、Zenfone RNDIS 網路與其他周邊，但沒有 Pixhawk 的 USB 裝置。
+- `/dev/serial/by-id/` 不存在，且沒有 `/dev/ttyACM*` 或 `/dev/ttyUSB*`。
+- 因此目前不能宣稱 Pixhawk↔NX 通訊通過；也尚未進入 MAVLink 心跳或 uXRCE-DDS topic 驗證。
+
+下一步應將 Pixhawk 以可確認資料線直接接到 NX，先不要經 USB Hub，然後重新執行 `JETSON_HANDOFF_COMMANDS.md` 的 I-1 檢查。只有出現穩定 serial 裝置並能由協定工具確認心跳／遙測後，才進入 ROS 2 Foxy 與 uXRCE-DDS 整合。
 
 ## 目前硬體與系統
 
@@ -160,6 +190,7 @@ ros2 doctor
 
 ## 尚未確認的 PX4 ROS 2 事項
 
+- Pixhawk↔NX 直接通訊尚未通過；下一步先確認 USB serial 或明確的 UART transport。
 - QGC 中 `UXRCE_DDS_CFG` 目前顯示 Disabled，尚未修改。
 - 尚未確認 Pixhawk 對應哪一個 Jetson UART。
 - NX 目前只看到：

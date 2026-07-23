@@ -12,6 +12,12 @@ Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 eMMC 完整刷寫，並�
 
 USB 手機網路在最近一次重開機後可快速連線；目前 ROS 2 Foxy 尚未安裝。
 
+## 本週目標（2026-07-23）
+
+本週大目標是先使用 Jetson 宿主上的原生 ROS 2 Foxy 完成一次自動飛行實驗，範圍先限定為起飛、短暫停留、降落。
+
+在 ROS 2 與自動飛行之前，必須先完成 Pixhawk 飛控與 NX 的直接通訊驗證。已確認的「筆電／P450 Wi-Fi → TCP/MAVLink → Pixhawk」不能直接視為「Pixhawk ↔ NX」已通訊；NX 仍需先驗證 USB 或明確確認的 UART，再驗證 uXRCE-DDS。
+
 ## 閱讀順序
 
 1. `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`

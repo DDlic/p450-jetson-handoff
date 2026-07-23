@@ -1,6 +1,6 @@
 # AMOV P450 Jetson Xavier NX 交接總覽
 
-最後更新：2026-07-22（Asia/Taipei）
+最後更新：2026-07-23（Asia/Taipei）
 
 ## 目前狀態
 
@@ -19,6 +19,20 @@ ROS 2 離線包已在 Ubuntu 桌機完成只讀檢查；目前選定先在 Ubunt
 - USB 手機網路在最近一次重開機後可快速連線。USB RNDIS 介面名稱可能是 `usb0` 或 `usb1`，不可在腳本中硬編碼其中一個名稱。
 
 上述 SD force-probe 設定只用於偵測側邊卡，不改變 eMMC 開機來源。驗證前不要執行 `dd`、格式化、`sgdisk -e` 或任何會寫入 512 GB 卡的修復命令。
+
+## 本週目標與執行順序（2026-07-23）
+
+本週大目標：使用 Jetson 宿主上的原生 ROS 2 Foxy 完成一次自動飛行實驗，第一階段只做起飛、短暫停留、降落。
+
+執行順序與通過條件：
+
+1. **先驗證 Pixhawk ↔ NX 直接通訊**：優先插接 Pixhawk USB，確認 NX 穩定產生 serial 裝置；若改用 UART，必須先確認 P450 實際腳位、電壓與線序，不猜測 `/dev/ttyTHS*` 對應。
+2. **再處理 ROS 2 Foxy**：完成離線套件驗證、原生安裝與 `ros2` 基礎檢查。
+3. **建立 PX4 ROS 2 通道**：建置 Micro XRCE-DDS Agent、`px4_msgs`、`px4_ros_com`，設定並驗證 uXRCE-DDS。
+4. **無槳驗證資料流與控制流程**：確認 `/fmu/out/*` topic、心跳／遙測、模式切換、Kill Switch 與失聯處置。
+5. **最後才做一次自動飛行實驗**：拆槳完成地面測試後，才在安全場地執行起飛、短暫停留、降落。
+
+目前已知的 QGC TCP/MAVLink 路徑只證明 P450 網路與 Pixhawk 可通訊，不代表 NX 已經完成 USB/UART 或 uXRCE-DDS 驗證。
 
 ## 專案目標
 
@@ -210,7 +224,7 @@ c637afbaf34e2bffe59fac5f0e0a622026e85729f267ce0ef99353a5e52d5f34
 3. 從 USB 重新複製 ROS 2 Foxy 離線包至 eMMC，完成完整性驗證。
 4. 原生安裝並驗證 ROS 2 Foxy。
 5. 建置 Micro XRCE-DDS Agent、`px4_msgs`、`px4_ros_com`。
-6. 連接 Pixhawk 6C，確認 USB/UART、uXRCE-DDS 參數與通道。
+6. 先連接 Pixhawk 6C，完成 NX 直接通訊驗證，再確認 USB/UART、uXRCE-DDS 參數與通道。
 7. 驗證 `/fmu/out/*` topic 與 PX4 ULog。
 8. 無槳測試 Kill Switch、定高、定點、EKF 與失聯處置。
 9. 若學長專案強制要求 Humble，再另行建立 ARM64 Humble 容器；不升級宿主 Ubuntu。

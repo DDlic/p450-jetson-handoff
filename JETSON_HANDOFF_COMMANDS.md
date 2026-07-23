@@ -1,6 +1,6 @@
 # Jetson Xavier NX 目前命令與後續作業
 
-最後更新：2026-07-22（Asia/Taipei）
+最後更新：2026-07-23（Asia/Taipei）
 
 目前 Jetson 已由 eMMC 成功進入 Ubuntu。以下命令是開機後驗證與 P450 後續作業，不要重新執行已完成的刷寫命令。
 
@@ -60,6 +60,13 @@ groups
 ```
 
 若使用 UART，先確認實際載板腳位、電壓與線序，不要直接猜測 P450 的 UART header。
+
+通訊測試的通過條件：
+
+- 插入 Pixhawk 後，NX 產生穩定的 `/dev/ttyACM*` 或 `/dev/ttyUSB*`，最好使用 `/dev/serial/by-id/` 的固定名稱。
+- 連續觀察至少 60 秒沒有 serial 裝置反覆消失、重連或 USB error。
+- 使用能解析 MAVLink 或 uXRCE-DDS 的工具確認心跳／遙測；單純執行 `cat /dev/ttyACM0` 看到亂碼不算通訊通過。
+- 記錄實際 transport、裝置名稱與 baud rate；在這些條件完成前，不修改 PX4 參數，也不猜測 UART 腳位。
 
 ## D. ROS 2 Foxy 離線安裝
 
@@ -185,3 +192,43 @@ nmcli device status
 ip -br addr
 ip route
 ```
+
+## I. 本週目標：先做 Pixhawk ↔ NX 通訊，再做 ROS 2 Foxy 自動飛行
+
+本週大目標是使用原生 ROS 2 Foxy 完成一次起飛、短暫停留、降落的自動飛行實驗。飛行前置順序固定如下：
+
+```text
+Pixhawk ↔ NX 直接通訊
+        ↓
+ROS 2 Foxy 原生環境
+        ↓
+uXRCE-DDS 與 /fmu/out/* topic
+        ↓
+拆槳地面測試與安全檢查
+        ↓
+一次自動飛行：起飛 → 短暫停留 → 降落
+```
+
+### I-1. 先確認 Pixhawk 是否被 NX 看見
+
+插入 Pixhawk 前後各執行一次：
+
+```bash
+date
+lsusb
+ls -l /dev/serial/by-id/ /dev/ttyACM* /dev/ttyUSB* 2>/dev/null
+sudo dmesg | tail -n 80
+```
+
+插入後若沒有新的 serial 裝置，不要把 QGC 已成功的 TCP/MAVLink 連線當成 NX 通訊成功，也不要直接猜測 UART。先保留 `lsusb`、`dmesg`、裝置名稱與線材／接法資訊，再排查 USB 線、Pixhawk 電源、USB Hub 與實際載板 UART 腳位。
+
+### I-2. 通訊成功後才能進入 ROS 2 驗證
+
+確認 Pixhawk↔NX 的 serial 或網路 transport 穩定後，才依序：
+
+1. 完成 ROS 2 Foxy 離線安裝。
+2. 建置 Micro XRCE-DDS Agent、`px4_msgs`、`px4_ros_com`。
+3. 設定 PX4 的 uXRCE-DDS 參數並啟動 Agent。
+4. 以 `ros2 topic list`、`ros2 topic echo` 驗證 `/fmu/out/*`。
+
+所有參數變更與飛行測試都必須拆槳或固定機體；在 topic、模式切換、Kill Switch 與失聯處置未驗證前，不進行自動起飛。

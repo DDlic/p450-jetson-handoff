@@ -6,7 +6,7 @@
 
 Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 刷寫，並已由 eMMC 成功進入 Ubuntu 圖形介面。
 
-ROS 2 離線包已在 Ubuntu 桌機完成只讀檢查；目前選定先在 Ubuntu 20.04 宿主原生安裝 ROS 2 Foxy。
+ROS 2 離線包已在 Ubuntu 桌機完成只讀檢查；2026-07-23 已改用在線方式在 Ubuntu 20.04 宿主完成原生 ROS 2 Foxy 安裝與驗證。離線包仍保留作為備援。
 
 目前不要重新刷 QSPI、不要重新刷 SD，也不要覆蓋原本的 128 GB 舊 microSD。
 
@@ -27,8 +27,8 @@ ROS 2 離線包已在 Ubuntu 桌機完成只讀檢查；目前選定先在 Ubunt
 執行順序與通過條件：
 
 1. **先驗證 Pixhawk ↔ NX 直接通訊**：優先插接 Pixhawk USB，確認 NX 穩定產生 serial 裝置；若改用 UART，必須先確認 P450 實際腳位、電壓與線序，不猜測 `/dev/ttyTHS*` 對應。
-2. **再處理 ROS 2 Foxy**：完成離線套件驗證、原生安裝與 `ros2` 基礎檢查。
-3. **建立 PX4 ROS 2 通道**：建置 Micro XRCE-DDS Agent、`px4_msgs`、`px4_ros_com`，設定並驗證 uXRCE-DDS。
+2. **再處理 ROS 2 Foxy**：已完成原生安裝與 `ros2` 基礎檢查。
+3. **建立 PX4 ROS 2 通道**：已完成 Micro XRCE-DDS Agent、`px4_msgs`、`px4_ros_com` 建置；尚待設定並驗證 uXRCE-DDS。
 4. **無槳驗證資料流與控制流程**：確認 `/fmu/out/*` topic、心跳／遙測、模式切換、Kill Switch 與失聯處置。
 5. **最後才做一次自動飛行實驗**：拆槳完成地面測試後，才在安全場地執行起飛、短暫停留、降落。
 
@@ -42,7 +42,7 @@ AMOV P450 整合：
 - PX4 v1.14.3
 - Jetson Xavier NX
 - JetPack 5.1.4／Ubuntu 20.04 宿主
-- ROS 2 Foxy 原生離線環境（目前方案）
+- ROS 2 Foxy 原生在線安裝環境（目前方案；離線包作為備援）
 - Ubuntu 22.04／ROS 2 Humble ARM64 容器（只有需要 Humble 專案時才評估）
 - Micro XRCE-DDS Agent、`px4_msgs`、`px4_ros_com`
 - 後續 Offboard 起降與飛行資料擷取
@@ -53,7 +53,7 @@ AMOV P450 整合：
 Jetson Xavier NX
 └─ JetPack 5.1.4 / Ubuntu 20.04（eMMC）
    ├─ NVIDIA kernel、CUDA、Wi-Fi、USB、UART
-   ├─ ROS 2 Foxy（原生、離線安裝）
+   ├─ ROS 2 Foxy（原生、在線安裝）
    │  ├─ Micro XRCE-DDS Agent
    │  ├─ px4_msgs
    │  ├─ px4_ros_com

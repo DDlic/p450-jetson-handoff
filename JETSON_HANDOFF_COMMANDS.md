@@ -68,7 +68,9 @@ groups
 - 使用能解析 MAVLink 或 uXRCE-DDS 的工具確認心跳／遙測；單純執行 `cat /dev/ttyACM0` 看到亂碼不算通訊通過。
 - 記錄實際 transport、裝置名稱與 baud rate；在這些條件完成前，不修改 PX4 參數，也不猜測 UART 腳位。
 
-## D. ROS 2 Foxy 離線安裝
+## D. ROS 2 Foxy 安裝（目前已在線完成；離線包作備援）
+
+2026-07-23 已在 NX 在線完成原生 ROS 2 Foxy 安裝、`rosdep` 依賴檢查、Micro XRCE-DDS Agent v2.4.2、`px4_msgs` 與 `px4_ros_com` 建置。以下離線包命令保留供日後無網路重建使用，目前不需重做。
 
 目前 USB bundle 的目標是 Ubuntu 20.04 Focal、ARM64、JetPack 5／L4T R35.6.0，與 NX 宿主相符。先確認 NX 環境：
 

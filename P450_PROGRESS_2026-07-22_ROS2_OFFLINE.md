@@ -4,6 +4,8 @@
 
 Ubuntu 桌機 Codex CLI 請先閱讀本文件，再處理 ROS 2 離線安裝。
 
+> **目前狀態覆寫（2026-07-23）**：NX 已在線完成原生 ROS 2 Foxy 安裝與驗證；Micro XRCE-DDS Agent v2.4.2、`px4_msgs` 與 `px4_ros_com` 也已完成建置與安裝。下方「離線安裝停點」保留作為歷史與備援紀錄，不再是目前阻塞。
+
 ## 本週目標與目前先決條件（2026-07-23）
 
 本週大目標是先使用 Jetson 宿主上的原生 ROS 2 Foxy 完成一次自動飛行實驗，第一階段範圍限定為起飛、短暫停留、降落。
@@ -13,7 +15,7 @@ Ubuntu 桌機 Codex CLI 請先閱讀本文件，再處理 ROS 2 離線安裝。
 ```text
 Pixhawk ↔ NX USB 或已確認腳位的 UART
         ↓
-ROS 2 Foxy 離線安裝與基礎驗證
+ROS 2 Foxy 原生安裝與基礎驗證
         ↓
 uXRCE-DDS Agent、px4_msgs、px4_ros_com
         ↓
@@ -33,6 +35,19 @@ uXRCE-DDS Agent、px4_msgs、px4_ros_com
 - 因此目前不能宣稱 Pixhawk↔NX 通訊通過；也尚未進入 MAVLink 心跳或 uXRCE-DDS topic 驗證。
 
 下一步應將 Pixhawk 以可確認資料線直接接到 NX，先不要經 USB Hub，然後重新執行 `JETSON_HANDOFF_COMMANDS.md` 的 I-1 檢查。只有出現穩定 serial 裝置並能由協定工具確認心跳／遙測後，才進入 ROS 2 Foxy 與 uXRCE-DDS 整合。
+
+## 2026-07-23 ROS 2 Foxy 與 PX4 工作區完成狀態
+
+已在 NX 在線完成下列項目，沒有升級 Ubuntu 或 JetPack：
+
+- ROS 2 Foxy `ros-base` 與必要的 demo／建置工具已安裝，`ros2`、`colcon`、`rosdep`、`vcs` 可用。
+- `rosdep install --from-paths ... --ignore-src -r -y` 成功完成。
+- Micro XRCE-DDS Agent v2.4.2 已編譯並安裝至 `/usr/local/bin/MicroXRCEAgent`；共享函式庫已由 `ldconfig` 納入系統搜尋路徑。
+- 工作區 `/home/p450/p450_ros2_ws` 已完成 `px4_msgs` 與 `px4_ros_com` 建置，套件前綴分別為 `install/px4_msgs` 與 `install/px4_ros_com`。
+- `px4_msgs/msg/VehicleOdometry` 介面可由 `ros2 interface show` 正常讀取；`px4_ros_com` 的 `offboard_control`、listener 範例已列出。
+- ROS 2 基礎 talker/listener DDS 回環測試已通過；目前尚未啟動飛控 Agent 或修改 PX4 參數。
+
+目前剩餘的通訊關卡是：先確認 Pixhawk↔NX 的實體 USB/UART/網路 transport，再依實際 transport 啟動 Agent、確認 `/fmu/out/*`，完成無槳測試後才進入自動飛行。
 
 ## 目前硬體與系統
 
@@ -97,7 +112,7 @@ px4_ros_com release/1.14
 Micro-XRCE-DDS-Agent v2.4.2
 ```
 
-## ROS 2 離線安裝目前停點
+## 歷史：ROS 2 離線安裝停點（目前已繞過）
 
 使用錯誤的絕對路徑 `/Downloads/ROS2` 時，系統找不到資料夾；正確路徑是使用者家目錄下的 `~/Downloads/ROS2`。
 

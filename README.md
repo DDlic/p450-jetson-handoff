@@ -10,7 +10,7 @@ Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 eMMC 完整刷寫，並�
 
 2026-07-22 最新檢查：系統目前仍由 eMMC `/dev/mmcblk0p1` 開機。內建 SD 控制器已透過可回退的 force-probe device tree 啟用，但在一般 card-detect 模式下，128 GB 與 512 GB 卡都沒有出現 `/dev/mmcblk1`；下一次重開機需再驗證 force-probe。512 GB 卡經 USB 讀卡機可辨識為約 500 GB 的 `/dev/sda`，並確認內容是 JetPack 5.1.4／L4T R35.6.0 映像；該卡的 GPT 備份表位置有警告，目前未修復、未寫入。
 
-USB 手機網路在最近一次重開機後可快速連線；目前 ROS 2 Foxy 尚未安裝。
+USB 手機網路在最近一次重開機後可快速連線。2026-07-23 已在線完成原生 ROS 2 Foxy、Micro XRCE-DDS Agent v2.4.2、`px4_msgs` 與 `px4_ros_com` 安裝／建置；目前尚未啟動飛控通訊測試。
 
 ## 本週目標（2026-07-23）
 

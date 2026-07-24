@@ -53,3 +53,20 @@ lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINTS
 6. 無槳後，才進行起飛、短暫停留、降落測試。
 
 不要在宿主執行 `do-release-upgrade`。不要使用 Orin BSP、不要再刷 SD、不要執行 `/dev/mtd0` 舊方法。
+
+## 2026-07-24 最新接手指令
+
+請先閱讀 `P450_PROGRESS_2026-07-24_NEXT.md`。目前不需要重裝 ROS 2，也不需要重刷 Jetson。下一個唯一優先關卡是確認 Pixhawk ↔ NX 的實體 transport。
+
+執行原則：使用繁體中文；一次只給使用者一個短命令；等待輸出後再繼續。螺旋槳拆除或機體固定，不 Arm，不修改 PX4 參數。
+
+1. 請使用者把 Pixhawk 6C 用資料 USB 線直接接到 NX，不要經過 USB Hub。
+2. 依序執行 `lsusb`、`ls -l /dev/ttyACM* /dev/ttyUSB* 2>/dev/null`，必要時才執行 `sudo dmesg | tail -n 30`。
+3. 若沒有新增穩定 serial 裝置，停止並回報；不要猜測 `/dev/ttyTHS0/1/4` 或 UART 腳位。
+4. 若 serial 出現，先記錄裝置並觀察是否穩定；USB serial 出現不代表 uXRCE-DDS 已完成。
+5. 之後才 source `/opt/ros/foxy/setup.bash` 與 `~/p450_ros2_ws/install/setup.bash`，確認 `px4_msgs`、`px4_ros_com`。
+6. 在 QGroundControl 先只讀取 `UXRCE_DDS_CFG`、`UXRCE_DDS_PRT`、`UXRCE_DDS_AG_IP`、`UXRCE_DDS_DOM_ID`；依實際 UART/UDP 路徑決定 Agent，不要直接套猜測命令。
+7. Agent 成功後，確認 `/fmu/out/*`、`vehicle_status`、`vehicle_odometry`；topic 不穩定就停止，不飛行。
+8. 完成 ULog、Kill Switch、失聯處置、定高/定點/EKF/震動的無槳測試後，才做第一次起飛→短暫停留→降落。
+
+QGC 的 P450 Wi-Fi→TCP/MAVLink 已成功，只代表筆電能連 Pixhawk；它不能代替 Pixhawk→NX 的 ROS 2/uXRCE-DDS 通道。Native Foxy 是目前方案；Humble/Docker 延後到確定需要對接學長專案時再規劃。

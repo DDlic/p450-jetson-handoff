@@ -12,6 +12,8 @@ Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 eMMC 完整刷寫，並�
 
 USB 手機網路在最近一次重開機後可快速連線。2026-07-23 已在線完成原生 ROS 2 Foxy、Micro XRCE-DDS Agent v2.4.2、`px4_msgs` 與 `px4_ros_com` 安裝／建置；目前尚未啟動飛控通訊測試。
 
+最新下一步指引：`P450_PROGRESS_2026-07-24_NEXT.md`。目前優先確認 Pixhawk 與 NX 的直接 USB/UART/網路 transport，再設定 uXRCE-DDS；不要重刷系統或直接進行飛行測試。
+
 ## 本週目標（2026-07-23）
 
 本週大目標是先使用 Jetson 宿主上的原生 ROS 2 Foxy 完成一次自動飛行實驗，範圍先限定為起飛、短暫停留、降落。
@@ -20,12 +22,13 @@ USB 手機網路在最近一次重開機後可快速連線。2026-07-23 已在�
 
 ## 閱讀順序
 
-1. `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`
-2. `JETSON_HANDOFF_MASTER.md`
-3. `P450_PROGRESS_2026-07-20.md`
-4. `JETSON_HANDOFF_HISTORY.md`
-5. `JETSON_HANDOFF_COMMANDS.md`
-6. `JETSON_HANDOFF_PROMPT_FOR_CODEX_CLI.md`
+1. `P450_PROGRESS_2026-07-24_NEXT.md`
+2. `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`
+3. `JETSON_HANDOFF_MASTER.md`
+4. `P450_PROGRESS_2026-07-20.md`
+5. `JETSON_HANDOFF_HISTORY.md`
+6. `JETSON_HANDOFF_COMMANDS.md`
+7. `JETSON_HANDOFF_PROMPT_FOR_CODEX_CLI.md`
 
 ## 注意
 

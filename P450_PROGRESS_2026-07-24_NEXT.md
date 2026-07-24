@@ -165,3 +165,55 @@ NX Codex CLI 每完成一個小步驟後，回報：
 2. 是否新增 serial 裝置或 topic。
 3. 若失敗，完整錯誤與停止位置。
 4. 下一步前先等待使用者確認，不自行跳過實體 transport 判斷。
+
+## 六、2026-07-24 TELEM2／UART0 實測結果
+
+### 已確認的接線與 PX4 參數
+
+- 使用者確認 NX `UART0` 接到 Pixhawk `TELEM2`。
+- NX `UART1` 雖有線材，但尾端未接到任何設備，暫不列為測試通道。
+- Pixhawk 已透過 USB 直接連接筆電 QGroundControl，作為參數恢復與診斷路徑。
+- 為保留 QGC TCP/MAVLink，`MAV_0_CONFIG` 保持 `TELEM1`。
+- `MAV_1_CONFIG` 設為 `Disabled`，釋放 `TELEM2` 給 uXRCE-DDS。
+- `UXRCE_DDS_CFG` 設為 `TELEM2`，QGC 顯示值為 102。
+- `SER_TEL2_BAUD` 為 `921600`（8N1）。
+
+上述參數由 Git 中的 `mav_con` 記錄確認：
+
+```text
+param show UXRCE_DDS_CFG  -> 102
+param show MAV_1_CONFIG   -> 0
+param show SER_TEL2_BAUD  -> 921600
+uxrce_dds_client status   -> Running, disconnected
+transport                 -> serial
+```
+
+### NX 端 Agent 測試
+
+在 NX 主機執行一次 20 秒測試：
+
+```bash
+sudo timeout 20s /usr/local/bin/MicroXRCEAgent serial --dev /dev/ttyTHS0 -b 921600
+```
+
+結果：
+
+- `/dev/ttyTHS0` 可開啟，Agent 回報 `running`。
+- 測試期間沒有出現 XRCE-DDS client session。
+- PX4 端同時回報 `Running, disconnected`。
+- 因此目前尚未出現 `/fmu/out/*` ROS 2 topics，也不得進入 Offboard 或飛行測試。
+
+系統 device-tree 顯示 `serial0` 指向 `3100000.serial`，而 `ttyTHS0` 對應該 serial 裝置；這只能確認 Linux 裝置映射，不能單獨證明 P450 載板的實體腳位、線序或電平正確。
+
+### 目前判定與停止點
+
+ROS 2 Foxy、`px4_msgs`、`px4_ros_com`、Micro XRCE-DDS Agent 與 PX4 端 uXRCE-DDS 啟動條件均已完成；目前失敗點在 PX4 TELEM2 到 NX UART0 之間沒有建立 XRCE-DDS session。
+
+仍需實體確認：
+
+- TELEM2 與 UART0 兩端是否真的接通。
+- TX/RX 是否交叉正確，且共用 GND。
+- P450 載板 UART 腳位的電壓電平是否相容。
+- 載板 UART0 的 pinmux 與實際 Linux 裝置映射是否一致。
+
+在上述項目確認前，不再猜測其他 `/dev/ttyTHS*`、不再改 PX4 參數、不重刷系統，也不進行解鎖或飛行。

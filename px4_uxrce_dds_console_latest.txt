@@ -1,0 +1,34 @@
+nsh: sysinit: fopen failed: No such file or directory
+
+NuttShell (NSH) NuttX-11.0.0
+
+nsh> param show UXRCE_DDS_CFG
+
+Symbols: x used, += saved, unsaved
+
+x + UXRCE_DDS_CFG [1084,1768]: 102
+
+1093/1813 parameters used.
+
+nsh> param show SER_TEL2_BAUD
+
+Symbols: x used, += saved, unsaved
+
+x + SER_TEL2_BAUD [959,1433]: 460800
+
+1093/1813 parameters used.
+
+nsh> param show MAV_1_CONFIG
+
+Symbols: x used, += saved, unsaved
+
+x MAV_1_CONFIG [529,907]: 0
+
+1093/1813 parameters used.
+
+nsh> uxrce_dds_client status
+
+INFO [uxrce_dds_client] Running, disconnected
+INFO [uxrce_dds_client] Using transport: serial
+
+nsh>

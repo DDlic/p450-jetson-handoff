@@ -58,6 +58,20 @@ uXRCE-DDS Agent、px4_msgs、px4_ros_com
 - 根檔案系統：`/dev/mmcblk0p1`（eMMC）。
 - 原本 128 GB microSD 保留，不要格式化。
 
+## 2026-07-28 SDMMC3、wlan1 與連線狀態覆核
+
+本次已完成底層設定、重開機與實機驗證：
+
+- 系統仍由 eMMC `/dev/mmcblk0p1` 開機。
+- 側邊 SD 卡已由 SDMMC3（`3440000.sdhci`／`mmc1`）辨識為 `/dev/mmcblk1`，目前卡片保持插入並可掛載。
+- 使用 DTB `/boot/dtb/p450-p3668-0001-p3509-0000-sdmmc3-wifi.dtb`；`extlinux.conf` 預設 `p450-sdmmc3`。
+- SDMMC3 設為 4-bit、3.3 V、停用 1.8 V 切換、最高 50 MHz。初始 SDR104 的 `Data CRC error` 在降速後，本次重開開機記錄未再出現。
+- SD 卡的 GPT 備份表位置警告仍存在；不得執行 `sgdisk -e`、格式化、分割區調整、`dd` 或重新刷寫。
+- 外接 TP-Link USB Wi-Fi 為 `wlan1`／`rtl88x2bu`，`rfkill` 無 hard/soft block，已成功掃描到 AP。
+- 內建 Intel 8265 `wlan0`／`iwlwifi` 的 `phy0` 持續 hardware hard block，會使 NetworkManager 全域 Wi-Fi disabled。已安裝 `/etc/modprobe.d/p450-disable-iwlwifi.conf` 的 `blacklist iwlwifi` 並重新生成 initramfs；目前已由有線切換至 `wlan1` 連線。
+
+上述 blacklist 只停用內建 Intel Wi-Fi，保留外接 `wlan1`。若需恢復內建 Wi-Fi，移除 blacklist、執行 `sudo update-initramfs -u` 後再重開機。
+
 ## 已確認可用功能
 
 ### P450 Wi-Fi 基地台
@@ -229,7 +243,9 @@ ros2 doctor
 
 ## 2026-07-22 後續硬體與儲存檢查
 
-### 內建側邊 SD 卡槽
+### 內建側邊 SD 卡槽（2026-07-22 初始狀態；後續已由上方覆核完成）
+
+以下 bullet 是修正前的歷史狀態；目前請以本文件上方的 2026-07-28 覆核為準。
 
 - 目前系統仍由 eMMC `/dev/mmcblk0p1` 開機。
 - 原本 active SD controller 為 disabled；已建立並安裝可回退的 force-probe device tree，`/boot/extlinux/extlinux.conf` 目前預設 `sd-force`，並保留 `sd-enabled`、`original` 兩個回退項目。force-probe 會移除 card-detect GPIO，並以 `non-removable` 方式讓控制器嘗試探測；尚待下一次重開機驗證。

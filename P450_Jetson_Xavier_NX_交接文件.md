@@ -162,6 +162,30 @@ Hard blocked：yes
 
 這表示舊系統在重灌前就已有 Wi-Fi 硬體封鎖問題。這不是目前 QSPI 主線，重灌後再驗證 Wi-Fi AP／基地台即可，不要讓此問題阻塞刷機。
 
+### 2026-07-28 最新 Wi-Fi 與 SD 修正結果
+
+目前以以下結果為準：
+
+```text
+系統：JetPack 5.1.4／L4T R35.6.0／Kernel 5.10.216-tegra
+root：/dev/mmcblk0p1（eMMC）
+SD：/dev/mmcblk1，控制器 3440000.sdhci（SDMMC3）
+SD DTB：/boot/dtb/p450-p3668-0001-p3509-0000-sdmmc3-wifi.dtb
+外接 Wi-Fi：wlan1，TP-Link USB，rtl88x2bu
+內建 Wi-Fi：wlan0，Intel 8265，iwlwifi，hardware hard block
+```
+
+已安裝的 DTB 讓 SDMMC3 以 4-bit、3.3 V、最高 50 MHz 運作，並以 `non-removable` 方式繞過異常的 card-detect。重開後 `/dev/mmcblk1` 可正常枚舉；初始 SDR104 曾出現 `Data CRC error`，降速後本次開機未再出現。仍保留 GPT 備份表警告，禁止對該卡執行 `sgdisk -e`、格式化、分割區調整或 `dd`。
+
+內建 Intel 8265 的 `phy0` 持續 hard blocked，會使 NetworkManager 將全域 Wi-Fi 設為 disabled。卸載 `iwlwifi` 後，外接 `wlan1` 已能啟用並掃描到 AP；目前已將下列設定寫入 initramfs，使修正跨重開機生效：
+
+```text
+/etc/modprobe.d/p450-disable-iwlwifi.conf
+blacklist iwlwifi
+```
+
+復原內建 Wi-Fi：移除上述 blacklist、執行 `sudo update-initramfs -u`，再重開機。外接 `wlan1` 目前已取代有線成為連線介面。
+
 ## 歷史排查與目前停點
 
 ```text

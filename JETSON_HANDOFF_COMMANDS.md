@@ -170,9 +170,34 @@ Flashing completed
 - 不要在未確認裝置名稱前使用 `dd`、Etcher 或其他整碟寫入工具。
 - 不要把密碼、token、`.pem`、`.key` 或大型映像提交到 Git。
 
-## H. 最新 SD 與 USB 讀卡機檢查
+## H. SD 與 USB 讀卡機檢查
 
-目前安全確認結果：eMMC `/dev/mmcblk0p1` 是開機 root；側邊 SD 控制器的 `mmc1` host 已啟用，但在一般 card-detect 模式下，128 GB 與 512 GB 卡都沒有出現 `/dev/mmcblk1`。已安裝的 force-probe 設定會在下一次開機預設使用 `sd-force`，但仍需開機後驗證：
+### H-1. 2026-07-28 已完成的 SD／Wi-Fi 修正
+
+目前系統的實際狀態：
+
+```text
+root：/dev/mmcblk0p1（eMMC）
+側邊 microSD：/dev/mmcblk1
+SD host：mmc1 = 3440000.sdhci = SDMMC3
+DTB：/boot/dtb/p450-p3668-0001-p3509-0000-sdmmc3-wifi.dtb
+外接 Wi-Fi：wlan1／rtl88x2bu
+```
+
+`extlinux.conf` 的預設項目為 `p450-sdmmc3`。SDMMC3 設為 4-bit、3.3 V、停用 1.8 V 切換、最高 50 MHz，並以 `non-removable` 方式探測。初始 SDR104 的 CRC 錯誤在降速後消失；GPT 備份表位置警告仍存在，這是映像容量複製造成的歷史狀態，禁止自動修復或寫入。
+
+內建 Intel 8265／`iwlwifi` 的 `phy0` 有不可解除的 hardware hard block，會關閉 NetworkManager 全域 Wi-Fi。為確保 `wlan1` 可用，已安裝：
+
+```text
+/etc/modprobe.d/p450-disable-iwlwifi.conf
+blacklist iwlwifi
+```
+
+該設定已透過 `sudo update-initramfs -u` 納入 initrd。`wlan1` 已能掃描 AP，並已由有線切換為目前連線介面。若要恢復內建 Wi-Fi，移除 blacklist、重新生成 initramfs 後再重開機。
+
+### H-2. 歷史 SD 與 USB 讀卡機檢查
+
+2026-07-22 初始檢查結果：當時 eMMC `/dev/mmcblk0p1` 是開機 root；側邊 SD 控制器的 `mmc1` host 已啟用，但在一般 card-detect 模式下，128 GB 與 512 GB 卡都沒有出現 `/dev/mmcblk1`。當時已安裝的 force-probe 設定預設使用 `sd-force`；後續已由 H-1 的 SDMMC3 DTB 取代並完成重開驗證：
 
 ```bash
 cat /boot/extlinux/extlinux.conf

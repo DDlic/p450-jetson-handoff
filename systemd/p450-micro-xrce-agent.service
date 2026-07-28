@@ -1,0 +1,18 @@
+[Unit]
+Description=P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0
+Documentation=https://docs.px4.io/v1.14/en/middleware/uxrce_dds
+After=multi-user.target
+ConditionPathExists=/dev/ttyTHS1
+
+[Service]
+Type=simple
+User=p450
+Group=p450
+SupplementaryGroups=dialout
+Environment=ROS_DOMAIN_ID=0
+ExecStart=/usr/local/bin/MicroXRCEAgent serial --dev /dev/ttyTHS1 -b 921600 -v 2
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

@@ -1,6 +1,6 @@
 # AMOV P450 Jetson Xavier NX 交接總覽
 
-最後更新：2026-07-23（Asia/Taipei）
+最後更新：2026-07-28（Asia/Taipei）
 
 ## 目前狀態
 
@@ -8,7 +8,11 @@ Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 刷寫，並已由 eMMC �
 
 ROS 2 離線包已在 Ubuntu 桌機完成只讀檢查；2026-07-23 已改用在線方式在 Ubuntu 20.04 宿主完成原生 ROS 2 Foxy 安裝與驗證。離線包仍保留作為備援。
 
-目前不要重新刷 QSPI、不要重新刷 SD，也不要覆蓋原本的 128 GB 舊 microSD。
+目前不要重新刷 QSPI 或 eMMC。側邊 128 GB microSD 已清除舊開機映像並改為單一 ext4 `P450_DATA` 資料碟。
+
+2026-07-28 已確認 AMOV AllSpark 外殼 `UART0` 對應 `/dev/ttyTHS1`，不是先前測試的 `/dev/ttyTHS0`。Pixhawk `TELEM2` 已能與 Micro XRCE-DDS Agent 建立 session，ROS 2 可發現 23 個 `/fmu/*` topics 並讀取即時 IMU／里程計資料。Agent 已由 `p450-micro-xrce-agent.service` 常駐及開機啟動。
+
+目前 PX4 1.14.3 client 約每 2.7–4.8 秒主動刪除並重建 session；協定追蹤顯示 NX Agent 有快速送出回覆，提升 Agent 排程優先度也未改善。因此通訊已打通但尚未穩定，不可進入 Offboard 或自動飛行。
 
 ### 2026-07-22 最新硬體檢查
 
@@ -28,8 +32,8 @@ ROS 2 離線包已在 Ubuntu 桌機完成只讀檢查；2026-07-23 已改用在�
 
 1. **先驗證 Pixhawk ↔ NX 直接通訊**：優先插接 Pixhawk USB，確認 NX 穩定產生 serial 裝置；若改用 UART，必須先確認 P450 實際腳位、電壓與線序，不猜測 `/dev/ttyTHS*` 對應。
 2. **再處理 ROS 2 Foxy**：已完成原生安裝與 `ros2` 基礎檢查。
-3. **建立 PX4 ROS 2 通道**：已完成 Micro XRCE-DDS Agent、`px4_msgs`、`px4_ros_com` 建置；尚待設定並驗證 uXRCE-DDS。
-4. **無槳驗證資料流與控制流程**：確認 `/fmu/out/*` topic、心跳／遙測、模式切換、Kill Switch 與失聯處置。
+3. **建立 PX4 ROS 2 通道**：已完成 Micro XRCE-DDS Agent、`px4_msgs`、`px4_ros_com` 建置，也已建立 UART session 與 `/fmu/*` topics；尚待排除週期性 session 重建。
+4. **無槳驗證資料流與控制流程**：通訊連續穩定後，再確認模式切換、Kill Switch 與失聯處置。
 5. **最後才做一次自動飛行實驗**：拆槳完成地面測試後，才在安全場地執行起飛、短暫停留、降落。
 
 目前已知的 QGC TCP/MAVLink 路徑只證明 P450 網路與 Pixhawk 可通訊，不代表 NX 已經完成 USB/UART 或 uXRCE-DDS 驗證。

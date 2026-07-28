@@ -166,7 +166,7 @@ NX Codex CLI 每完成一個小步驟後，回報：
 3. 若失敗，完整錯誤與停止位置。
 4. 下一步前先等待使用者確認，不自行跳過實體 transport 判斷。
 
-## 六、2026-07-24 TELEM2／UART0 實測結果
+## 六、2026-07-24 至 2026-07-28 TELEM2／UART0 實測結果
 
 ### 已確認的接線與 PX4 參數
 
@@ -188,32 +188,61 @@ uxrce_dds_client status   -> Running, disconnected
 transport                 -> serial
 ```
 
-### NX 端 Agent 測試
+### 正確的 NX UART 映射
 
-在 NX 主機執行一次 20 秒測試：
+AMOV AllSpark 官方手冊確認：
+
+- 外殼 `UART0` = Linux `/dev/ttyTHS1`
+- 外殼 `UART1` = Linux `/dev/ttyTHS0`
+- 兩者皆為 3.3 V CMOS，四線依序為 3V3、RX、TX、GND
+
+因此先前 `/dev/ttyTHS0` 的 20 秒無 session 測試其實是在測未接設備的外殼 `UART1`，不是接到 Pixhawk `TELEM2` 的 `UART0`。
+
+官方資料：
+
+- <https://wiki.amovlab.com/public/prometheuswiki/P450%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8C/%E7%A1%AC%E4%BB%B6%E4%BB%8B%E7%BB%8D.html>
+- <https://wiki.amovlab.com/static/pdf/AllSpark%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8C.pdf>
+
+### 已通過的 ROS 2 資料測試
+
+在正確裝置啟動 Agent：
 
 ```bash
-sudo timeout 20s /usr/local/bin/MicroXRCEAgent serial --dev /dev/ttyTHS0 -b 921600
+sudo /usr/local/bin/MicroXRCEAgent serial --dev /dev/ttyTHS1 -b 921600
 ```
 
-結果：
+實測結果：
 
-- `/dev/ttyTHS0` 可開啟，Agent 回報 `running`。
-- 測試期間沒有出現 XRCE-DDS client session。
-- PX4 端同時回報 `Running, disconnected`。
-- 因此目前尚未出現 `/fmu/out/*` ROS 2 topics，也不得進入 Offboard 或飛行測試。
+- PX4 client 建立 XRCE session，Agent 成功建立 participant、publisher、subscriber、data writer 與 data reader。
+- ROS 2 發現 23 個 `/fmu/*` topics，其中有 10 個 `/fmu/out/*`。
+- `px4_ros_com sensor_combined_listener` 能持續讀到即時陀螺儀與加速度計資料。
+- `/fmu/out/vehicle_odometry` 能讀到即時位置、速度、姿態與 variance。
+- 明確指定 message type 及 QoS 後，`/fmu/out/vehicle_status` 能讀到狀態。
+- 當時狀態包含 `failsafe: false`、`power_input_valid: true`，但同時為 `gcs_connection_lost: true`、`pre_flight_checks_pass: false`，里程計 `quality: 0`；不得據此解鎖或起飛。
 
-系統 device-tree 顯示 `serial0` 指向 `3100000.serial`，而 `ttyTHS0` 對應該 serial 裝置；這只能確認 Linux 裝置映射，不能單獨證明 P450 載板的實體腳位、線序或電平正確。
+Agent 已安裝為 systemd 服務：
 
-### 目前判定與停止點
+```bash
+sudo systemctl status p450-micro-xrce-agent.service
+```
 
-ROS 2 Foxy、`px4_msgs`、`px4_ros_com`、Micro XRCE-DDS Agent 與 PX4 端 uXRCE-DDS 啟動條件均已完成；目前失敗點在 PX4 TELEM2 到 NX UART0 之間沒有建立 XRCE-DDS session。
+服務檔來源為 `systemd/p450-micro-xrce-agent.service`，已 enabled，人工重啟後可重新建立 session 與 topics。
 
-仍需實體確認：
+### 尚未通過：session 穩定性
 
-- TELEM2 與 UART0 兩端是否真的接通。
-- TX/RX 是否交叉正確，且共用 GND。
-- P450 載板 UART 腳位的電壓電平是否相容。
-- 載板 UART0 的 pinmux 與實際 Linux 裝置映射是否一致。
+目前不是「完全不通」，而是 session 約每 2.7–4.8 秒重建：
 
-在上述項目確認前，不再猜測其他 `/dev/ttyTHS*`、不再改 PX4 參數、不重刷系統，也不進行解鎖或飛行。
+- Agent 日誌可見 PX4 依序送出 `delete_client`、`session closed`，隨即再 `create_client`。
+- 10 秒協定追蹤量到飛控至 NX 約 26.8 kB/s、NX 至飛控約 0.6 kB/s。
+- 協定層追蹤顯示 Agent 在收到要求後約 0.2 ms 內產生回覆。
+- 降低 Agent 日誌量及用 FIFO 即時排程執行，均未消除重建。
+- PX4 v1.14.3 原始碼在連續漏掉約三次短週期 ping 回覆後就斷線；PX4 v1.15 已改為有有效 payload 收發時不以 ping 判死，並放寬 ping timeout。這使 PX4 1.14.3 的判定成為目前的重要因素。
+
+目前優先採低風險排查：
+
+1. 由 QGC 把 `SER_TEL2_BAUD` 從 921600 改為 460800 並重啟 Pixhawk。
+2. 同步把 NX Agent baud 改為 460800。
+3. 連續監測至少 60 秒，要求沒有 `delete_client`／`session closed`，且 `/fmu/out/sensor_combined`、`vehicle_odometry`、`vehicle_status` 持續可讀。
+4. 若 460800 仍反覆重建，再檢查 TELEM2→UART0 的 TX/RX/GND 接點與線材；最後才評估升級 PX4 或回補新版 uXRCE ping 修正。
+
+460800 的理論有效負載高於目前約 26.8 kB/s 的量測值，但仍須實測確認。完成上述穩定性關卡前，不進入 Offboard、不送控制指令、不解鎖。

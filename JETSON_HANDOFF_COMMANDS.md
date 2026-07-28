@@ -236,7 +236,26 @@ uXRCE-DDS 與 /fmu/out/* topic
 一次自動飛行：起飛 → 短暫停留 → 降落
 ```
 
-### I-1. 先確認 Pixhawk 是否被 NX 看見
+### I-1. 已確認的 Pixhawk ↔ NX UART
+
+AMOV AllSpark 外殼 `UART0` 對應 `/dev/ttyTHS1`，並接到 Pixhawk `TELEM2`。外殼 `UART1` 才是 `/dev/ttyTHS0`，且目前尾端未接設備。不要再用 `/dev/ttyTHS0` 測 TELEM2。
+
+確認常駐 Agent：
+
+```bash
+systemctl is-active p450-micro-xrce-agent.service
+systemctl --no-pager --full status p450-micro-xrce-agent.service
+```
+
+手動診斷前必須先停止常駐服務，避免兩個 Agent 同時開啟 UART：
+
+```bash
+sudo systemctl stop p450-micro-xrce-agent.service
+sudo timeout 20s /usr/local/bin/MicroXRCEAgent serial --dev /dev/ttyTHS1 -b 921600 -v 4
+sudo systemctl start p450-micro-xrce-agent.service
+```
+
+### I-1a. USB 備援檢查
 
 插入 Pixhawk 前後各執行一次：
 
@@ -249,13 +268,23 @@ sudo dmesg | tail -n 80
 
 插入後若沒有新的 serial 裝置，不要把 QGC 已成功的 TCP/MAVLink 連線當成 NX 通訊成功，也不要直接猜測 UART。先保留 `lsusb`、`dmesg`、裝置名稱與線材／接法資訊，再排查 USB 線、Pixhawk 電源、USB Hub 與實際載板 UART 腳位。
 
-### I-2. 通訊成功後才能進入 ROS 2 驗證
+### I-2. ROS 2 唯讀驗證
 
-確認 Pixhawk↔NX 的 serial 或網路 transport 穩定後，才依序：
+ROS 2 Foxy、Agent、`px4_msgs`、`px4_ros_com` 均已完成，不需重裝。驗證命令：
 
-1. 完成 ROS 2 Foxy 離線安裝。
-2. 建置 Micro XRCE-DDS Agent、`px4_msgs`、`px4_ros_com`。
-3. 設定 PX4 的 uXRCE-DDS 參數並啟動 Agent。
-4. 以 `ros2 topic list`、`ros2 topic echo` 驗證 `/fmu/out/*`。
+```bash
+source /opt/ros/foxy/setup.bash
+source /home/p450/p450_ros2_ws/install/setup.bash
+export ROS_DOMAIN_ID=0
+export ROS_LOCALHOST_ONLY=0
 
-所有參數變更與飛行測試都必須拆槳或固定機體；在 topic、模式切換、Kill Switch 與失聯處置未驗證前，不進行自動起飛。
+ros2 topic list | grep '^/fmu/'
+ros2 run px4_ros_com sensor_combined_listener
+ros2 topic echo /fmu/out/vehicle_status px4_msgs/msg/VehicleStatus \
+  --qos-reliability best_effort \
+  --qos-durability transient_local
+```
+
+Foxy 有時無法替 bare DDS publisher 自動推導型別，因此 `vehicle_status` 應明確指定 message type 與 QoS。
+
+目前 921600 baud 下 session 約每 2.7–4.8 秒重建。所有參數變更與飛行測試都必須拆槳或固定機體；在連續通訊、topic、模式切換、Kill Switch 與失聯處置未驗證前，不進行自動起飛。

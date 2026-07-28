@@ -14,9 +14,13 @@ Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 eMMC 完整刷寫，並�
 
 2026-07-22 歷史檢查：在 force-probe 啟用前，一般 card-detect 模式下 128 GB 與 512 GB 卡都沒有出現 `/dev/mmcblk1`。512 GB 卡經 USB 讀卡機可辨識為約 500 GB 的 `/dev/sda`，並確認內容是 JetPack 5.1.4／L4T R35.6.0 映像；該卡的 GPT 備份表位置有警告，目前未修復、未寫入。
 
-USB 手機網路在最近一次重開機後可快速連線。2026-07-23 已在線完成原生 ROS 2 Foxy、Micro XRCE-DDS Agent v2.4.2、`px4_msgs` 與 `px4_ros_com` 安裝／建置；目前尚未啟動飛控通訊測試。
+USB 手機網路在最近一次重開機後可快速連線。2026-07-23 已在線完成原生 ROS 2 Foxy、Micro XRCE-DDS Agent v2.4.2、`px4_msgs` 與 `px4_ros_com` 安裝／建置。
 
-最新下一步指引：`P450_PROGRESS_2026-07-24_NEXT.md`。目前優先確認 Pixhawk 與 NX 的直接 USB/UART/網路 transport，再設定 uXRCE-DDS；不要重刷系統或直接進行飛行測試。
+2026-07-28 已確認 AMOV AllSpark 外殼 `UART0` 對應 Linux `/dev/ttyTHS1`，並在 Pixhawk `TELEM2` 建立 uXRCE-DDS session；ROS 2 可看到 23 個 `/fmu/*` topics，且能讀取 IMU、姿態與里程計資料。Agent 已安裝為 `p450-micro-xrce-agent.service` 並設為開機啟動。
+
+目前 session 約每 2.7–4.8 秒重建一次，尚不符合 Offboard／自動飛行的穩定度。PX4 1.14.3 的嚴格 ping 判定、921600 baud 串口接收品質是目前優先排查項目；在完成連續穩定測試前，不解鎖、不送控制指令。
+
+最新下一步指引：`P450_PROGRESS_2026-07-24_NEXT.md`。不要重刷系統或直接進行飛行測試。
 
 ## 本週目標（2026-07-23）
 
@@ -36,7 +40,7 @@ USB 手機網路在最近一次重開機後可快速連線。2026-07-23 已在�
 
 ## 注意
 
-- 不要格式化原本 128 GB 舊 microSD。
+- 側邊 128 GB microSD 已依機主指示清除舊開機映像，現為單一 ext4 `P450_DATA` 資料碟；不要再把它當開機碟。
 - 不要使用 Orin BSP 或一般 Ubuntu ISO。
 - 不要把 `.img`、BSP archive、log、密碼、token 或 key 提交到 Git。
 - 大型映像與刷寫日志已由 `.gitignore` 排除。

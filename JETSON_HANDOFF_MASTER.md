@@ -12,7 +12,11 @@ ROS 2 離線包已在 Ubuntu 桌機完成只讀檢查；2026-07-23 已改用在�
 
 2026-07-28 已確認 AMOV AllSpark 外殼 `UART0` 對應 `/dev/ttyTHS1`，不是先前測試的 `/dev/ttyTHS0`。Pixhawk `TELEM2` 已能與 Micro XRCE-DDS Agent 建立 session，ROS 2 可發現 23 個 `/fmu/*` topics 並讀取即時 IMU／里程計資料。Agent 已由 `p450-micro-xrce-agent.service` 常駐及開機啟動。
 
-目前 PX4 1.14.3 client 約每 2.7–4.8 秒主動刪除並重建 session；協定追蹤顯示 NX Agent 有快速送出回覆，提升 Agent 排程優先度也未改善。因此通訊已打通但尚未穩定，不可進入 Offboard 或自動飛行。
+目前 PX4 1.14.3 client 仍會主動刪除並重建 session。將 TELEM2 與 NX Agent 從 921600 同步降至 460800 後，session 存活時間由約 2.7–4.8 秒改善至約 10–23 秒，但 68 秒內仍重建 5 次；低日誌模式 65 秒 IMU 監測的最大資料空窗為 1614 ms。協定追蹤顯示 NX Agent 有快速送出回覆，提升 Agent 排程優先度及測試性重送 pong 都未消除問題。通訊已打通但尚未穩定，不可進入 Offboard 或自動飛行。
+
+PX4 官方提交 `a1cce7e961df`（`uxrce_dds_client: optimizations and instrumentation`）包含：有效雙向資料流時略過 session ping、將 ping timeout 放寬為 1 秒、縮短／調整 client loop。這是後續評估的飛控端修正來源，但尚未建立或刷入自訂韌體。
+
+側邊 `P450_DATA` 已恢復為可寫 ext4，並以 UUID 寫入 `/etc/fstab` 固定掛載於 `/media/p450/P450_DATA`。已建立 `rosbags/`、`ulog/`、`builds/`；eMMC 保留程式與 ROS workspace，大型資料改存 SD。
 
 ### 2026-07-22 最新硬體檢查
 

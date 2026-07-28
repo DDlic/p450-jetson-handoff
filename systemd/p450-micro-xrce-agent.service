@@ -10,7 +10,7 @@ User=p450
 Group=p450
 SupplementaryGroups=dialout
 Environment=ROS_DOMAIN_ID=0
-ExecStart=/usr/local/bin/MicroXRCEAgent serial --dev /dev/ttyTHS1 -b 921600 -v 2
+ExecStart=/usr/local/bin/MicroXRCEAgent serial --dev /dev/ttyTHS1 -b 460800 -v 2
 Restart=on-failure
 RestartSec=2
 

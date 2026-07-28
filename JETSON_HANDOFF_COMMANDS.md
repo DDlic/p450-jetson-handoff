@@ -251,7 +251,7 @@ systemctl --no-pager --full status p450-micro-xrce-agent.service
 
 ```bash
 sudo systemctl stop p450-micro-xrce-agent.service
-sudo timeout 20s /usr/local/bin/MicroXRCEAgent serial --dev /dev/ttyTHS1 -b 921600 -v 4
+sudo timeout 20s /usr/local/bin/MicroXRCEAgent serial --dev /dev/ttyTHS1 -b 460800 -v 4
 sudo systemctl start p450-micro-xrce-agent.service
 ```
 
@@ -287,4 +287,11 @@ ros2 topic echo /fmu/out/vehicle_status px4_msgs/msg/VehicleStatus \
 
 Foxy 有時無法替 bare DDS publisher 自動推導型別，因此 `vehicle_status` 應明確指定 message type 與 QoS。
 
-目前 921600 baud 下 session 約每 2.7–4.8 秒重建。所有參數變更與飛行測試都必須拆槳或固定機體；在連續通訊、topic、模式切換、Kill Switch 與失聯處置未驗證前，不進行自動起飛。
+連續性測試：
+
+```bash
+cd /home/p450/p450-jetson-handoff
+./scripts/p450_ros2_link_monitor.py --duration 65 --max-gap-ms 100
+```
+
+目前 460800 baud 下 session 約每 10–23 秒重建，65 秒 IMU 最大空窗約 1.6 秒，仍不合格。所有參數變更與飛行測試都必須拆槳或固定機體；在連續通訊、topic、模式切換、Kill Switch 與失聯處置未驗證前，不進行自動起飛。

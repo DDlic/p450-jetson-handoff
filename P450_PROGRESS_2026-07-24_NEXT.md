@@ -238,11 +238,71 @@ sudo systemctl status p450-micro-xrce-agent.service
 - 降低 Agent 日誌量及用 FIFO 即時排程執行，均未消除重建。
 - PX4 v1.14.3 原始碼在連續漏掉約三次短週期 ping 回覆後就斷線；PX4 v1.15 已改為有有效 payload 收發時不以 ping 判死，並放寬 ping timeout。這使 PX4 1.14.3 的判定成為目前的重要因素。
 
-目前優先採低風險排查：
+### 2026-07-28：460800 複測
 
-1. 由 QGC 把 `SER_TEL2_BAUD` 從 921600 改為 460800 並重啟 Pixhawk。
-2. 同步把 NX Agent baud 改為 460800。
-3. 連續監測至少 60 秒，要求沒有 `delete_client`／`session closed`，且 `/fmu/out/sensor_combined`、`vehicle_odometry`、`vehicle_status` 持續可讀。
-4. 若 460800 仍反覆重建，再檢查 TELEM2→UART0 的 TX/RX/GND 接點與線材；最後才評估升級 PX4 或回補新版 uXRCE ping 修正。
+QGC 與 MAVLink Console 已確認：
 
-460800 的理論有效負載高於目前約 26.8 kB/s 的量測值，但仍須實測確認。完成上述穩定性關卡前，不進入 Offboard、不送控制指令、不解鎖。
+```text
+UXRCE_DDS_CFG  = 102
+SER_TEL2_BAUD  = 460800
+MAV_1_CONFIG   = 0
+uxrce_dds_client: Running, disconnected, serial transport
+```
+
+完整 MAVLink Console 原始輸出保存在 `px4_uxrce_dds_console_latest.txt`。
+
+NX systemd Agent 也已同步為 460800。重新握手後可恢復完整 23 個 `/fmu/*` topics，但傳輸層仍不穩定：
+
+- 68 秒 Agent lifecycle 監測：`create_client=6`、`delete_client=5`、`session established=6`、`session closed=5`。
+- 各次 session 約存活 9.7、12.1、11.3、19.1、12.5 秒，較 921600 改善但仍不合格。
+- 低日誌常駐 Agent 下做 65 秒 IMU 訂閱：1891 筆、平均 29.092 Hz、中位 gap 12.653 ms、最大 gap 1614.046 ms。
+- 共有 12 次 gap 超過 100 ms、4 次超過 500 ms、4 次超過 1 秒。
+- 測試性 duplicate-pong Agent 仍會重建 session，未安裝到 `/usr/local`；測試碼已移除並還原官方 v2.4.2 build。
+
+可用下列唯讀工具重做 IMU gap 測試：
+
+```bash
+source /opt/ros/foxy/setup.bash
+source /home/p450/p450_ros2_ws/install/setup.bash
+export ROS_DOMAIN_ID=0
+export ROS_LOCALHOST_ONLY=0
+
+./scripts/p450_ros2_link_monitor.py --duration 65 --max-gap-ms 100
+```
+
+工具只訂閱 `/fmu/out/sensor_combined`，不發布任何 `/fmu/in/*`；最大 gap 超過門檻時回傳失敗。
+
+PX4 官方提交 `a1cce7e961df` 明確包含：
+
+- 有有效雙向 payload 時略過 session ping。
+- ping interval 改為 1 秒，單次 timeout 改為 1000 ms。
+- 避免 client loop 因 blocking poll 延遲處理輸入。
+
+該提交位於 PX4 1.15 開發歷史，尚未回補或刷入目前的 PX4 1.14.3。下一步先檢查 TELEM2→UART0 的 TX/RX/GND 接點與線材；若接線品質無誤，再另案建立、審核與地面測試含上述修正的 PX4 韌體。刷韌體前必須備份參數，且不得直接進入飛行。
+
+### 電池安全停點
+
+測試期間飛控蜂鳴，ROS 2 唯讀資料顯示：
+
+```text
+battery_warning: 3
+battery_unhealthy: false
+arming_state: 1
+armed_time: 0
+failsafe: false
+failure_detector_status: 0
+pre_flight_checks_pass: false
+```
+
+PX4 `BatteryStatus.msg` 定義 `BATTERY_WARNING_EMERGENCY = 3`。旋翼已拆、人員保持安全距離，低電壓主電池已停止使用並充電。當時沒有解鎖，也沒有發布控制訊息。電池恢復並重新確認 warning 前，不再做需主電池供電的飛控測試。
+
+### SD 資料碟
+
+- `/dev/mmcblk1p1`：ext4，label `P450_DATA`，UUID `99c03936-1ba4-49e8-a8d7-b2b158418e76`。
+- 固定掛載：`/media/p450/P450_DATA`，`rw,nosuid,nodev,nofail`。
+- `/etc/fstab` 原檔備份：`/etc/fstab.p450-backup-20260728`。
+- 已建立 `rosbags/`、`ulog/`、`builds/`，owner 為 `p450:p450`。
+- 64 MiB 實寫約 16 MB/s，完成後沒有 kernel CRC 或 I/O error。
+- 目前約 111 GB 可用；ROS workspace 留在 eMMC，rosbag、ULog、影像及大型 build artifact 優先放 SD。
+
+完成 session 穩定性與電池安全關卡前，不進入 Offboard、不送控制指令、不解鎖。

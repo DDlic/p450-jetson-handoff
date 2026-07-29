@@ -1,6 +1,6 @@
 # P450 2026-07-24 下一步規劃：Pixhawk ↔ NX 與 ROS 2 Foxy
 
-更新日期：2026-07-24（Asia/Taipei）
+更新日期：2026-07-29（Asia/Taipei）
 
 本文件是目前最新的執行指引，供 Ubuntu 桌機與 Jetson NX 上的 Codex CLI 接手使用。它不取代刷寫歷史，只更新「下一步做什麼」。
 
@@ -279,6 +279,115 @@ PX4 官方提交 `a1cce7e961df` 明確包含：
 - 避免 client loop 因 blocking poll 延遲處理輸入。
 
 該提交位於 PX4 1.15 開發歷史，尚未回補或刷入目前的 PX4 1.14.3。下一步先檢查 TELEM2→UART0 的 TX/RX/GND 接點與線材；若接線品質無誤，再另案建立、審核與地面測試含上述修正的 PX4 韌體。刷韌體前必須備份參數，且不得直接進入飛行。
+
+### 2026-07-29：飛控僅以 USB 供電複測
+
+本輪主電池未接，飛控僅由外部 USB 供電；旋翼已拆除，全程只訂閱
+`/fmu/out/*`，沒有發布控制訊息、解鎖或啟動馬達。
+
+低日誌常駐 Agent 下執行 120 秒 IMU gap 測試：
+
+```text
+messages=7110
+average_hz=59.233
+median_gap_ms=12.860
+max_gap_ms=2904.859
+gaps_over_100ms=27
+gaps_over_500ms=10
+gaps_over_1s=10
+result=FAIL
+```
+
+另一次 30 秒 ROS discovery 觀察中，`/fmu/*` topic 數曾由 23 瞬間降為
+0，下一輪再恢復 23，證明不是單一 topic 掉資料，而是整個 XRCE session
+消失後重建。
+
+65 秒前景 Agent 詳細日誌測試結果：
+
+- `create_client=10`、`delete_client=9`
+- `session established=10`、`session closed=9`
+- 已關閉的 session 約存活 3.1–16.7 秒
+
+因此 USB 供電沒有消除重連；本次樣本甚至比先前 460800 主電池測試更頻繁。
+不能把低電壓主電池視為 session 重建的唯一原因，也仍不得進入 Offboard。
+
+連線存在時確認 10 個 `/fmu/out/*` topics：
+
+```text
+battery_status 未列入 PX4 DDS 輸出清單
+failsafe_flags
+position_setpoint_triplet
+sensor_combined
+timesync_status
+vehicle_attitude
+vehicle_control_mode
+vehicle_gps_position
+vehicle_local_position
+vehicle_odometry
+vehicle_status
+```
+
+實際抽樣結果：
+
+- `SensorCombined`、`VehicleOdometry`、`VehicleStatus`、`FailsafeFlags` 均有即時資料。
+- `armed_time=0`、`arming_state=1`、`failsafe=false`、`failure_detector_status=0`。
+- `usb_connected=true`、`power_input_valid=true`、`pre_flight_checks_pass=false`。
+- USB-only 時 `battery_warning=0`、`battery_unhealthy=false`。
+- `/fmu/out/battery_status` 不在目前飛控 DDS 輸出 topic 清單，手動指定該名稱亦無樣本；不可用它判定本機主電池狀態。
+
+前景 Agent 測試結束並恢復 systemd 服務後，PX4 client 超過兩分鐘沒有自行
+重建 DDS entities；只重啟 NX Agent 一次仍維持 0 個 `/fmu/*` topics。
+NX 的 `lsusb` 也沒有 Pixhawk 或 `/dev/ttyACM*`，表示飛控 USB 接在其他主機，
+NX 無法直接進入 PX4 shell。
+
+由 QGC 重啟 Vehicle 後，MAVLink Console 一度顯示
+`Running, disconnected`，但 NX 已重新看到 18 個、之後完整 23 個
+`/fmu/*` topics。18 秒 discovery 觀察實際呈現：
+
+```text
+23 → 23 → 23 → 2 → 16 → 23
+```
+
+這表示重啟已恢復 client，但 `disconnected` 是週期性 session 重建中的真實
+瞬間狀態，不是 QGC 顯示錯誤。
+
+45 秒導航唯讀抽樣結果：
+
+- GPS 有資料但 `fix_type=0`、`satellites_used=0`、`vel_ned_valid=false`。
+- Local position 為 `xy_valid=false`、`v_xy_valid=false`、`z_valid=true`、
+  `v_z_valid=true`。
+- `heading_good_for_control=false`、`xy_global=false`、`z_global=false`、
+  `dead_reckoning=true`。
+- Vehicle attitude 四元數持續有樣本。
+- Vehicle control mode 為 `flag_armed=false`、
+  `flag_control_offboard_enabled=false`、`flag_control_termination_enabled=false`。
+- `/fmu/out/timesync_status` 可被 discovery 發現，但本輪 45 秒沒有收到樣本。
+
+因此目前同時未通過 XRCE 穩定性、GPS fix、水平位置／速度、航向控制有效性
+與 timesync 實測，不具備 Offboard 自動起飛條件。
+
+#### PX4 v1.14.3 `gyro_clipping` 欄位不可採信
+
+20 秒抽樣中 `accelerometer_clipping` 皆為 0，但 `gyro_clipping` 大多為 128，
+並出現多個大於合法 bitmask 7 的值。已逐行比對：
+
+- 本機 `px4_msgs release/1.14`
+- PX4-Autopilot v1.14.3 message definitions
+- PX4 官方目前 `px4_msgs release/1.14`
+
+`SensorCombined.msg` 與 `FailsafeFlags.msg` 完全一致，因此不是 ROS message
+版本錯配。
+
+PX4 v1.14.3 官方 `VehicleIMU.cpp` 在發布 `vehicle_imu_s` 時只設定
+`imu.delta_velocity_clipping`，沒有設定 `imu.delta_angle_clipping`，而且只重置
+`_delta_velocity_clipping`；PX4 v1.15 已補上陀螺儀 clipping 的設定與重置。
+因此目前韌體經 `SensorCombined.gyro_clipping` 傳出的隨機值屬於飛控端未初始化
+欄位，不是 UART payload 損壞的證據，也不得用於飛行安全判斷。
+
+官方原始碼：
+
+- <https://github.com/PX4/PX4-Autopilot/blob/v1.14.3/src/modules/sensors/vehicle_imu/VehicleIMU.cpp>
+- <https://github.com/PX4/PX4-Autopilot/blob/v1.15.0/src/modules/sensors/vehicle_imu/VehicleIMU.cpp>
 
 ### 電池安全停點
 

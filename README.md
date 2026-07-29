@@ -18,7 +18,11 @@ USB 手機網路在最近一次重開機後可快速連線。2026-07-23 已在�
 
 2026-07-28 已確認 AMOV AllSpark 外殼 `UART0` 對應 Linux `/dev/ttyTHS1`，並在 Pixhawk `TELEM2` 建立 uXRCE-DDS session；ROS 2 可看到 23 個 `/fmu/*` topics，且能讀取 IMU、姿態與里程計資料。Agent 已安裝為 `p450-micro-xrce-agent.service` 並設為開機啟動。
 
-`SER_TEL2_BAUD` 與 Agent 已由 921600 同步降為 460800。這使 session 存活時間由約 2.7–4.8 秒改善到約 10–23 秒，但 68 秒內仍關閉／重建 5 次；低日誌模式下 65 秒收到 1891 筆 IMU，最大資料空窗 1614 ms，仍不符合 Offboard／自動飛行要求。測試期間 PX4 另回報 `battery_warning: 3`（Emergency）；當時未解鎖、未送控制指令，測試已停止並將低電壓電池移除充電。
+`SER_TEL2_BAUD` 與 Agent 已由 921600 同步降為 460800。這使先前 session 存活時間由約 2.7–4.8 秒改善到約 10–23 秒，但通訊仍不合格。2026-07-29 飛控僅以 USB 供電的 120 秒複測收到 7110 筆 IMU，最大資料空窗 2904.859 ms，10 次超過 1 秒；65 秒詳細 Agent 日誌中 session 建立 10 次、關閉 9 次。USB 供電沒有消除重連，低電壓主電池不是唯一原因。
+
+PX4 v1.14.3 另有官方原始碼缺陷：`VehicleIMU.cpp` 未設定及重置 `delta_angle_clipping`，使 ROS 2 的 `SensorCombined.gyro_clipping` 出現未初始化隨機值；v1.15 已修正。該欄位在目前韌體不可採信，但這與整個 XRCE session 反覆重建是兩個不同問題。
+
+USB-only 詳細測試結束後，PX4 client 一度沒有自行恢復 DDS entities；由 QGC 重啟 Vehicle 後已恢復 23 個 `/fmu/*` topics，但短時間 discovery 仍出現 `23 → 2 → 16 → 23`，QGC 的 `Running, disconnected` 是重連循環中的瞬間狀態。導航抽樣顯示 GPS `fix_type=0`、0 顆衛星、水平位置／速度無效、航向不適合控制、dead reckoning 啟用，且 45 秒沒有 TimesyncStatus 樣本。測試期間始終未解鎖、未送控制指令。
 
 最新下一步指引：`P450_PROGRESS_2026-07-24_NEXT.md`。不要重刷系統或直接進行飛行測試。
 

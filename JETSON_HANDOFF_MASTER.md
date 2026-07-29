@@ -1,6 +1,6 @@
 # AMOV P450 Jetson Xavier NX 交接總覽
 
-最後更新：2026-07-28（Asia/Taipei）
+最後更新：2026-07-29（Asia/Taipei）
 
 ## 目前狀態
 
@@ -13,6 +13,12 @@ ROS 2 離線包已在 Ubuntu 桌機完成只讀檢查；2026-07-23 已改用在�
 2026-07-28 已確認 AMOV AllSpark 外殼 `UART0` 對應 `/dev/ttyTHS1`，不是先前測試的 `/dev/ttyTHS0`。Pixhawk `TELEM2` 已能與 Micro XRCE-DDS Agent 建立 session，ROS 2 可發現 23 個 `/fmu/*` topics 並讀取即時 IMU／里程計資料。Agent 已由 `p450-micro-xrce-agent.service` 常駐及開機啟動。
 
 目前 PX4 1.14.3 client 仍會主動刪除並重建 session。將 TELEM2 與 NX Agent 從 921600 同步降至 460800 後，session 存活時間由約 2.7–4.8 秒改善至約 10–23 秒，但 68 秒內仍重建 5 次；低日誌模式 65 秒 IMU 監測的最大資料空窗為 1614 ms。協定追蹤顯示 NX Agent 有快速送出回覆，提升 Agent 排程優先度及測試性重送 pong 都未消除問題。通訊已打通但尚未穩定，不可進入 Offboard 或自動飛行。
+
+2026-07-29 改用飛控 USB-only 供電複測，120 秒收到 7110 筆 IMU，平均 59.233 Hz，但最大空窗 2904.859 ms，10 次超過 1 秒；65 秒 Agent 詳細日誌中建立 10 次、關閉 9 次 session，已關閉 session 約存活 3.1–16.7 秒。USB 供電沒有消除重連，低電壓主電池不是唯一原因。測試切回 systemd Agent 後，PX4 client 一度沒有自行恢復 DDS entities；由 QGC 重啟 Vehicle 後已恢復 23 個 `/fmu/*` topics，但 18 秒內仍出現 `23 → 2 → 16 → 23`，QGC 的 `Running, disconnected` 是重連循環中的瞬間狀態。
+
+重啟後的導航抽樣顯示 GPS `fix_type=0`、0 顆衛星、水平位置／速度無效、航向不適合控制、dead reckoning 啟用；姿態可持續讀取，但 45 秒沒有 TimesyncStatus 樣本。當時未解鎖且 Offboard disabled。除了 XRCE session 不穩定外，定位與時間同步也尚未達自動飛行條件。
+
+PX4 v1.14.3 官方 `VehicleIMU.cpp` 還漏掉 `delta_angle_clipping` 的設定與重置，造成 ROS 2 `SensorCombined.gyro_clipping` 為未初始化隨機值；v1.15 已補齊。message definitions 已逐行核對一致，這不是 `px4_msgs` 版本錯配，也不是 UART payload 損壞的證據。此欄位在目前韌體不可用於安全判斷。
 
 PX4 官方提交 `a1cce7e961df`（`uxrce_dds_client: optimizations and instrumentation`）包含：有效雙向資料流時略過 session ping、將 ping timeout 放寬為 1 秒、縮短／調整 client loop。這是後續評估的飛控端修正來源，但尚未建立或刷入自訂韌體。
 

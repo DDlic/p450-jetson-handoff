@@ -28,6 +28,11 @@ USB-only 詳細測試結束後，PX4 client 一度沒有自行恢復 DDS entitie
 
 已從 PX4 官方提交 `a1cce7e961df` 將 session ping 修正最小回補至 v1.14.3，並在 SD 上成功建立 Pixhawk 6C 韌體。成品位於 `/media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`，SHA-256 為 `cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd`；目前尚未刷入，必須先備份飛控參數，再做無槳地面 A/B 測試。
 
+Git repository 內也保存一份可下載副本：
+[`firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`](firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4)。
+下載後必須先依 [`firmware/SHA256SUMS`](firmware/SHA256SUMS) 驗證；安全狀態與
+刷入前提見 [`firmware/README.md`](firmware/README.md)。
+
 PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步，因此沒有獨立 `TimesyncStatus` 樣本不是額外阻塞條件。真正的阻塞條件仍是 session 穩定性、GPS fix、水平定位／速度、航向與後續安全地面測試。
 
 最新下一步指引：`P450_PROGRESS_2026-07-24_NEXT.md`。不要重刷系統或直接進行飛行測試。

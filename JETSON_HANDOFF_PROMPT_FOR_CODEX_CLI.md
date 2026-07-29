@@ -11,7 +11,8 @@
 - BSP：Jetson Linux R35.6.0／JetPack 5.1.4
 - Jetson 已完成 eMMC 刷寫並進入 Ubuntu 圖形介面
 - ROS 2 目前採 Ubuntu 20.04 宿主原生 Foxy 在線安裝；離線包作為備援，Humble 容器暫不執行
-- 原本 128 GB 舊 microSD 必須保留，不要格式化
+- 側邊 128 GB microSD 已依機主指示清除舊映像並改為 ext4 `P450_DATA` 資料碟；
+  不要再當作開機卡或重新刷寫
 
 注意：舊交接資料曾將裝置寫成 P3668-0000 microSD；新的 Recovery EEPROM、UEFI `eMMC(0x0)`、最終刷寫設定與 `p3668-0001` DTB 已證明該判斷過時。後續以 P3668-0001/eMMC 為準。
 

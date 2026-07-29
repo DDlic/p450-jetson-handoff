@@ -16,13 +16,15 @@ ROS 2 離線包已在 Ubuntu 桌機完成只讀檢查；2026-07-23 已改用在�
 
 2026-07-29 改用飛控 USB-only 供電複測，120 秒收到 7110 筆 IMU，平均 59.233 Hz，但最大空窗 2904.859 ms，10 次超過 1 秒；65 秒 Agent 詳細日誌中建立 10 次、關閉 9 次 session，已關閉 session 約存活 3.1–16.7 秒。USB 供電沒有消除重連，低電壓主電池不是唯一原因。測試切回 systemd Agent 後，PX4 client 一度沒有自行恢復 DDS entities；由 QGC 重啟 Vehicle 後已恢復 23 個 `/fmu/*` topics，但 18 秒內仍出現 `23 → 2 → 16 → 23`，QGC 的 `Running, disconnected` 是重連循環中的瞬間狀態。
 
-重啟後的導航抽樣顯示 GPS `fix_type=0`、0 顆衛星、水平位置／速度無效、航向不適合控制、dead reckoning 啟用；姿態可持續讀取，但 45 秒沒有 TimesyncStatus 樣本。當時未解鎖且 Offboard disabled。除了 XRCE session 不穩定外，定位與時間同步也尚未達自動飛行條件。
+重啟後的導航抽樣顯示 GPS `fix_type=0`、0 顆衛星、水平位置／速度無效、航向不適合控制、dead reckoning 啟用；姿態可持續讀取，但 45 秒沒有 TimesyncStatus 樣本。PX4 v1.14 官方文件說明 XRCE-DDS 已自動處理 Agent／client 時間同步，因此缺少獨立 TimesyncStatus 樣本不是額外阻塞條件。當時未解鎖且 Offboard disabled；XRCE session、定位、速度與航向仍未達自動飛行條件。
 
 PX4 v1.14.3 官方 `VehicleIMU.cpp` 還漏掉 `delta_angle_clipping` 的設定與重置，造成 ROS 2 `SensorCombined.gyro_clipping` 為未初始化隨機值；v1.15 已補齊。message definitions 已逐行核對一致，這不是 `px4_msgs` 版本錯配，也不是 UART payload 損壞的證據。此欄位在目前韌體不可用於安全判斷。
 
-PX4 官方提交 `a1cce7e961df`（`uxrce_dds_client: optimizations and instrumentation`）包含：有效雙向資料流時略過 session ping、將 ping timeout 放寬為 1 秒、縮短／調整 client loop。這是後續評估的飛控端修正來源，但尚未建立或刷入自訂韌體。
+PX4 官方提交 `a1cce7e961df`（`uxrce_dds_client: optimizations and instrumentation`）包含：有效雙向資料流時略過 session ping、將 ping timeout 放寬為 1 秒、縮短／調整 client loop。2026-07-29 已將其中 session ping 的最小修改回補至 v1.14.3，成功建置 `PX4FMUv6C` 韌體；成品位於 SD 的 `/media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`，SHA-256 為 `cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd`。目前尚未刷入。
 
-側邊 `P450_DATA` 已恢復為可寫 ext4，並以 UUID 寫入 `/etc/fstab` 固定掛載於 `/media/p450/P450_DATA`。已建立 `rosbags/`、`ulog/`、`builds/`；eMMC 保留程式與 ROS workspace，大型資料改存 SD。
+同日也針對 Jetson `3110000.serial` 的 460800 baud out-of-range kernel 錯誤建立 UARTB device-tree 修正。預設 DTB 現為 `/boot/dtb/p450-p3668-0001-p3509-0000-sdmmc3-wifi-uartb460800.dtb`，舊 DTB 保留為 fallback；重啟後 kernel 錯誤消失。但修正後 120 秒測試最大空窗仍為 3129 ms、28 次超過 1 秒，再次重啟後 60 秒最大空窗 3382 ms、15 次超過 1 秒。因此 DTB 修正有效排除主機設定錯誤，卻不是 XRCE session 重建的最終解法。
+
+側邊 `P450_DATA` 已恢復為可寫 ext4，並以 UUID 寫入 `/etc/fstab` 固定掛載於 `/media/p450/P450_DATA`。已建立 `rosbags/`、`ulog/`、`builds/`；eMMC 保留程式與 ROS workspace，大型資料改存 SD。2026-07-29 建置完成後 eMMC 使用 66%、尚有 4.5 GB，SD 使用 3%、尚有 108 GB；PX4 source、工具鏈、build 與韌體都放在 SD。
 
 ### 2026-07-22 最新硬體檢查
 
@@ -192,9 +194,10 @@ Coldbooting the device
 
 ## 舊 SD 卡與映像
 
-- 原本 128 GB 舊 microSD 保留，不得格式化。
+- 原本 128 GB microSD 在早期排查時曾要求保留；2026-07-28 已依機主明確指示
+  清除舊映像並改為單一 ext4 `P450_DATA` 資料碟。
 - JP514 SD 映像測試屬於歷史排查，不是目前開機媒體。
-- 目前成功開機來源是 eMMC，不要重新插入 SD 來判斷本次 eMMC 是否正常。
+- 目前成功開機來源是 eMMC；側邊卡只作為資料碟，不要用它判斷 eMMC 開機。
 
 ## Ubuntu 初次開機後驗證
 
@@ -260,7 +263,7 @@ c637afbaf34e2bffe59fac5f0e0a622026e85729f267ce0ef99353a5e52d5f34
 
 - 不要使用 Orin BSP 或 Orin 映像。
 - 不要執行舊系統內的 `/dev/mtd0` QSPI 寫入方法。
-- 不要格式化 128 GB 舊 microSD。
+- 128 GB 側邊卡目前是 `P450_DATA`；不要再刷入開機映像或對未確認裝置格式化。
 - 不要在未確認儲存目標前執行完整刷寫。
 - 飛行測試前必須拆槳或固定機體。
 

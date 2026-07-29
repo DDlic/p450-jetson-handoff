@@ -163,7 +163,8 @@ Flashing completed
 
 ## G. 重要保存規則
 
-- 不要格式化原本 128 GB 舊 microSD。
+- 側邊 128 GB microSD 已依機主指示清除舊映像並改為 `P450_DATA`；不要再刷入
+  開機映像，也不要對未確認裝置執行格式化。
 - 不要使用 Orin BSP 或 Orin 映像。
 - 不要使用舊系統內的 `/dev/mtd0` 方法。
 - 不要把 `jetson-xavier-nx-devkit-qspi` 當作完整 eMMC 系統刷寫設定。
@@ -180,11 +181,15 @@ Flashing completed
 root：/dev/mmcblk0p1（eMMC）
 側邊 microSD：/dev/mmcblk1
 SD host：mmc1 = 3440000.sdhci = SDMMC3
-DTB：/boot/dtb/p450-p3668-0001-p3509-0000-sdmmc3-wifi.dtb
+DTB：/boot/dtb/p450-p3668-0001-p3509-0000-sdmmc3-wifi-uartb460800.dtb
 外接 Wi-Fi：wlan1／rtl88x2bu
 ```
 
-`extlinux.conf` 的預設項目為 `p450-sdmmc3`。SDMMC3 設為 4-bit、3.3 V、停用 1.8 V 切換、最高 50 MHz，並以 `non-removable` 方式探測。初始 SDR104 的 CRC 錯誤在降速後消失；GPT 備份表位置警告仍存在，這是映像容量複製造成的歷史狀態，禁止自動修復或寫入。
+`extlinux.conf` 的預設項目為 `p450-sdmmc3-uartb460800`，舊
+`p450-sdmmc3` 保留為 fallback。SDMMC3 設為 4-bit、3.3 V、停用 1.8 V
+切換、最高 50 MHz，並以 `non-removable` 方式探測。初始 SDR104 的 CRC 錯誤
+在降速後消失。128 GB 卡的舊映像與 GPT 已依機主指示清除，現在是單一 ext4
+`P450_DATA`，不是開機媒體。
 
 內建 Intel 8265／`iwlwifi` 的 `phy0` 有不可解除的 hardware hard block，會關閉 NetworkManager 全域 Wi-Fi。為確保 `wlan1` 可用，已安裝：
 
@@ -295,3 +300,38 @@ cd /home/p450/p450-jetson-handoff
 ```
 
 目前 460800 baud 下 session 約每 10–23 秒重建，65 秒 IMU 最大空窗約 1.6 秒，仍不合格。所有參數變更與飛行測試都必須拆槳或固定機體；在連續通訊、topic、模式切換、Kill Switch 與失聯處置未驗證前，不進行自動起飛。
+
+### I-3. PX4 v1.14.3 XRCE ping 回補韌體（已建置、尚未刷入）
+
+成品位於 SD：
+
+```text
+/media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4
+```
+
+刷入前先核對：
+
+```bash
+sha256sum /media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4
+```
+
+預期 SHA-256：
+
+```text
+cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd
+```
+
+這是 `PX4FMUv6C`／board ID 56 的 Pixhawk 6C 韌體。刷入前必須：
+
+1. 保持拆槳與穩定供電。
+2. 用 QGC 匯出完整參數備份。
+3. 再次確認硬體是 Pixhawk 6C。
+4. 由 QGC Firmware 的 Advanced／Custom firmware file 選擇上述檔案。
+5. 刷完後核對 airframe、校正、RC、安全與 failsafe，並確認
+   `UXRCE_DDS_CFG=102`、`SER_TEL2_BAUD=460800`、`MAV_1_CONFIG=0`。
+6. 先執行至少 10 分鐘唯讀 ROS 2 continuity 測試；不得直接解鎖或進入
+   Offboard。
+
+通過條件：10 分鐘內無 session close/recreate、`/fmu/*` topics 不消失、
+IMU 最大 gap 小於 100 ms。完整背景、build commit 與失敗後的線路 A/B 清單見
+`P450_PROGRESS_2026-07-24_NEXT.md`。

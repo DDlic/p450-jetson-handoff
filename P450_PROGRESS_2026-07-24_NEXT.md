@@ -8,7 +8,8 @@
 
 - Jetson Xavier NX 已確認為 P3668-0001、eMMC 版本。
 - JetPack 5.1.4／L4T R35.6.0 已完整刷入 eMMC，Ubuntu 20.04 圖形介面可正常開機。
-- 原本 128 GB microSD 保留，禁止格式化或重新刷寫。
+- 側邊 128 GB microSD 已依機主明確指示清除舊開機映像，改為單一 ext4
+  `P450_DATA` 資料碟；不要再將它視為待保留的開機卡。
 - P450 機上 Wi-Fi 基地台已確認可用；手機與筆電可以連線。沒有 Internet 是預期的封閉式區域網路狀態。
 - 筆電透過 P450 Wi-Fi 使用 TCP/MAVLink 連接 QGroundControl，已能讀取 Pixhawk 6C 訊息；PX4 版本為 1.14.3。
 - NX 宿主使用原生 ROS 2 Foxy，不使用 Docker。
@@ -17,19 +18,17 @@
 
 ## 二、目前尚未完成的核心關卡
 
-目前沒有證據證明 Pixhawk 已直接連到 NX。QGC 的 TCP/MAVLink 路徑是：
+Pixhawk ↔ NX 的實體路徑已確認，不再是「完全沒有直接通訊」：
 
 ```text
-筆電 → P450 Wi-Fi → TCP/MAVLink → Pixhawk
+Pixhawk 6C TELEM2 → AMOV AllSpark UART0 → /dev/ttyTHS1
+                 → Micro XRCE-DDS Agent v2.4.2 → ROS 2 Foxy
 ```
 
-這不等於：
-
-```text
-Pixhawk → NX USB/UART/網路 → uXRCE-DDS Agent → ROS 2 Foxy
-```
-
-先前 NX 檢查沒有看到 `/dev/ttyACM*` 或 `/dev/ttyUSB*`，所以必須重新確認實際接線與 transport。不要因為 QGC 已成功就直接設定 `UXRCE_DDS_CFG` 或猜測 `/dev/ttyTHS0/1/4`。
+此路徑可建立 session、發現 23 個 `/fmu/*` topics 並取得即時資料。尚未通過的
+核心關卡是 PX4 v1.14.3 client 會週期性刪除並重建整個 XRCE session，造成
+ROS 2 資料出現 1–3 秒級空窗。QGC 的 TCP/MAVLink 路徑仍只作為飛控診斷與
+參數設定使用，不可取代上述 XRCE 路徑。
 
 ## 三、NX Codex CLI 接手流程
 
@@ -278,7 +277,9 @@ PX4 官方提交 `a1cce7e961df` 明確包含：
 - ping interval 改為 1 秒，單次 timeout 改為 1000 ms。
 - 避免 client loop 因 blocking poll 延遲處理輸入。
 
-該提交位於 PX4 1.15 開發歷史，尚未回補或刷入目前的 PX4 1.14.3。下一步先檢查 TELEM2→UART0 的 TX/RX/GND 接點與線材；若接線品質無誤，再另案建立、審核與地面測試含上述修正的 PX4 韌體。刷韌體前必須備份參數，且不得直接進入飛行。
+該提交位於 PX4 1.15 開發歷史。2026-07-29 已將其中與 session ping 直接相關的
+最小修改回補至 v1.14.3，並成功建置 Pixhawk 6C 韌體；目前尚未刷入飛控。
+完整成品與測試程序見下方「PX4 v1.14.3 XRCE ping 回補韌體」。
 
 ### 2026-07-29：飛控僅以 USB 供電複測
 
@@ -364,7 +365,9 @@ NX 無法直接進入 PX4 shell。
 - `/fmu/out/timesync_status` 可被 discovery 發現，但本輪 45 秒沒有收到樣本。
 
 因此目前同時未通過 XRCE 穩定性、GPS fix、水平位置／速度、航向控制有效性
-與 timesync 實測，不具備 Offboard 自動起飛條件。
+，不具備 Offboard 自動起飛條件。PX4 v1.14 官方文件說明 XRCE-DDS 已自動處理
+Agent／client 時間同步，因此沒有獨立 `TimesyncStatus` 樣本不是額外的阻塞
+條件；XRCE session 穩定性本身仍必須先通過。
 
 #### PX4 v1.14.3 `gyro_clipping` 欄位不可採信
 
@@ -412,6 +415,159 @@ PX4 `BatteryStatus.msg` 定義 `BATTERY_WARNING_EMERGENCY = 3`。旋翼已拆、
 - `/etc/fstab` 原檔備份：`/etc/fstab.p450-backup-20260728`。
 - 已建立 `rosbags/`、`ulog/`、`builds/`，owner 為 `p450:p450`。
 - 64 MiB 實寫約 16 MB/s，完成後沒有 kernel CRC 或 I/O error。
-- 目前約 111 GB 可用；ROS workspace 留在 eMMC，rosbag、ULog、影像及大型 build artifact 優先放 SD。
+- 2026-07-29 建置完成後 SD 約使用 2.9 GB、可用 108 GB；eMMC 使用 8.6 GB、
+  可用 4.5 GB（66%）。
+- PX4 原始碼、ARM 工具鏈、build tree 與韌體成品全部位於 SD。ROS workspace
+  留在 eMMC，rosbag、ULog、影像及後續大型 build artifact 繼續優先放 SD。
+- 已解壓的 145 MB 工具鏈下載壓縮檔已刪除；可重現建置所需的原始碼、
+  工具鏈及 build tree 保留。
+
+### 2026-07-29：Jetson UARTB 460800 baud device-tree 修正
+
+重啟前的 kernel log 明確顯示 `/dev/ttyTHS1` 對應的 `3110000.serial`：
+
+```text
+configured baud rate is out of range by -29
+Failed to set baud rate
+```
+
+原 DTB 的 UARTB `nvidia,adjust-baud-rates` 只包含 `115200 115200 100`。依
+NVIDIA UART device-tree binding 與 Jetson Xavier NX 460800 案例，建立只增加
+460800 正向容差範圍的 DTB：
+
+```text
+nvidia,adjust-baud-rates = <115200 115200 100 460800 460800 100>
+```
+
+目前預設開機項目：
+
+```text
+label: p450-sdmmc3-uartb460800
+DTB: /boot/dtb/p450-p3668-0001-p3509-0000-sdmmc3-wifi-uartb460800.dtb
+```
+
+舊的 `p450-sdmmc3` DTB 仍保留為 boot menu fallback。重啟後已確認：
+
+- active DTB 含上述 115200 與 460800 兩組設定。
+- UARTB clock 由約 7,351,351 Hz 改為 7,418,181 Hz。
+- kernel 不再出現 baud out-of-range 或 Failed to set baud rate。
+- SD、外接 Wi-Fi 與 Agent 服務均可正常啟動。
+
+但同條件 120 秒唯讀測試仍失敗：
+
+```text
+messages=3693
+average_hz=30.753
+median_gap_ms=12.516
+max_gap_ms=3129.283
+gaps_over_100ms=61
+gaps_over_500ms=30
+gaps_over_1s=28
+result=FAIL
+```
+
+所以這個 DTB 修正排除了真實的 Jetson baud 設定錯誤，但沒有解決 PX4 XRCE
+session 重建。暫時保留修正與 fallback，不把它誤記為最終解法。
+
+官方與上游參考：
+
+- <https://forums.developer.nvidia.com/t/serial-port-less-reliable-after-upgrade-to-35-1/232396>
+- <https://kernel.googlesource.com/pub/scm/linux/kernel/git/arnd/playground/+/refs/heads/compat-ioctl-endgame-20200103/Documentation/devicetree/bindings/serial/nvidia%2Ctegra20-hsuart.txt>
+
+### 2026-07-29：再次重啟後的現有韌體基準
+
+NX 與飛控重啟後，`p450-micro-xrce-agent.service` 維持 active，使用
+`/dev/ttyTHS1`、460800 baud。測試開始時只發現 20 個 `/fmu/*` topics，部分
+輸出 entity 正處於重建狀態。60 秒唯讀 IMU 測試結果：
+
+```text
+messages=1771
+average_hz=29.514
+median_gap_ms=12.397
+max_gap_ms=3382.174
+gaps_over_100ms=36
+gaps_over_500ms=15
+gaps_over_1s=15
+result=FAIL
+```
+
+因此重啟不是解法，下一個有鑑別力的步驟是用回補韌體做 A/B 測試。
+
+### PX4 v1.14.3 XRCE ping 回補韌體
+
+官方來源提交：
+
+- <https://github.com/PX4/PX4-Autopilot/commit/a1cce7e961df>
+
+本次只回補與目前症狀直接相關且可乾淨套用到 v1.14.3 架構的部分：
+
+- 有有效雙向 payload 時，不以 session ping 判定 Agent 已失聯。
+- ping interval 改為 1 秒，單次 timeout 改為 1000 ms。
+- 連續漏掉 3 次 ping 才斷線。
+
+沒有回補該提交中依賴後續 PX4 架構的 service/timesync 重構。回補 patch 已納入：
+
+```text
+patches/px4-v1.14.3-uxrce-session-ping-backport.patch
+```
+
+獨立建置資料：
+
+```text
+PX4 source:
+/media/p450/P450_DATA/builds/PX4-Autopilot-v1.14.3-xrce-fix
+
+source commit:
+f9bc66c6f30d8ddcceaeba2545dc9f6d0e71faf1
+
+board:
+PX4FMUv6C / board_id 56 / px4_fmu-v6c_default
+
+firmware:
+/media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4
+
+size:
+1,808,166 bytes
+
+SHA-256:
+cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd
+```
+
+使用官方 aarch64 GNU Arm Embedded 9-2020-q2-update（GCC 9.3.1）完整建置
+1114/1114 成功。映像 `image_size=1,937,740` bytes，FLASH 使用 98.56%，仍在
+Pixhawk 6C 的 1920 KiB 區域限制內。PX4 source tree 在提交後為乾淨狀態，
+recursive submodules 無偏移。
+
+此韌體目前「已建置、已驗證封裝、尚未刷入」。不得宣稱問題已解決，也不得
+直接用於飛行。
+
+### 回補韌體的 QGC 地面 A/B 測試清單
+
+1. 旋翼保持拆除、機體固定、人員保持安全距離，使用穩定供電。
+2. QGC 先匯出完整參數備份；另記錄 airframe、感測器校正、RC、安全開關與
+   failsafe 設定。
+3. 再次確認飛控是 Pixhawk 6C，目標必須為 `px4_fmu-v6c_default`。
+4. QGC `Vehicle Setup → Firmware → Advanced settings → Custom firmware file`
+   選擇上述 `.px4`。這一步會改寫飛控，必須由機主明確開始後才執行。
+5. 刷完重啟後核對／恢復參數：
+   `UXRCE_DDS_CFG=102`、`SER_TEL2_BAUD=460800`、`MAV_1_CONFIG=0`；
+   `MAV_0_CONFIG` 保持 TELEM1，並核對所有飛行安全與校正設定。
+6. QGC MAVLink Console 保存：
+   `uxrce_dds_client status`、`param show UXRCE_DDS_CFG`、
+   `param show SER_TEL2_BAUD`、`param show MAV_1_CONFIG`。
+7. NX 先做 10 分鐘純訂閱測試：topic 數、Agent lifecycle 與
+   `sensor_combined` 最大 gap；期間不發布任何 `/fmu/in/*`。
+8. 通過條件至少為：10 分鐘內無 session close/recreate、topic 不消失、
+   IMU 最大 gap 小於 100 ms。未通過就停止，不進入 Offboard。
+9. 若仍失敗，實體檢查 TELEM2↔UART0 的 TX/RX/GND、接頭、共地、線長與屏蔽；
+   以示波器／邏輯分析儀確認 3.3 V、460800 8N1。另可將飛控與 Agent 同步降至
+   115200 做線路 A/B 測試，但不可只改單邊。
+10. 最小回補仍失敗時，再另案評估已包含完整上游修正的 PX4 v1.15；不可直接
+    跳過參數備份、地面測試或安全檢查。
+
+PX4 v1.14 官方 uXRCE-DDS 文件與 Pixhawk 6C 相關案例：
+
+- <https://docs.px4.io/v1.14/en/middleware/uxrce_dds>
+- <https://github.com/PX4/PX4-Autopilot/issues/24413>
 
 完成 session 穩定性與電池安全關卡前，不進入 Offboard、不送控制指令、不解鎖。

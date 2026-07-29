@@ -1,0 +1,53 @@
+diff --git a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+--- a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
++++ b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+@@ -355,25 +355,35 @@
+ 				last_status_update = now;
+ 			}
+ 
+-			// Handle ping
+-			if (now - last_ping > 500_ms) {
++			// Handle ping, unless we're actively sending & receiving payloads successfully.
++			// Backported from PX4 commit a1cce7e961df.
++			if ((_last_payload_tx_rate > 0) && (_last_payload_rx_rate > 0)) {
++				_connected = true;
++				num_pings_missed = 0;
+ 				last_ping = now;
+ 
+-				if (had_ping_reply) {
+-					num_pings_missed = 0;
++			} else {
++				if (hrt_elapsed_time(&last_ping) > 1_s) {
++					last_ping = now;
++
++					if (had_ping_reply) {
++						num_pings_missed = 0;
++
++					} else {
++						++num_pings_missed;
++					}
++
++					int timeout_ms = 1'000;
++					uint8_t attempts = 1;
++					uxr_ping_agent_session(&session, timeout_ms, attempts);
+ 
+-				} else {
+-					++num_pings_missed;
++					had_ping_reply = false;
+ 				}
+ 
+-				uxr_ping_agent_session(&session, 0, 1);
+-
+-				had_ping_reply = false;
+-			}
+-
+-			if (num_pings_missed > 2) {
+-				PX4_INFO("No ping response, disconnecting");
+-				_connected = false;
++				if (num_pings_missed >= 3) {
++					PX4_INFO("No ping response, disconnecting");
++					_connected = false;
++				}
+ 			}
+ 
+ 			px4_usleep(1000);

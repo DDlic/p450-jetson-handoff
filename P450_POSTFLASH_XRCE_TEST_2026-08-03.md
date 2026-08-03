@@ -173,6 +173,35 @@ result=PASS
 四元數維持正規化。PX4 v1.14.3 已知未初始化的 `gyro_clipping` 欄位仍明確忽略，
 不納入判定。
 
+## NX 再次開機後 XRCE 回歸
+
+NX 於 15:12 再次整機開機後：
+
+- `p450-micro-xrce-agent.service` 自動啟動。
+- Agent `NRestarts=0`，不是 Agent crash 後由 systemd 拉起。
+- ROS 2 topics 為完整 23/10。
+- 60 秒室內靜態感測器測試已在這次 boot 內通過。
+
+另執行 120 秒 continuity：
+
+```text
+elapsed_s=120.017
+messages=8719
+average_hz=72.648
+median_gap_ms=12.216
+max_gap_ms=47.477
+gaps_over_100ms=0
+gaps_over_500ms=0
+gaps_over_1s=0
+result=PASS
+```
+
+因此回補韌體在整機重新開機後仍可自動恢復並維持穩定 XRCE session。
+
+系統記錄顯示 15:04–15:12 的前一個短 boot 沒有正常 shutdown marker，但系統
+沒有啟用 persistent journal，無法追查最後事件。若該次不是人工斷電或 Reset，
+需另列為供電／主機穩定性待查；這與目前 Agent 的 `NRestarts=0` 不同。
+
 ## 結論與限制
 
 PX4 v1.14.3 session ping 最小回補已消除目前地面條件下觀察到的週期性 XRCE

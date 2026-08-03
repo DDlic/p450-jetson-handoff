@@ -95,6 +95,50 @@ session closed=0
 - 30 秒收到 2147 筆，平均 71.566 Hz。
 - 最大 gap 33.134 ms，所有超過 100 ms 的 gap 為 0，結果 PASS。
 
+## 刷入後定位與控制狀態唯讀檢查
+
+GPS：
+
+```text
+fix_type=0
+satellites_used=0
+eph=4294967.5
+epv=4259544.0
+vel_ned_valid=false
+heading=NaN
+```
+
+Local position／odometry：
+
+```text
+xy_valid=false
+z_valid=true
+v_xy_valid=false
+v_z_valid=true
+heading_good_for_control=false
+xy_global=false
+z_global=false
+dead_reckoning=true
+odometry quality=0
+```
+
+Control／vehicle status：
+
+```text
+arming_state=1
+nav_state=4
+flag_armed=false
+flag_control_auto_enabled=true
+flag_control_offboard_enabled=false
+flag_control_termination_enabled=false
+failsafe=false
+pre_flight_checks_pass=false
+```
+
+這表示飛控保持未解鎖、沒有進入 Offboard 或 termination；當下模式選擇為
+Auto，但 GPS、水平定位、速度、航向與 preflight 均未通過，不具備自動飛行
+條件。不得因 XRCE 通訊穩定就嘗試解鎖。
+
 ## 結論與限制
 
 PX4 v1.14.3 session ping 最小回補已消除目前地面條件下觀察到的週期性 XRCE

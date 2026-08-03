@@ -8,7 +8,9 @@
 - 已刷入 `p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`。
 - 機主回報刷入後參數恢復及檢查正常。
 - NX 使用 Micro XRCE-DDS Agent v2.4.2、`/dev/ttyTHS1`、460800 baud。
-- 所有測試只訂閱 `/fmu/out/*`，沒有發布 `/fmu/in/*`、解鎖或控制馬達。
+- 本報告前半段的 XRCE continuity、導航與靜態感測器測試只訂閱
+  `/fmu/out/*`。同日後續另執行明確標示的無槳 ROS→PX4 輸入測試；該階段
+  有發布零推力與模式命令，但沒有成功解鎖，馬達全程未轉動。
 
 韌體 SHA-256：
 
@@ -202,6 +204,110 @@ result=PASS
 沒有啟用 persistent journal，無法追查最後事件。若該次不是人工斷電或 Reset，
 需另列為供電／主機穩定性待查；這與目前 Agent 的 `NRestarts=0` 不同。
 
+## 無槳 RC 模式與失聯測試
+
+測試全程拆除旋翼、機體未解鎖，遙控器保持可用；只有在準備解鎖測試時要求
+油門最低。三段飛行模式開關已由 ROS 2 `VehicleStatus` 確認：
+
+```text
+第一格：STAB   nav_state_user_intention=15, nav_state=15
+第二格：ALTCTL nav_state_user_intention=1,  nav_state=1
+第三格：POSCTL nav_state_user_intention=2,  nav_state=2
+```
+
+STAB 與 ALTCTL 時 RC 正常、`failsafe=false`；STAB 的
+`pre_flight_checks_pass=true`。POSCTL 雖可被選取，但室內狀態為
+`local_position_invalid=true`、`global_position_invalid=true`、
+`home_position_invalid=true`，因此 `pre_flight_checks_pass=false`，不得解鎖。
+
+RC loss 測試時，因發射機在飛控開機期間無法用一般流程關閉，機主直接移除
+發射機電池以確保 RF 發射端完全停止。飛控在超過 20 秒、四次連續抽樣中仍為：
+
+```text
+manual_control_signal_lost=false
+failsafe=false
+arming_state=1
+nav_state=15
+```
+
+`failsafe=false` 在未解鎖狀態下不意外，但 `manual_control_signal_lost=false`
+表示飛控沒有偵測到 RC 失聯；這與接收機失聯後持續輸出最後通道值（Hold）相符，
+尚未取得接收機型號確認。此項測試為 FAIL，必須在飛行前將接收機設定為失聯時
+停止輸出，或使用低油門失聯值並正確設定 `RC_FAILS_THR`，再重測。
+
+## ROS→PX4 Offboard／控制輸入診斷
+
+### 已確認通過的部分
+
+- `/fmu/in/offboard_control_mode`、`vehicle_rates_setpoint`、`vehicle_command`
+  均有一個 PX4 DDS subscriber。
+- 發布端使用 PX4 v1.14 範例的 Best Effort／Transient Local QoS 後，飛控可收到
+  Offboard 心跳；Volatile 發布雖能 DDS match，但本機測試未清除
+  `offboard_control_signal_lost`。
+- NX 發出的 `VEHICLE_CMD_DO_SET_MODE` 成功將飛控由 STAB 切至 ALTCTL，證明
+  `VehicleCommand` 的 ROS→PX4 路徑可工作。測試後由實體模式開關恢復 STAB。
+- PX4 與 NX ROS clock 的一次抽樣差約 20 ms，沒有固定的大幅時間基準錯位。
+
+### 未通過的部分
+
+- 未解鎖時的 Offboard 模式要求沒有進入 `nav_state=14`。
+- 外部 ARM 命令未被接受；當時 `pre_flight_checks_pass=true`、
+  `safety_button_available=true`、`safety_off=true`、`usb_connected=false`，但目前
+  DDS topic 清單沒有 `VehicleCommandAck`，因此尚未取得精確拒絕原因。
+- 原先準備以人工 ARM 配合 NX 零推力 watchdog 繼續測試，但 watchdog 在人工操作
+  前偵測到 Offboard heartbeat loss 並自動中止。沒有人工解鎖、沒有進入
+  Offboard、沒有施加低推力，馬達全程未轉動。
+
+### 心跳連續性數據
+
+使用零 body-rate、零 thrust 的純地面心跳測試；NX 本地發布迴圈本身穩定：
+
+```text
+非零 ROS timestamp，約 88 Hz：1499 筆，最大發布 gap 13.261 ms
+FailsafeFlags：9 / 32 筆 offboard_control_signal_lost=true
+
+timestamp=0，約 87 Hz：1482 筆，最大發布 gap 13.984 ms
+FailsafeFlags：2 / 29 筆 offboard_control_signal_lost=true
+
+timestamp=0，約 16.2 Hz：275 筆，最大發布 gap 70.547 ms
+FailsafeFlags：12 / 31 筆 offboard_control_signal_lost=true
+```
+
+設定 20 Hz（實測約 16.2 Hz）與設定 100 Hz（實測約 87–88 Hz）、Best Effort 與 Reliable 均測過；Reliable 沒有改善。PX4 v1.14.3
+反序列化器會把輸入 `timestamp=0` 改為飛控收件時間，能降低但未消除失聯判定。
+
+另暫停 systemd Agent，以 v6 詳細模式記錄一次約 88 Hz 測試後自動恢復服務：
+
+```text
+ROS 本地發布：1491 組 offboard_control_mode + vehicle_rates_setpoint
+Agent DataReader：1491 + 1491，最大 gap 14.522 / 14.620 ms
+Agent serial send：1491 + 1491，最大 gap 17.596 / 21.018 ms
+Agent error=0, warning=0，沒有 session teardown/recreate
+```
+
+因此目前證據把異常範圍縮小到飛控端 XRCE client 接收／轉成 uORB 後的心跳新鮮度
+判定，不是 NX Python 排程、DDS discovery、Agent 收件或 Agent UART 發送遺失。
+PX4 v1.14.3 `OffboardChecks` 使用
+`offboard_control_mode.timestamp + COM_OF_LOSS_T` 判斷資料是否仍新鮮；目前行為高度
+懷疑恢復的 `COM_OF_LOSS_T` 值過短，但尚未由 QGC 讀取確認。後續第一步是用 QGC
+查詢該參數的完整目前值，確認前不得繞過 watchdog 或強行解鎖。
+
+## 本輪結束安全狀態
+
+```text
+arming_state=1
+nav_state_user_intention=15
+nav_state=15
+failsafe=false
+pre_flight_checks_pass=true
+safety_off=true
+usb_connected=false
+manual_control_signal_lost=false
+battery_warning=0
+p450-micro-xrce-agent.service=active
+Agent NRestarts=0
+```
+
 ## 結論與限制
 
 PX4 v1.14.3 session ping 最小回補已消除目前地面條件下觀察到的週期性 XRCE
@@ -213,8 +319,10 @@ session teardown/recreate；Pixhawk TELEM2 ↔ NX UART0 ↔ ROS 2 Foxy 的通訊
 1. GPS fix、衛星數與水平位置／速度有效性。
 2. 航向可控制性與 EKF 狀態。
 3. `pre_flight_checks_pass`。
-4. Kill Switch、手動控制與失聯 failsafe 的無槳地面實測。
-5. Offboard 心跳、模式切換、失聯退出與 setpoint 邊界測試。
-6. 更長時間、不同供電與完整 power-cycle 的回歸測試。
+4. RC loss 未被飛控偵測；確認接收機型號並修正 Hold／failsafe 輸出後重測。
+5. 由 QGC 讀取並核對 `COM_OF_LOSS_T`，排除 Offboard 心跳間歇過期。
+6. 取得外部 ARM／Offboard 命令拒絕原因；目前未解鎖、馬達未轉。
+7. Kill Switch、Offboard 失聯退出與 setpoint 邊界的無槳地面實測。
+8. 更長時間、不同供電與完整 power-cycle 的回歸測試。
 
 在上述安全關卡完成前，不解鎖、不進行自動起飛。

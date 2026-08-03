@@ -30,12 +30,14 @@ USB-only 詳細測試結束後，PX4 client 一度沒有自行恢復 DDS entitie
 
 2026-08-03 機主已完成參數完整備份、刷入回補韌體及參數恢復。NX 的 10 分鐘純訂閱測試收到 42,936 筆 IMU，最大 gap 56.263 ms，所有超過 100 ms 的 gap 為 0；Agent 全程 active 且 PID 未變。另一次 120 秒詳細 Agent 測試只有起始 `create_client=1`、`session established=1`，沒有 `delete_client` 或 `session closed`，IMU 最大 gap 35.617 ms。切回 systemd Agent 後 30 秒複驗最大 gap 33.134 ms。原本週期性 XRCE session 重建在目前地面條件下已消除，通訊穩定性關卡通過。
 
+同日無槳輸入方向測試仍未通過：三段 RC 模式已確認為 STAB／ALTCTL／POSCTL，但移除發射機電池後飛控沒有偵測 RC loss；NX 的 `VehicleCommand` 可切換至 ALTCTL，外部 ARM 則未被接受。Offboard 零推力心跳在 NX 本地、DDS Agent 與 UART 發送端均連續，飛控端卻間歇回報 `offboard_control_signal_lost=true`。目前高度懷疑 `COM_OF_LOSS_T` 過短，必須先由 QGC 讀取確認。所有實體馬達步驟都被 watchdog 在解鎖前中止，馬達全程未轉；完整數據見 [`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`](P450_POSTFLASH_XRCE_TEST_2026-08-03.md)。
+
 Git repository 內也保存一份可下載副本：
 [`firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`](firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4)。
 下載後必須先依 [`firmware/SHA256SUMS`](firmware/SHA256SUMS) 驗證；安全狀態與
 刷入前提見 [`firmware/README.md`](firmware/README.md)。
 
-PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步，因此沒有獨立 `TimesyncStatus` 樣本不是額外阻塞條件。XRCE 穩定性已通過；GPS fix、水平定位／速度、航向、preflight、failsafe 與控制流程仍須分別測試。
+PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步，因此沒有獨立 `TimesyncStatus` 樣本不是額外阻塞條件。PX4→NX 輸出與 session continuity 已通過；NX→PX4 Offboard heartbeat、RC loss、GPS fix、水平定位／速度、航向、failsafe 與控制流程仍須分別排除，不得概括為雙向控制已通過。
 
 最新下一步指引：`P450_PROGRESS_2026-07-24_NEXT.md`。不要重刷系統或直接進行飛行測試。
 

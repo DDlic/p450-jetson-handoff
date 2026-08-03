@@ -24,6 +24,8 @@ PX4 官方提交 `a1cce7e961df`（`uxrce_dds_client: optimizations and instrumen
 
 2026-08-03 機主已完成參數備份、刷入上述韌體及參數恢復。10 分鐘常駐 Agent 測試收到 42,936 筆 IMU，最大 gap 56.263 ms，0 次超過 100 ms，Agent PID 全程不變；120 秒詳細 Agent 測試為 `create_client=1`、`established=1`、`delete_client=0`、`closed=0`，最大 gap 35.617 ms。恢復 systemd Agent 後 30 秒測試最大 gap 33.134 ms。XRCE 週期性 session 重建在目前地面測試條件下已消除，通訊穩定性關卡通過；這不代表 GPS、preflight、failsafe、Offboard 或飛行測試已通過。
 
+同日後續無槳控制檢查確認三段 RC 模式為 STAB／ALTCTL／POSCTL；POSCTL 因室內沒有有效 local/global position 與 Home 而不通過 preflight。移除發射機電池超過 20 秒後，飛控仍回報 `manual_control_signal_lost=false`，與接收機失聯 Hold 輸出相符，RC loss 關卡為 FAIL。ROS→PX4 的 `VehicleCommand` 已能由 NX 將 STAB 切至 ALTCTL，但外部 ARM 未被接受，且 Offboard 零推力心跳會間歇被判為 lost。詳細 Agent v6 記錄證明 1491 組心跳／rate setpoint 全數由 DDS 收到並寫入 UART，沒有 Agent error、warning 或 session 重建；異常已縮小到飛控端 XRCE 收件／uORB 新鮮度判定。高度懷疑恢復參數中的 `COM_OF_LOSS_T` 過短，但尚待 QGC 讀取確認。所有解鎖／馬達測試均被 watchdog 安全中止，飛控最終為 STAB、未解鎖、馬達未轉；詳見 `P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。
+
 同日也針對 Jetson `3110000.serial` 的 460800 baud out-of-range kernel 錯誤建立 UARTB device-tree 修正。預設 DTB 現為 `/boot/dtb/p450-p3668-0001-p3509-0000-sdmmc3-wifi-uartb460800.dtb`，舊 DTB 保留為 fallback；重啟後 kernel 錯誤消失。但修正後 120 秒測試最大空窗仍為 3129 ms、28 次超過 1 秒，再次重啟後 60 秒最大空窗 3382 ms、15 次超過 1 秒。因此 DTB 修正有效排除主機設定錯誤，卻不是 XRCE session 重建的最終解法。
 
 側邊 `P450_DATA` 已恢復為可寫 ext4，並以 UUID 寫入 `/etc/fstab` 固定掛載於 `/media/p450/P450_DATA`。已建立 `rosbags/`、`ulog/`、`builds/`；eMMC 保留程式與 ROS workspace，大型資料改存 SD。2026-07-29 建置完成後 eMMC 使用 66%、尚有 4.5 GB，SD 使用 3%、尚有 108 GB；PX4 source、工具鏈、build 與韌體都放在 SD。

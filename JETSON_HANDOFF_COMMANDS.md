@@ -299,9 +299,9 @@ cd /home/p450/p450-jetson-handoff
 ./scripts/p450_ros2_link_monitor.py --duration 65 --max-gap-ms 100
 ```
 
-目前 460800 baud 下 session 約每 10–23 秒重建，65 秒 IMU 最大空窗約 1.6 秒，仍不合格。所有參數變更與飛行測試都必須拆槳或固定機體；在連續通訊、topic、模式切換、Kill Switch 與失聯處置未驗證前，不進行自動起飛。
+原廠韌體在 460800 baud 下曾約每 10–23 秒重建 session，65 秒 IMU 最大空窗約 1.6 秒。2026-08-03 刷入 ping 回補韌體後，10 分鐘最大 gap 56.263 ms、0 次超過 100 ms，詳細 Agent 測試沒有 session close/recreate；通訊連續性已通過。模式切換、Kill Switch、失聯處置、定位與 preflight 尚未驗證前，仍不進行自動起飛。
 
-### I-3. PX4 v1.14.3 XRCE ping 回補韌體（已建置、尚未刷入）
+### I-3. PX4 v1.14.3 XRCE ping 回補韌體（已刷入、通訊測試通過）
 
 成品位於 SD：
 
@@ -309,7 +309,7 @@ cd /home/p450/p450-jetson-handoff
 /media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4
 ```
 
-刷入前先核對：
+下載或重刷前先核對：
 
 ```bash
 sha256sum /media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4
@@ -321,7 +321,8 @@ sha256sum /media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping
 cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd
 ```
 
-這是 `PX4FMUv6C`／board ID 56 的 Pixhawk 6C 韌體。刷入前必須：
+這是 `PX4FMUv6C`／board ID 56 的 Pixhawk 6C 韌體。機主已在 2026-08-03
+完成參數備份、刷入與恢復。若日後重刷，仍必須：
 
 1. 保持拆槳與穩定供電。
 2. 用 QGC 匯出完整參數備份。
@@ -332,6 +333,6 @@ cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd
 6. 先執行至少 10 分鐘唯讀 ROS 2 continuity 測試；不得直接解鎖或進入
    Offboard。
 
-通過條件：10 分鐘內無 session close/recreate、`/fmu/*` topics 不消失、
-IMU 最大 gap 小於 100 ms。完整背景、build commit 與失敗後的線路 A/B 清單見
-`P450_PROGRESS_2026-07-24_NEXT.md`。
+實測結果：10 分鐘 42,936 筆、最大 gap 56.263 ms、0 次超過 100 ms；120 秒
+詳細 Agent lifecycle 為建立 1 次、關閉 0 次。完整結果見
+`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。

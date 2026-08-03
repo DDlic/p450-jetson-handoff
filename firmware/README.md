@@ -24,10 +24,14 @@ XRCE session ping 直接相關的最小回補。實際 patch 位於
 
 ## 安全狀態
 
-此韌體已通過完整編譯、板型中繼資料與 SHA-256 驗證，但尚未刷入實機，也尚未
-完成 10 分鐘 XRCE 穩定性測試。
+此韌體已通過完整編譯、板型中繼資料與 SHA-256 驗證。2026-08-03 機主完成
+參數備份、刷入與參數恢復；10 分鐘 XRCE 純訂閱測試最大 gap 56.263 ms、
+0 次超過 100 ms，120 秒詳細 Agent 測試沒有 session close/recreate。
 
-刷入前必須：
+此結果代表目前地面條件下的 XRCE 通訊穩定性通過，不代表 GPS、preflight、
+failsafe、Offboard 或飛行安全已通過。
+
+若日後重刷，必須：
 
 1. 保持拆槳、機體固定與穩定供電。
 2. 使用 QGroundControl 匯出完整參數備份。
@@ -35,4 +39,4 @@ XRCE session ping 直接相關的最小回補。實際 patch 位於
 4. 刷入後核對 airframe、校正、RC、安全與 failsafe 參數。
 5. 先做至少 10 分鐘純訂閱地面測試，不可直接解鎖或進入 Offboard。
 
-完整測試程序見 `../P450_PROGRESS_2026-07-24_NEXT.md`。
+完整測試結果見 `../P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。

@@ -26,14 +26,16 @@ USB-only 詳細測試結束後，PX4 client 一度沒有自行恢復 DDS entitie
 
 2026-07-29 已修正 Jetson UARTB 在 460800 baud 的 device-tree 容差設定；重啟後 kernel 不再回報 baud out-of-range，UARTB clock 為 7,418,181 Hz。但修正後 120 秒測試最大空窗仍為 3129 ms，28 次超過 1 秒；再次重啟後 60 秒測試最大空窗 3382 ms，15 次超過 1 秒。這證明 Jetson 設定錯誤已排除，但 XRCE session 問題仍未解決。
 
-已從 PX4 官方提交 `a1cce7e961df` 將 session ping 修正最小回補至 v1.14.3，並在 SD 上成功建立 Pixhawk 6C 韌體。成品位於 `/media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`，SHA-256 為 `cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd`；目前尚未刷入，必須先備份飛控參數，再做無槳地面 A/B 測試。
+已從 PX4 官方提交 `a1cce7e961df` 將 session ping 修正最小回補至 v1.14.3，並在 SD 上成功建立 Pixhawk 6C 韌體。成品位於 `/media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`，SHA-256 為 `cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd`。
+
+2026-08-03 機主已完成參數完整備份、刷入回補韌體及參數恢復。NX 的 10 分鐘純訂閱測試收到 42,936 筆 IMU，最大 gap 56.263 ms，所有超過 100 ms 的 gap 為 0；Agent 全程 active 且 PID 未變。另一次 120 秒詳細 Agent 測試只有起始 `create_client=1`、`session established=1`，沒有 `delete_client` 或 `session closed`，IMU 最大 gap 35.617 ms。切回 systemd Agent 後 30 秒複驗最大 gap 33.134 ms。原本週期性 XRCE session 重建在目前地面條件下已消除，通訊穩定性關卡通過。
 
 Git repository 內也保存一份可下載副本：
 [`firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`](firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4)。
 下載後必須先依 [`firmware/SHA256SUMS`](firmware/SHA256SUMS) 驗證；安全狀態與
 刷入前提見 [`firmware/README.md`](firmware/README.md)。
 
-PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步，因此沒有獨立 `TimesyncStatus` 樣本不是額外阻塞條件。真正的阻塞條件仍是 session 穩定性、GPS fix、水平定位／速度、航向與後續安全地面測試。
+PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步，因此沒有獨立 `TimesyncStatus` 樣本不是額外阻塞條件。XRCE 穩定性已通過；GPS fix、水平定位／速度、航向、preflight、failsafe 與控制流程仍須分別測試。
 
 最新下一步指引：`P450_PROGRESS_2026-07-24_NEXT.md`。不要重刷系統或直接進行飛行測試。
 

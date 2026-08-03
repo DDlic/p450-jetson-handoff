@@ -1,6 +1,6 @@
 # P450 2026-07-24 下一步規劃：Pixhawk ↔ NX 與 ROS 2 Foxy
 
-更新日期：2026-07-29（Asia/Taipei）
+更新日期：2026-08-03（Asia/Taipei）
 
 本文件是目前最新的執行指引，供 Ubuntu 桌機與 Jetson NX 上的 Codex CLI 接手使用。它不取代刷寫歷史，只更新「下一步做什麼」。
 
@@ -16,7 +16,7 @@
 - Micro XRCE-DDS Agent v2.4.2 已安裝。
 - `/home/p450/p450_ros2_ws` 的 `px4_msgs` 與 `px4_ros_com` 已建置；ROS 2 talker/listener 回環測試已通過。
 
-## 二、目前尚未完成的核心關卡
+## 二、已通過的通訊關卡與尚未完成項目
 
 Pixhawk ↔ NX 的實體路徑已確認，不再是「完全沒有直接通訊」：
 
@@ -25,10 +25,14 @@ Pixhawk 6C TELEM2 → AMOV AllSpark UART0 → /dev/ttyTHS1
                  → Micro XRCE-DDS Agent v2.4.2 → ROS 2 Foxy
 ```
 
-此路徑可建立 session、發現 23 個 `/fmu/*` topics 並取得即時資料。尚未通過的
-核心關卡是 PX4 v1.14.3 client 會週期性刪除並重建整個 XRCE session，造成
-ROS 2 資料出現 1–3 秒級空窗。QGC 的 TCP/MAVLink 路徑仍只作為飛控診斷與
-參數設定使用，不可取代上述 XRCE 路徑。
+此路徑可建立 session、發現 23 個 `/fmu/*` topics 並取得即時資料。原廠
+PX4 v1.14.3 client 曾週期性刪除並重建整個 XRCE session，造成 1–3 秒級空窗；
+2026-08-03 刷入 session ping 回補韌體後，10 分鐘資料與詳細 lifecycle 測試均
+通過，週期性重建在目前地面條件下已消除。
+
+目前尚未完成的是 GPS fix、水平定位／速度、航向、preflight、Kill Switch、
+失聯 failsafe、Offboard 控制流程與飛行測試。QGC 的 TCP/MAVLink 路徑仍只作為
+飛控診斷與參數設定使用，不可取代上述 XRCE 路徑。
 
 ## 三、NX Codex CLI 接手流程
 
@@ -278,8 +282,9 @@ PX4 官方提交 `a1cce7e961df` 明確包含：
 - 避免 client loop 因 blocking poll 延遲處理輸入。
 
 該提交位於 PX4 1.15 開發歷史。2026-07-29 已將其中與 session ping 直接相關的
-最小修改回補至 v1.14.3，並成功建置 Pixhawk 6C 韌體；目前尚未刷入飛控。
-完整成品與測試程序見下方「PX4 v1.14.3 XRCE ping 回補韌體」。
+最小修改回補至 v1.14.3，並成功建置 Pixhawk 6C 韌體；2026-08-03 已完成刷入、
+參數恢復與地面通訊測試。完整結果見下方與
+`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。
 
 ### 2026-07-29：飛控僅以 USB 供電複測
 
@@ -538,8 +543,8 @@ cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd
 Pixhawk 6C 的 1920 KiB 區域限制內。PX4 source tree 在提交後為乾淨狀態，
 recursive submodules 無偏移。
 
-此韌體目前「已建置、已驗證封裝、尚未刷入」。不得宣稱問題已解決，也不得
-直接用於飛行。
+此韌體目前「已建置、已驗證封裝、已刷入、XRCE 地面通訊測試通過」。不得把
+這項結果延伸宣稱為 GPS、failsafe、Offboard 或飛行安全已通過。
 
 ### 回補韌體的 QGC 地面 A/B 測試清單
 
@@ -570,4 +575,5 @@ PX4 v1.14 官方 uXRCE-DDS 文件與 Pixhawk 6C 相關案例：
 - <https://docs.px4.io/v1.14/en/middleware/uxrce_dds>
 - <https://github.com/PX4/PX4-Autopilot/issues/24413>
 
-完成 session 穩定性與電池安全關卡前，不進入 Offboard、不送控制指令、不解鎖。
+XRCE session 穩定性關卡已通過。完成定位、preflight、Kill Switch、失聯
+failsafe 與 Offboard 地面控制流程前，仍不進入自動飛行、不解鎖。

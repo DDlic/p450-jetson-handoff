@@ -1,6 +1,6 @@
 # AMOV P450 Jetson Xavier NX 交接總覽
 
-最後更新：2026-07-29（Asia/Taipei）
+最後更新：2026-08-03（Asia/Taipei）
 
 ## 目前狀態
 
@@ -12,7 +12,7 @@ ROS 2 離線包已在 Ubuntu 桌機完成只讀檢查；2026-07-23 已改用在�
 
 2026-07-28 已確認 AMOV AllSpark 外殼 `UART0` 對應 `/dev/ttyTHS1`，不是先前測試的 `/dev/ttyTHS0`。Pixhawk `TELEM2` 已能與 Micro XRCE-DDS Agent 建立 session，ROS 2 可發現 23 個 `/fmu/*` topics 並讀取即時 IMU／里程計資料。Agent 已由 `p450-micro-xrce-agent.service` 常駐及開機啟動。
 
-目前 PX4 1.14.3 client 仍會主動刪除並重建 session。將 TELEM2 與 NX Agent 從 921600 同步降至 460800 後，session 存活時間由約 2.7–4.8 秒改善至約 10–23 秒，但 68 秒內仍重建 5 次；低日誌模式 65 秒 IMU 監測的最大資料空窗為 1614 ms。協定追蹤顯示 NX Agent 有快速送出回覆，提升 Agent 排程優先度及測試性重送 pong 都未消除問題。通訊已打通但尚未穩定，不可進入 Offboard 或自動飛行。
+原廠 PX4 1.14.3 client 曾主動刪除並重建 session。將 TELEM2 與 NX Agent 從 921600 同步降至 460800 後，session 存活時間由約 2.7–4.8 秒改善至約 10–23 秒，但 68 秒內仍重建 5 次；低日誌模式 65 秒 IMU 監測的最大資料空窗為 1614 ms。協定追蹤顯示 NX Agent 有快速送出回覆，提升 Agent 排程優先度及測試性重送 pong 都未消除問題。這是回補韌體刷入前的歷史基準。
 
 2026-07-29 改用飛控 USB-only 供電複測，120 秒收到 7110 筆 IMU，平均 59.233 Hz，但最大空窗 2904.859 ms，10 次超過 1 秒；65 秒 Agent 詳細日誌中建立 10 次、關閉 9 次 session，已關閉 session 約存活 3.1–16.7 秒。USB 供電沒有消除重連，低電壓主電池不是唯一原因。測試切回 systemd Agent 後，PX4 client 一度沒有自行恢復 DDS entities；由 QGC 重啟 Vehicle 後已恢復 23 個 `/fmu/*` topics，但 18 秒內仍出現 `23 → 2 → 16 → 23`，QGC 的 `Running, disconnected` 是重連循環中的瞬間狀態。
 
@@ -20,7 +20,9 @@ ROS 2 離線包已在 Ubuntu 桌機完成只讀檢查；2026-07-23 已改用在�
 
 PX4 v1.14.3 官方 `VehicleIMU.cpp` 還漏掉 `delta_angle_clipping` 的設定與重置，造成 ROS 2 `SensorCombined.gyro_clipping` 為未初始化隨機值；v1.15 已補齊。message definitions 已逐行核對一致，這不是 `px4_msgs` 版本錯配，也不是 UART payload 損壞的證據。此欄位在目前韌體不可用於安全判斷。
 
-PX4 官方提交 `a1cce7e961df`（`uxrce_dds_client: optimizations and instrumentation`）包含：有效雙向資料流時略過 session ping、將 ping timeout 放寬為 1 秒、縮短／調整 client loop。2026-07-29 已將其中 session ping 的最小修改回補至 v1.14.3，成功建置 `PX4FMUv6C` 韌體；成品位於 SD 的 `/media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`，SHA-256 為 `cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd`。目前尚未刷入。
+PX4 官方提交 `a1cce7e961df`（`uxrce_dds_client: optimizations and instrumentation`）包含：有效雙向資料流時略過 session ping、將 ping timeout 放寬為 1 秒、縮短／調整 client loop。2026-07-29 已將其中 session ping 的最小修改回補至 v1.14.3，成功建置 `PX4FMUv6C` 韌體；成品位於 SD 的 `/media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`，SHA-256 為 `cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd`。
+
+2026-08-03 機主已完成參數備份、刷入上述韌體及參數恢復。10 分鐘常駐 Agent 測試收到 42,936 筆 IMU，最大 gap 56.263 ms，0 次超過 100 ms，Agent PID 全程不變；120 秒詳細 Agent 測試為 `create_client=1`、`established=1`、`delete_client=0`、`closed=0`，最大 gap 35.617 ms。恢復 systemd Agent 後 30 秒測試最大 gap 33.134 ms。XRCE 週期性 session 重建在目前地面測試條件下已消除，通訊穩定性關卡通過；這不代表 GPS、preflight、failsafe、Offboard 或飛行測試已通過。
 
 同日也針對 Jetson `3110000.serial` 的 460800 baud out-of-range kernel 錯誤建立 UARTB device-tree 修正。預設 DTB 現為 `/boot/dtb/p450-p3668-0001-p3509-0000-sdmmc3-wifi-uartb460800.dtb`，舊 DTB 保留為 fallback；重啟後 kernel 錯誤消失。但修正後 120 秒測試最大空窗仍為 3129 ms、28 次超過 1 秒，再次重啟後 60 秒最大空窗 3382 ms、15 次超過 1 秒。因此 DTB 修正有效排除主機設定錯誤，卻不是 XRCE session 重建的最終解法。
 

@@ -299,6 +299,17 @@ cd /home/p450/p450-jetson-handoff
 ./scripts/p450_ros2_link_monitor.py --duration 65 --max-gap-ms 100
 ```
 
+室內靜態 IMU／姿態測試（機體保持不動）：
+
+```bash
+cd /home/p450/p450-jetson-handoff
+./scripts/p450_sensor_static_check.py --duration 60
+```
+
+工具只訂閱 `sensor_combined` 與 `vehicle_attitude`，不發布控制；它會檢查資料率、
+加速度模長、靜止陀螺儀、accelerometer clipping 與四元數正規化。已知不可信的
+PX4 v1.14.3 `gyro_clipping` 不納入判定。
+
 原廠韌體在 460800 baud 下曾約每 10–23 秒重建 session，65 秒 IMU 最大空窗約 1.6 秒。2026-08-03 刷入 ping 回補韌體後，10 分鐘最大 gap 56.263 ms、0 次超過 100 ms，詳細 Agent 測試沒有 session close/recreate；通訊連續性已通過。模式切換、Kill Switch、失聯處置、定位與 preflight 尚未驗證前，仍不進行自動起飛。
 
 ### I-3. PX4 v1.14.3 XRCE ping 回補韌體（已刷入、通訊測試通過）

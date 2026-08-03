@@ -139,6 +139,40 @@ pre_flight_checks_pass=false
 Auto，但 GPS、水平定位、速度、航向與 preflight 均未通過，不具備自動飛行
 條件。不得因 XRCE 通訊穩定就嘗試解鎖。
 
+## 室內 60 秒靜態 IMU／姿態檢查
+
+機體保持靜止，使用純訂閱工具：
+
+```bash
+./scripts/p450_sensor_static_check.py --duration 60
+```
+
+結果：
+
+```text
+elapsed_s=60.000
+sensor_samples=4342
+sensor_average_hz=72.366
+attitude_samples=4341
+attitude_average_hz=72.349
+accel_norm_mean_m_s2=9.763735
+accel_norm_std_m_s2=0.025857
+accel_norm_min_m_s2=9.665857
+accel_norm_max_m_s2=9.852389
+gyro_norm_mean_rad_s=0.006282
+gyro_norm_std_rad_s=0.002582
+gyro_norm_max_rad_s=0.016183
+accelerometer_clipping_samples=0
+quaternion_norm_mean=1.000000037
+quaternion_norm_max_error=0.000000120
+gyro_clipping_field=IGNORED_known_px4_v1.14.3_uninitialized_field
+result=PASS
+```
+
+加速度模長接近重力、靜止陀螺儀幅度低、沒有 accelerometer clipping，姿態
+四元數維持正規化。PX4 v1.14.3 已知未初始化的 `gyro_clipping` 欄位仍明確忽略，
+不納入判定。
+
 ## 結論與限制
 
 PX4 v1.14.3 session ping 最小回補已消除目前地面條件下觀察到的週期性 XRCE

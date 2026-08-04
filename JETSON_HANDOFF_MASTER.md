@@ -1,6 +1,6 @@
 # AMOV P450 Jetson Xavier NX 交接總覽
 
-最後更新：2026-08-03（Asia/Taipei）
+最後更新：2026-08-04（Asia/Taipei）
 
 ## 目前狀態
 
@@ -23,6 +23,19 @@ PX4 v1.14.3 官方 `VehicleIMU.cpp` 還漏掉 `delta_angle_clipping` 的設定�
 PX4 官方提交 `a1cce7e961df`（`uxrce_dds_client: optimizations and instrumentation`）包含：有效雙向資料流時略過 session ping、將 ping timeout 放寬為 1 秒、縮短／調整 client loop。2026-07-29 已將其中 session ping 的最小修改回補至 v1.14.3，成功建置 `PX4FMUv6C` 韌體；成品位於 SD 的 `/media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`，SHA-256 為 `cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd`。
 
 2026-08-03 機主已完成參數備份、刷入上述韌體及參數恢復。10 分鐘常駐 Agent 測試收到 42,936 筆 IMU，最大 gap 56.263 ms，0 次超過 100 ms，Agent PID 全程不變；120 秒詳細 Agent 測試為 `create_client=1`、`established=1`、`delete_client=0`、`closed=0`，最大 gap 35.617 ms。恢復 systemd Agent 後 30 秒測試最大 gap 33.134 ms。XRCE 週期性 session 重建在目前地面測試條件下已消除，通訊穩定性關卡通過；這不代表 GPS、preflight、failsafe、Offboard 或飛行測試已通過。
+
+2026-08-04 已改刷官方 PX4 v1.15.4 source build，並建立對齊的 `px4_msgs release/1.15`
+工作區。43 個 DDS message types 全部逐一相符；NX 可建立 43 個 `/fmu/*` topics。
+但 60 秒純接收最大 gap 約 1.015 秒，多個 outputs 與 PX4 source timestamp 會在同一
+時刻一起跳過約 1 秒。45 秒 Agent v6 只有一次 session 建立，沒有 close/recreate，
+表示異常發生在仍連線的 client loop 內。停用 `UXRCE_DDS_SYNCT` 也沒有改善；2 Hz
+非控制 status 已到達 Agent，但空窗不變，20 Hz 更會使 PX4 輸出停止直到 Agent 重啟。
+
+上述結果與 PX4 官方 `d12a7dd11d` 所述的 XRCE input 每輪只處理一次、造成接收顯著
+延遲相符。已建立 v1.15.4 最小接收排空候選韌體
+`firmware/p450-pixhawk6c-v1.15.4-xrce-rx-drain-996b1df7a1.px4`，SHA-256 為
+`dbfd43085bbb4fe59744ad244a973b1243fb55d34ed36df52c9a0855be464949`；候選版尚未刷入，
+XRCE／Offboard 關卡仍為 FAIL。完整結果見 `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`。
 
 同日後續無槳控制檢查確認三段 RC 模式為 STAB／ALTCTL／POSCTL；POSCTL 因室內沒有有效 local/global position 與 Home 而不通過 preflight。移除發射機電池超過 20 秒後，飛控仍回報 `manual_control_signal_lost=false`，與接收機失聯 Hold 輸出相符，RC loss 關卡為 FAIL。ROS→PX4 的 `VehicleCommand` 已能由 NX 將 STAB 切至 ALTCTL，但外部 ARM 未被接受，且 Offboard 零推力心跳會間歇被判為 lost。詳細 Agent v6 記錄證明 1491 組心跳／rate setpoint 全數由 DDS 收到並寫入 UART，沒有 Agent error、warning 或 session 重建；異常已縮小到飛控端 XRCE 收件／uORB 新鮮度判定。高度懷疑恢復參數中的 `COM_OF_LOSS_T` 過短，但尚待 QGC 讀取確認。所有解鎖／馬達測試均被 watchdog 安全中止，飛控最終為 STAB、未解鎖、馬達未轉；詳見 `P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。
 

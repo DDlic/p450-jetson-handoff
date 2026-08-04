@@ -30,6 +30,14 @@ USB-only 詳細測試結束後，PX4 client 一度沒有自行恢復 DDS entitie
 
 2026-08-03 機主已完成參數完整備份、刷入回補韌體及參數恢復。NX 的 10 分鐘純訂閱測試收到 42,936 筆 IMU，最大 gap 56.263 ms，所有超過 100 ms 的 gap 為 0；Agent 全程 active 且 PID 未變。另一次 120 秒詳細 Agent 測試只有起始 `create_client=1`、`session established=1`，沒有 `delete_client` 或 `session closed`，IMU 最大 gap 35.617 ms。切回 systemd Agent 後 30 秒複驗最大 gap 33.134 ms。原本週期性 XRCE session 重建在目前地面條件下已消除，通訊穩定性關卡通過。
 
+2026-08-04 已改刷官方 PX4 v1.15.4 source build，並完成 `px4_msgs release/1.15`
+對齊。43 個 DDS message types 全部一致，但實機輸出仍週期性同步停約 1 秒；詳細
+Agent 測試沒有 session close/recreate，停用 `UXRCE_DDS_SYNCT` 也沒有改善。2 Hz
+非控制 status 已到達 Agent 仍無效，20 Hz 會使 PX4 輸出停止直到 Agent 重啟。
+已依 PX4 官方 `d12a7dd11d` 建立 v1.15.4 接收排空候選韌體，尚待刷入 A/B 驗證；
+目前 XRCE continuity 與 Offboard 仍為 FAIL。詳見
+[`P450_PX4_V1154_XRCE_TEST_2026-08-04.md`](P450_PX4_V1154_XRCE_TEST_2026-08-04.md)。
+
 同日無槳輸入方向測試仍未通過：三段 RC 模式已確認為 STAB／ALTCTL／POSCTL，但移除發射機電池後飛控沒有偵測 RC loss；NX 的 `VehicleCommand` 可切換至 ALTCTL，外部 ARM 則未被接受。Offboard 零推力心跳在 NX 本地、DDS Agent 與 UART 發送端均連續，飛控端卻間歇回報 `offboard_control_signal_lost=true`。目前高度懷疑 `COM_OF_LOSS_T` 過短，必須先由 QGC 讀取確認。所有實體馬達步驟都被 watchdog 在解鎖前中止，馬達全程未轉；完整數據見 [`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`](P450_POSTFLASH_XRCE_TEST_2026-08-03.md)。
 
 Git repository 內也保存一份可下載副本：

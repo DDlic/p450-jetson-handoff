@@ -1,0 +1,38 @@
+From 996b1df7a10a35b3e3534df9c5629f3675c7cab0 Mon Sep 17 00:00:00 2001
+From: DDlic <DDlic@users.noreply.github.com>
+Date: Tue, 4 Aug 2026 16:59:00 +0800
+Subject: [PATCH] uxrce_dds_client: drain pending receive payloads
+
+Backport the receive-queue draining behavior from upstream PX4 commit
+d12a7dd11da521ebbdd6ba07be1987b459d39ace. Processing only one XRCE
+input per client loop can significantly delay inbound ROS 2 payloads.
+---
+ src/modules/uxrce_dds_client/uxrce_dds_client.cpp | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+index 1412414b63..d49a54543b 100644
+--- a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
++++ b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+@@ -551,8 +551,17 @@ void UxrceddsClient::run()
+ 				}
+ 			}
+ 
+-			// run session with 0 timeout (non-blocking)
+-			uxr_run_session_timeout(&session, 0);
++			// Run the session until we receive no more data or up to a maximum number of iterations.
++			// PX4 commit d12a7dd11d showed that processing only one message per loop can significantly
++			// delay received data and make registered flight modes time out.
++			for (int i = 0; i < 10; ++i) {
++				const uint32_t prev_num_payload_received = _pubs->num_payload_received;
++				uxr_run_session_timeout(&session, 0);
++
++				if (_pubs->num_payload_received == prev_num_payload_received) {
++					break;
++				}
++			}
+ 
+ 			// check if there are available replies
+ 			process_replies();
+-- 
+2.25.1

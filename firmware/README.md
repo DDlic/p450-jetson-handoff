@@ -1,5 +1,46 @@
 # P450 Pixhawk 6C 測試韌體
 
+## PX4 v1.15.4 XRCE 接收排空候選版
+
+檔案：
+
+```text
+p450-pixhawk6c-v1.15.4-xrce-rx-drain-996b1df7a1.px4
+```
+
+建置與封裝驗證：
+
+- 目標板：Pixhawk 6C／`PX4FMUv6C`
+- PX4 target：`px4_fmu-v6c_default`
+- 基底：官方 tag `v1.15.4`
+- 基底 commit：`99c40407ffd7ac184e2d7b4b293f36f10fe561ef`
+- 修補後 source commit：`996b1df7a10a35b3e3534df9c5629f3675c7cab0`
+- 上游修補來源：PX4 `d12a7dd11da521ebbdd6ba07be1987b459d39ace`
+- 自製 patch：`../patches/px4-v1.15.4-uxrce-rx-drain-backport.patch`
+- `.px4` 檔案大小：1,849,474 bytes
+- 韌體 image size：1,961,732 bytes
+- FLASH：1,961,732／1,966,080 bytes（99.78%）
+- firmware `board_id`：56
+- firmware `description`：`Firmware for the PX4FMUv6C board`
+- firmware `git_identity`：`v1.15.4-1-g996b1df7a1`
+- SHA-256：`dbfd43085bbb4fe59744ad244a973b1243fb55d34ed36df52c9a0855be464949`
+
+此候選版只把每個 XRCE client loop 的輸入處理由一次改為最多 10 次，收到的 payload
+排空後立即停止；沒有修改 commander、飛行控制、解鎖、failsafe、DDS message definitions
+或參數預設值。修補行為來自 PX4 官方提交
+[`d12a7dd11da5`](https://github.com/PX4/PX4-Autopilot/commit/d12a7dd11da521ebbdd6ba07be1987b459d39ace)，
+其提交說明指出每輪只處理一次會造成接收資料顯著延遲，甚至讓已註冊飛行模式 timeout。
+
+建立此版前的 stock v1.15.4 實機結果：純接收、多 topic 與
+`UXRCE_DDS_SYNCT=0` 測試都反覆出現約 1 秒同步空窗；2 Hz
+`OnboardComputerStatus` 已由 Agent 確認送入 UART，但空窗不變；提高至 20 Hz 後
+PX4→NX 輸出完全停止，需重啟 Agent 才恢復。這些結果符合飛控端 XRCE 輸入未及時
+排空的症狀，但候選韌體尚未刷入，因此仍需 A/B 驗證，不能視為已修復。
+
+第一次刷入測試先保留 `UXRCE_DDS_SYNCT=0`，保持單一變因，依序測純訂閱、2 Hz
+非控制狀態 heartbeat 與 20 Hz 壓力；若通過再將 `UXRCE_DDS_SYNCT` 恢復為預設值
+`1`、重啟並重測。時間同步停用不是最終飛行設定。
+
 ## PX4 v1.15.4 官方原始碼乾淨編譯版
 
 檔案：
@@ -36,11 +77,12 @@ make px4_fmu-v6c_default
 message definitions 必須改用 `px4_msgs release/1.15`，不可繼續用 `release/1.14`
 進行 ROS→PX4 控制測試。
 
-此檔目前只有完成 source／submodule／板型／容量／封裝與 checksum 驗證，尚未刷入
-本機飛控，也尚未通過參數遷移、感測器、RC、failsafe、XRCE 或 Offboard 地面測試。
-使用 QGroundControl 刷入前仍須保持拆槳、穩定供電並保存 v1.14.3 完整參數備份；
-刷入後不得直接套用控制或起飛，須先核對 airframe、校正、RC、安全開關、failsafe、
-`UXRCE_DDS_CFG`、`SER_TEL2_BAUD` 與 `MAV_1_CONFIG`。
+2026-08-04 已刷入本機飛控並完成參數恢復。`px4_msgs release/1.15` 的 43 個 DDS
+message types 已逐一核對，與韌體 `dds_topics.yaml` 全部一致；NX 可建立 43 個
+`/fmu/*` topics，Agent 與 UART session 可連線。但 60 秒純訂閱最大空窗約 1.015 秒，
+多個 PX4 outputs 會在相同時間同步跳過約 1 秒。詳細 Agent 測試只有一次
+`create_client/session established`，沒有 session close/recreate，因此 stock 版目前
+不通過 XRCE continuity 與 Offboard 地面關卡，不可進入自動飛行。
 
 ## XRCE 接收排空＋session ping 回補候選版
 

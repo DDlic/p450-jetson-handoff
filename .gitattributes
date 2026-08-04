@@ -1,1 +1,2 @@
 *.px4 binary
+patches/*.patch -whitespace

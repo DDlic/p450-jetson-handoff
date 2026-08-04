@@ -1,5 +1,47 @@
 # P450 Pixhawk 6C 測試韌體
 
+## PX4 v1.15.4 官方原始碼乾淨編譯版
+
+檔案：
+
+```text
+p450-pixhawk6c-v1.15.4-stock-99c40407ff.px4
+```
+
+建置與封裝驗證：
+
+- 目標板：Pixhawk 6C／`PX4FMUv6C`
+- PX4 target：`px4_fmu-v6c_default`
+- 官方 tag：`v1.15.4`
+- source commit：`99c40407ffd7ac184e2d7b4b293f36f10fe561ef`
+- 自製 patch：無
+- recursive submodules：全部位於 v1.15.4 鎖定 commit，無偏移
+- 編譯器：GNU Arm Embedded Toolchain 9-2020-q2-update／GCC 9.3.1
+- `.px4` 檔案大小：1,849,448 bytes
+- 韌體 image size：1,961,652 bytes
+- FLASH：1,961,652／1,966,080 bytes（99.77%）
+- firmware `board_id`：56
+- firmware `description`：`Firmware for the PX4FMUv6C board`
+- firmware `git_identity`：`v1.15.4`
+- SHA-256：`21af0b94edd5de84dde5360874d8e1f66a52e3be07dfbafaaffc03baa580c29a`
+
+2026-08-04 在 NX 的 `P450_DATA` SD 資料碟上由官方 v1.15.4 source 完整執行：
+
+```bash
+make px4_fmu-v6c_default
+```
+
+建置 `1233/1233` 成功。此版本用來取代持續回補 v1.14.3 XRCE client 的路線；
+它不包含 repository 內兩個 v1.14.3 XRCE patch。PX4 v1.15.4 對應的 Jetson ROS 2
+message definitions 必須改用 `px4_msgs release/1.15`，不可繼續用 `release/1.14`
+進行 ROS→PX4 控制測試。
+
+此檔目前只有完成 source／submodule／板型／容量／封裝與 checksum 驗證，尚未刷入
+本機飛控，也尚未通過參數遷移、感測器、RC、failsafe、XRCE 或 Offboard 地面測試。
+使用 QGroundControl 刷入前仍須保持拆槳、穩定供電並保存 v1.14.3 完整參數備份；
+刷入後不得直接套用控制或起飛，須先核對 airframe、校正、RC、安全開關、failsafe、
+`UXRCE_DDS_CFG`、`SER_TEL2_BAUD` 與 `MAV_1_CONFIG`。
+
 ## XRCE 接收排空＋session ping 回補候選版
 
 檔案：

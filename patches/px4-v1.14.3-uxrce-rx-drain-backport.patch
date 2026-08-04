@@ -1,0 +1,35 @@
+From 49049d855552c39879234bf4f19229baf0939a48 Mon Sep 17 00:00:00 2001
+From: DDlic <DDlic@users.noreply.github.com>
+Date: Tue, 4 Aug 2026 11:43:25 +0800
+Subject: [PATCH] backport XRCE receive queue drain fix
+
+---
+ src/modules/uxrce_dds_client/uxrce_dds_client.cpp | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+index 0e2236d1bc..44d49de22b 100644
+--- a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
++++ b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+@@ -328,7 +328,17 @@ void UxrceddsClient::run()
+ 
+ 			_subs->update(&session, reliable_out, best_effort_out, participant_id, _client_namespace);
+ 
+-			uxr_run_session_timeout(&session, 0);
++			// Run the session until we receive no more data or up to a maximum number of iterations.
++			// Backported from PX4 commit d12a7dd11d: processing only one message per loop can delay
++			// received data enough to make registered flight modes time out.
++			for (int i = 0; i < 10; ++i) {
++				const uint32_t prev_num_payload_received = _pubs->num_payload_received;
++				uxr_run_session_timeout(&session, 0);
++
++				if (_pubs->num_payload_received == prev_num_payload_received) {
++					break;
++				}
++			}
+ 
+ 			// time sync session
+ 			if (hrt_elapsed_time(&last_sync_session) > 1_s) {
+-- 
+2.25.1
+

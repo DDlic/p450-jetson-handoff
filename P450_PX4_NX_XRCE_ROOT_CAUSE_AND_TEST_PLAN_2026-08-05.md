@@ -55,9 +55,9 @@ PX4 transport: /dev/ttyTHS1，460800 baud，8N1
 
 ```text
 Flight controller: Pixhawk 6C／PX4FMUv6C
-PX4: stock v1.15.4 source build
-source: 99c40407ffd7ac184e2d7b4b293f36f10fe561ef
-firmware SHA-256: 21af0b94edd5de84dde5360874d8e1f66a52e3be07dfbafaaffc03baa580c29a
+PX4: v1.15.4 RX-drain 最小候選版（2026-08-05 已刷入）
+source: 996b1df7a10a35b3e3534df9c5629f3675c7cab0
+firmware SHA-256: dbfd43085bbb4fe59744ad244a973b1243fb55d34ed36df52c9a0855be464949
 px4_msgs: release/1.15
 px4_msgs commit: a1045ec4feb6d709bdecaf3895f1d5b43a5dabb8
 UXRCE_DDS_SYNCT: 0（只為診斷；完成 A/B 後必須恢復 1）
@@ -132,6 +132,12 @@ output buffer 修改。
 所以現有候選版是合理的最小診斷 A/B，但不等於 v1.18 新修正，也不可因編譯成功就
 稱為已修復。它的 image 已使用 1,961,732／1,966,080 bytes（99.78%）；若建立第二個
 較完整 backport，必須再次驗證 FLASH 容量與 board metadata。
+
+2026-08-05 機主已刷入此候選版並保留 `UXRCE_DDS_SYNCT=0`。清潔重啟 Agent 後
+42 個 topics 正常、Agent PID 與 `NRestarts` 穩定、飛控未解鎖，但 60 秒純接收仍有
+`1005.408 ms` 最大 arrival gap 與 `1021.902 ms` 最大 PX4 source gap，22 次超過
+500 ms、7 次超過 1 秒，因此第一個 continuity gate 即 FAIL。依本文件停止條件，
+沒有繼續執行 2 Hz 或 20 Hz 輸入。此最小 backport 不可採用為飛行解法。
 
 ## 四、原因分級
 
@@ -433,7 +439,7 @@ stock v1.15.4 會在活著的 session 內同步停約 1 秒；20 Hz NX→PX4 非
 PX4→NX 完全停止，需重啟 Agent。
 上游 v1.18 beta 的 3169dc6 已重新加入 RX burst drain，與本機症狀高度吻合。
 先做 stock 當日基準；有 FTDI 就先隔離 ttyTHS1；再測現有 v1.15.4 d12 候選版。
-現有候選版只作診斷，不等於新版完整修正。
+現有候選版已刷入但第一個純接收 gate FAIL，只作診斷，不等於新版完整修正。
 手動 Offboard／手動 ARM 仍不能省略 >2 Hz heartbeat、loss action、RC failsafe 與 estimator。
 任何步驟出現 output 歸零、session 重建、UART error 或意外解鎖，立即停止。
 ```

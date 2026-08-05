@@ -35,7 +35,9 @@ p450-pixhawk6c-v1.15.4-xrce-rx-drain-996b1df7a1.px4
 `UXRCE_DDS_SYNCT=0` 測試都反覆出現約 1 秒同步空窗；2 Hz
 `OnboardComputerStatus` 已由 Agent 確認送入 UART，但空窗不變；提高至 20 Hz 後
 PX4→NX 輸出完全停止，需重啟 Agent 才恢復。這些結果符合飛控端 XRCE 輸入未及時
-排空的症狀，但候選韌體尚未刷入，因此仍需 A/B 驗證，不能視為已修復。
+排空的症狀。2026-08-05 候選版已刷入，但保留 `UXRCE_DDS_SYNCT=0` 的 60 秒純接收
+仍有 1005.408 ms 最大 gap、22 次超過 500 ms、7 次超過 1 秒；第一個 continuity
+gate 即 FAIL，因此沒有繼續 2 Hz／20 Hz 輸入，不能視為已修復或用於飛行。
 
 第一次刷入測試先保留 `UXRCE_DDS_SYNCT=0`，保持單一變因，依序測純訂閱、2 Hz
 非控制狀態 heartbeat 與 20 Hz 壓力；若通過再將 `UXRCE_DDS_SYNCT` 恢復為預設值

@@ -34,9 +34,14 @@ USB-only 詳細測試結束後，PX4 client 一度沒有自行恢復 DDS entitie
 對齊。43 個 DDS message types 全部一致，但實機輸出仍週期性同步停約 1 秒；詳細
 Agent 測試沒有 session close/recreate，停用 `UXRCE_DDS_SYNCT` 也沒有改善。2 Hz
 非控制 status 已到達 Agent 仍無效，20 Hz 會使 PX4 輸出停止直到 Agent 重啟。
-已依 PX4 官方 `d12a7dd11d` 建立 v1.15.4 接收排空候選韌體，尚待刷入 A/B 驗證；
-目前 XRCE continuity 與 Offboard 仍為 FAIL。詳見
+已依 PX4 官方 `d12a7dd11d` 建立 v1.15.4 接收排空候選韌體；目前 XRCE continuity
+與 Offboard 仍為 FAIL。詳見
 [`P450_PX4_V1154_XRCE_TEST_2026-08-04.md`](P450_PX4_V1154_XRCE_TEST_2026-08-04.md)。
+
+2026-08-05 已刷入上述 `996b1df7a1` 候選版。保留 `UXRCE_DDS_SYNCT=0` 的 60 秒
+純接收仍有 1005.408 ms 最大 gap、22 次超過 500 ms、7 次超過 1 秒；Agent PID
+與 topics 穩定、飛控未解鎖，但第一個 continuity gate 即 FAIL，因此未執行 2 Hz／
+20 Hz 輸入。此最小 receive-drain 候選版不能作為飛行解法。
 
 2026-08-05 已完成 PX4 v1.13.3、v1.14.3、v1.15.4、v1.16.2、v1.17.0 與
 v1.18.0-beta1 的 XRCE client 原始碼對照。v1.15.4 至 v1.17.0 仍每輪只處理一次

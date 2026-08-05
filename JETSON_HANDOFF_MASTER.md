@@ -42,8 +42,11 @@ buffer 改善。這與本機 20 Hz NX→PX4 輸入造成活 session 停止輸出
 上述結果與 PX4 官方 `d12a7dd11d` 所述的 XRCE input 每輪只處理一次、造成接收顯著
 延遲相符。已建立 v1.15.4 最小接收排空候選韌體
 `firmware/p450-pixhawk6c-v1.15.4-xrce-rx-drain-996b1df7a1.px4`，SHA-256 為
-`dbfd43085bbb4fe59744ad244a973b1243fb55d34ed36df52c9a0855be464949`；候選版尚未刷入，
-XRCE／Offboard 關卡仍為 FAIL。完整結果見 `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`。
+`dbfd43085bbb4fe59744ad244a973b1243fb55d34ed36df52c9a0855be464949`。2026-08-05
+機主已刷入此候選版；保留 `UXRCE_DDS_SYNCT=0` 的 60 秒純接收仍有 1005.408 ms
+最大 gap、22 次超過 500 ms、7 次超過 1 秒，第一關即 FAIL，因此沒有繼續 2 Hz／
+20 Hz 輸入。XRCE／Offboard 關卡仍為 FAIL。完整結果見
+`P450_PX4_V1154_XRCE_TEST_2026-08-04.md`。
 
 同日後續無槳控制檢查確認三段 RC 模式為 STAB／ALTCTL／POSCTL；POSCTL 因室內沒有有效 local/global position 與 Home 而不通過 preflight。移除發射機電池超過 20 秒後，飛控仍回報 `manual_control_signal_lost=false`，與接收機失聯 Hold 輸出相符，RC loss 關卡為 FAIL。ROS→PX4 的 `VehicleCommand` 已能由 NX 將 STAB 切至 ALTCTL，但外部 ARM 未被接受，且 Offboard 零推力心跳會間歇被判為 lost。詳細 Agent v6 記錄證明 1491 組心跳／rate setpoint 全數由 DDS 收到並寫入 UART，沒有 Agent error、warning 或 session 重建；異常已縮小到飛控端 XRCE 收件／uORB 新鮮度判定。2026-08-04 已確認 `COM_OF_LOSS_T=1.0 s`，不是 timeout 過短；PX4 uORB 內最新 heartbeat 曾落後約 0.724 秒。所有解鎖／馬達測試均被 watchdog 安全中止，飛控最終為 STAB、未解鎖、馬達未轉；詳見 `P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。
 

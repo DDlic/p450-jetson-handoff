@@ -1,5 +1,40 @@
 # P450 Pixhawk 6C 測試韌體
 
+## PX4 v1.15.4 XRCE 完整 transport 排空候選版
+
+檔案：
+
+```text
+p450-pixhawk6c-v1.15.4-xrce-full-drain-3f118ef593.px4
+```
+
+建置與封裝驗證：
+
+- 目標板：Pixhawk 6C／`PX4FMUv6C`
+- PX4 target：`px4_fmu-v6c_default`
+- 基底：官方 tag `v1.15.4`／`99c40407ffd7ac184e2d7b4b293f36f10fe561ef`
+- 修補後 source：`3f118ef593a45b9ac42ba7ac4cc6565c568ca5f1`
+- 上游依據：PX4 `3169dc6b1b17d138d1e04228e400814ed79d0e63`
+- 自製 patch：`../patches/px4-v1.15.4-uxrce-full-drain-backport.patch`
+- recursive submodules：無偏移
+- 編譯器：GNU Arm Embedded 9-2020-q2-update／GCC 9.3.1
+- clean build：`1233/1233` 成功
+- firmware `board_id`：56
+- firmware `description`：`Firmware for the PX4FMUv6C board`
+- firmware `git_identity`：`v1.15.4-1-g3f118ef593`
+- image size：1,961,772／1,966,080 bytes（FLASH 99.78%）
+- SHA-256：`cb54e73327c95f2ceb0dbd9d53c5020b9d8c76cf1c045600e6c66106576dd660`
+
+這是第一代 `996b1df7a1` 候選版失敗後的第二代診斷韌體。它以官方 v1.15.4 為
+單一基底，回移植新版 client 中與 serial 共用的低延遲 poll、`FIONREAD` bounded
+burst draining、best-effort buffer flush/retry 與 transport fd close ownership。
+沒有帶入 UDP 專用 non-blocking socket，也沒有修改 commander、控制器、failsafe、
+參數預設值或 DDS message definitions。
+
+2026-08-05 只完成 source、clean build、metadata、FLASH、SHA 與 submodule 驗證；
+尚未刷入、尚未實機 A/B，因此不得稱為已修復或飛行韌體。刷入後必須先通過 60 秒與
+10 分鐘純接收 continuity，再依 2 Hz／20 Hz 非控制輸入順序測試。
+
 ## PX4 v1.15.4 XRCE 接收排空候選版
 
 檔案：

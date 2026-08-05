@@ -51,6 +51,13 @@ A/B，但不等於新版完整修正。原因分級、FTDI transport 隔離、�
 NX CLI 停止條件見
 [`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
 
+2026-08-05 已獲機主授權建立 Phase 4 第二代候選版。以官方 v1.15.4 為單一基底，
+回移植 `3169dc6` 的 serial 共用接收排空／排程修改；clean build `1233/1233` 成功，
+`board_id=56`，image `1,961,772 / 1,966,080` bytes，SHA-256 為
+`cb54e73327c95f2ceb0dbd9d53c5020b9d8c76cf1c045600e6c66106576dd660`。韌體位於
+[`firmware/p450-pixhawk6c-v1.15.4-xrce-full-drain-3f118ef593.px4`](firmware/p450-pixhawk6c-v1.15.4-xrce-full-drain-3f118ef593.px4)，
+目前尚未刷入或實機驗證，不可稱為修復完成。
+
 同日無槳輸入方向測試仍未通過：三段 RC 模式已確認為 STAB／ALTCTL／POSCTL，但移除發射機電池後飛控沒有偵測 RC loss；NX 的 `VehicleCommand` 可切換至 ALTCTL，外部 ARM 則未被接受。Offboard 零推力心跳在 NX 本地、DDS Agent 與 UART 發送端均連續，飛控端卻間歇回報 `offboard_control_signal_lost=true`。2026-08-04 已確認 `COM_OF_LOSS_T=1.0 s`，不是 timeout 過短；PX4 uORB 內最新 heartbeat 曾落後約 0.724 秒，較符合飛控端 XRCE 收件未及時排空。所有實體馬達步驟都被 watchdog 在解鎖前中止，馬達全程未轉；完整數據見 [`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`](P450_POSTFLASH_XRCE_TEST_2026-08-03.md)。
 
 Git repository 內也保存一份可下載副本：
@@ -62,6 +69,8 @@ PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步�
 
 最新 XRCE 原因分析與下一步指引：
 [`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
+供簡報與答辯使用的完整前因後果工程時間線：
+[`P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`](P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md)。
 不要重刷系統或直接進行飛行測試。
 
 ## 本週目標（2026-07-23）
@@ -72,15 +81,16 @@ PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步�
 
 ## 閱讀順序
 
-1. `P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
-2. `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
-3. `P450_PROGRESS_2026-07-24_NEXT.md`
-4. `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`
-5. `JETSON_HANDOFF_MASTER.md`
-6. `P450_PROGRESS_2026-07-20.md`
-7. `JETSON_HANDOFF_HISTORY.md`
-8. `JETSON_HANDOFF_COMMANDS.md`
-9. `JETSON_HANDOFF_PROMPT_FOR_CODEX_CLI.md`
+1. `P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
+2. `P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
+3. `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
+4. `P450_PROGRESS_2026-07-24_NEXT.md`
+5. `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`
+6. `JETSON_HANDOFF_MASTER.md`
+7. `P450_PROGRESS_2026-07-20.md`
+8. `JETSON_HANDOFF_HISTORY.md`
+9. `JETSON_HANDOFF_COMMANDS.md`
+10. `JETSON_HANDOFF_PROMPT_FOR_CODEX_CLI.md`
 
 ## 注意
 

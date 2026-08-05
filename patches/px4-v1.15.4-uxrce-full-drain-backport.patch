@@ -1,0 +1,141 @@
+From 3f118ef593a45b9ac42ba7ac4cc6565c568ca5f1 Mon Sep 17 00:00:00 2001
+From: DDlic <DDlic@users.noreply.github.com>
+Date: Wed, 5 Aug 2026 16:36:31 +0800
+Subject: [PATCH] uxrce_dds_client: backport bounded transport draining
+
+---
+ src/modules/uxrce_dds_client/dds_topics.h.em  | 26 +++++++++++---
+ .../uxrce_dds_client/uxrce_dds_client.cpp     | 34 ++++++++++++-------
+ 2 files changed, 44 insertions(+), 16 deletions(-)
+
+diff --git a/src/modules/uxrce_dds_client/dds_topics.h.em b/src/modules/uxrce_dds_client/dds_topics.h.em
+index cade47b5fd..c68026b38b 100644
+--- a/src/modules/uxrce_dds_client/dds_topics.h.em
++++ b/src/modules/uxrce_dds_client/dds_topics.h.em
+@@ -30,7 +30,9 @@ import os
+ #include <uORB/topics/@(include).h>
+ @[end for]@
+ 
+-#define UXRCE_DEFAULT_POLL_RATE 10
++// Minimum interval (ms) between uORB updates forwarded to DDS (/fmu/out/*).
++// 4 ms ~= 250 Hz.
++#define UXRCE_DEFAULT_POLL_RATE 4
+ 
+ typedef bool (*UcdrSerializeMethod)(const void* data, ucdrBuffer& buf, int64_t time_offset);
+ 
+@@ -89,6 +91,7 @@ void SendTopicsSubs::update(uxrSession *session, uxrStreamId reliable_out_stream
+ 	int64_t time_offset_us = session->time_offset / 1000; // ns -> us
+ 
+ 	alignas(sizeof(uint64_t)) char topic_data[max_topic_size];
++	bool needs_flush = false;
+ 
+ 	for (unsigned idx = 0; idx < sizeof(send_subscriptions)/sizeof(send_subscriptions[0]); ++idx) {
+ 		if (fds[idx].revents & POLLIN) {
+@@ -104,10 +107,21 @@ void SendTopicsSubs::update(uxrSession *session, uxrStreamId reliable_out_stream
+ 
+ 				ucdrBuffer ub;
+ 				uint32_t topic_size = send_subscriptions[idx].topic_size;
+-				if (uxr_prepare_output_stream(session, best_effort_stream_id, send_subscriptions[idx].data_writer, &ub, topic_size) != UXR_INVALID_REQUEST_ID) {
+-					send_subscriptions[idx].ucdr_serialize_method(&topic_data, ub, time_offset_us);
+-					// TODO: fill up the MTU and then flush, which reduces the packet overhead
++				uint16_t req_id = uxr_prepare_output_stream(session, best_effort_stream_id,
++						  send_subscriptions[idx].data_writer, &ub, topic_size);
++
++				if (req_id == UXR_INVALID_REQUEST_ID) {
++					// Multiple simultaneous topic updates can fill the best-effort buffer.
++					// Flush once to free space and retry the current topic.
+ 					uxr_flash_output_streams(session);
++					needs_flush = false;
++					req_id = uxr_prepare_output_stream(session, best_effort_stream_id,
++								   send_subscriptions[idx].data_writer, &ub, topic_size);
++				}
++
++				if (req_id != UXR_INVALID_REQUEST_ID) {
++					send_subscriptions[idx].ucdr_serialize_method(&topic_data, ub, time_offset_us);
++					needs_flush = true;
+ 					num_payload_sent += topic_size;
+ 
+ 				} else {
+@@ -120,6 +134,10 @@ void SendTopicsSubs::update(uxrSession *session, uxrStreamId reliable_out_stream
+ 
+ 		}
+ 	}
++
++	if (needs_flush) {
++		uxr_flash_output_streams(session);
++	}
+ }
+ 
+ // Publishers for received messages
+diff --git a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+index 1412414b63..81daabdf2b 100644
+--- a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
++++ b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+@@ -187,11 +187,6 @@ bool UxrceddsClient::init()
+ 
+ void UxrceddsClient::deinit()
+ {
+-	if (_fd >= 0) {
+-		close(_fd);
+-		_fd = -1;
+-	}
+-
+ 	if (_transport_serial) {
+ 		uxr_close_serial_transport(_transport_serial);
+ 		delete _transport_serial;
+@@ -209,6 +204,7 @@ void UxrceddsClient::deinit()
+ #endif // UXRCE_DDS_CLIENT_UDP
+ 
+ 	_comm = nullptr;
++	_fd = -1;
+ }
+ 
+ UxrceddsClient::~UxrceddsClient()
+@@ -522,17 +518,20 @@ void UxrceddsClient::run()
+ 			perf_begin(_loop_perf);
+ 			perf_count(_loop_interval_perf);
+ 
+-			int orb_poll_timeout_ms = 10;
++			// Keep loop latency low, and never wait on uORB while transport data is pending.
++			int orb_poll_timeout_ms = 1;
+ 
+-			int bytes_available = 0;
++			if (_fd >= 0) {
++				px4_pollfd_struct_t transport_pollfd {};
++				transport_pollfd.fd = _fd;
++				transport_pollfd.events = POLLIN;
+ 
+-			if (ioctl(_fd, FIONREAD, (unsigned long)&bytes_available) == OK) {
+-				if (bytes_available > 10) {
++				if (px4_poll(&transport_pollfd, 1, 0) > 0) {
+ 					orb_poll_timeout_ms = 0;
+ 				}
+ 			}
+ 
+-			/* Wait for topic updates for max 10 ms */
++			/* Wait briefly for topic updates. */
+ 			int poll = px4_poll(_subs->fds, (sizeof(_subs->fds) / sizeof(_subs->fds[0])), orb_poll_timeout_ms);
+ 
+ 			/* Handle the poll results */
+@@ -551,8 +550,19 @@ void UxrceddsClient::run()
+ 				}
+ 			}
+ 
+-			// run session with 0 timeout (non-blocking)
+-			uxr_run_session_timeout(&session, 0);
++			// Drain a bounded inbound burst. FIONREAD observes transport bytes directly,
++			// including XRCE traffic that does not increment the payload counter.
++			for (int i = 0; i < 10; ++i) {
++				uxr_run_session_timeout(&session, 0);
++
++				int fd_bytes_available = 0;
++
++				if ((_fd < 0)
++				    || (ioctl(_fd, FIONREAD, (unsigned long)&fd_bytes_available) != OK)
++				    || (fd_bytes_available <= 0)) {
++					break;
++				}
++			}
+ 
+ 			// check if there are available replies
+ 			process_replies();

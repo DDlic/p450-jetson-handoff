@@ -342,7 +342,7 @@ ros2 topic pub --rate 2 \
 - kernel 新增 UART／DMA／I/O error。
 - 意外進入 Offboard、解鎖或任何馬達輸出。
 
-### Phase 4：若舊 backport 不完整，才建立第二候選版
+### Phase 4：第二候選版（2026-08-05 已完成建置，尚未刷入）
 
 不要直接把 v1.18 beta 整版刷入。以 stock v1.15.4 為單一基底，另案評估只回補
 `3169dc6` 中與 serial 共用路徑相關的修改：
@@ -352,16 +352,19 @@ ros2 topic pub --rate 2 \
 - 每輪最多 drain 10 次，以 `FIONREAD`／pending bytes 決定停止。
 - best-effort output buffer 滿載時 flush／retry。
 
-建立後必須重新驗證：
+已完成驗證：
 
-- patch diff 與來源 commit。
-- recursive submodules 沒有偏移。
-- clean build 完成。
+- patch：`patches/px4-v1.15.4-uxrce-full-drain-backport.patch`。
+- source：`3f118ef593a45b9ac42ba7ac4cc6565c568ca5f1`，基底官方 `v1.15.4`。
+- recursive submodules 沒有偏移，source tree clean。
+- clean build `1233/1233` 完成。
 - `board_id=56`、`PX4FMUv6C` metadata。
-- image 不超過 1,966,080 bytes。
-- SHA-256 與可重現 build 資訊。
+- image `1,961,772 / 1,966,080` bytes（99.78%）。
+- SHA-256：`cb54e73327c95f2ceb0dbd9d53c5020b9d8c76cf1c045600e6c66106576dd660`。
+- 韌體：`firmware/p450-pixhawk6c-v1.15.4-xrce-full-drain-3f118ef593.px4`。
 
-此階段需要另行授權；NX CLI 不得自行修改、建置、刷入或發布新韌體。
+機主已於 2026-08-05 授權建立此版。NX 沒有自行刷入飛控；實機 A/B 仍須由機主使用
+QGC 刷入後，按 Phase 3 的純接收停止規則重新開始。
 
 ## 六、手動 Offboard 開關與手動 ARM 能省略什麼
 

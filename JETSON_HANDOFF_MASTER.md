@@ -1,6 +1,6 @@
 # AMOV P450 Jetson Xavier NX 交接總覽
 
-最後更新：2026-08-04（Asia/Taipei）
+最後更新：2026-08-05（Asia/Taipei）
 
 ## 目前狀態
 
@@ -31,13 +31,21 @@ PX4 官方提交 `a1cce7e961df`（`uxrce_dds_client: optimizations and instrumen
 表示異常發生在仍連線的 client loop 內。停用 `UXRCE_DDS_SYNCT` 也沒有改善；2 Hz
 非控制 status 已到達 Agent，但空窗不變，20 Hz 更會使 PX4 輸出停止直到 Agent 重啟。
 
+2026-08-05 進一步對照 PX4 release tags 與最新上游修正：v1.15.4、v1.16.2、
+v1.17.0 的 client loop 都仍只執行一次非阻塞 session；v1.18 development 的官方
+`3169dc6` 才重新加入每輪最多 10 次的 inbound burst draining、1 ms poll 與 output
+buffer 改善。這與本機 20 Hz NX→PX4 輸入造成活 session 停止輸出的症狀高度吻合。
+現有 `d12a7dd` 候選版仍可作最小 A/B，但不等於新版完整修正。完整版本矩陣、FTDI
+隔離路徑、NX CLI 命令與停止條件見
+[`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
+
 上述結果與 PX4 官方 `d12a7dd11d` 所述的 XRCE input 每輪只處理一次、造成接收顯著
 延遲相符。已建立 v1.15.4 最小接收排空候選韌體
 `firmware/p450-pixhawk6c-v1.15.4-xrce-rx-drain-996b1df7a1.px4`，SHA-256 為
 `dbfd43085bbb4fe59744ad244a973b1243fb55d34ed36df52c9a0855be464949`；候選版尚未刷入，
 XRCE／Offboard 關卡仍為 FAIL。完整結果見 `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`。
 
-同日後續無槳控制檢查確認三段 RC 模式為 STAB／ALTCTL／POSCTL；POSCTL 因室內沒有有效 local/global position 與 Home 而不通過 preflight。移除發射機電池超過 20 秒後，飛控仍回報 `manual_control_signal_lost=false`，與接收機失聯 Hold 輸出相符，RC loss 關卡為 FAIL。ROS→PX4 的 `VehicleCommand` 已能由 NX 將 STAB 切至 ALTCTL，但外部 ARM 未被接受，且 Offboard 零推力心跳會間歇被判為 lost。詳細 Agent v6 記錄證明 1491 組心跳／rate setpoint 全數由 DDS 收到並寫入 UART，沒有 Agent error、warning 或 session 重建；異常已縮小到飛控端 XRCE 收件／uORB 新鮮度判定。高度懷疑恢復參數中的 `COM_OF_LOSS_T` 過短，但尚待 QGC 讀取確認。所有解鎖／馬達測試均被 watchdog 安全中止，飛控最終為 STAB、未解鎖、馬達未轉；詳見 `P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。
+同日後續無槳控制檢查確認三段 RC 模式為 STAB／ALTCTL／POSCTL；POSCTL 因室內沒有有效 local/global position 與 Home 而不通過 preflight。移除發射機電池超過 20 秒後，飛控仍回報 `manual_control_signal_lost=false`，與接收機失聯 Hold 輸出相符，RC loss 關卡為 FAIL。ROS→PX4 的 `VehicleCommand` 已能由 NX 將 STAB 切至 ALTCTL，但外部 ARM 未被接受，且 Offboard 零推力心跳會間歇被判為 lost。詳細 Agent v6 記錄證明 1491 組心跳／rate setpoint 全數由 DDS 收到並寫入 UART，沒有 Agent error、warning 或 session 重建；異常已縮小到飛控端 XRCE 收件／uORB 新鮮度判定。2026-08-04 已確認 `COM_OF_LOSS_T=1.0 s`，不是 timeout 過短；PX4 uORB 內最新 heartbeat 曾落後約 0.724 秒。所有解鎖／馬達測試均被 watchdog 安全中止，飛控最終為 STAB、未解鎖、馬達未轉；詳見 `P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。
 
 同日也針對 Jetson `3110000.serial` 的 460800 baud out-of-range kernel 錯誤建立 UARTB device-tree 修正。預設 DTB 現為 `/boot/dtb/p450-p3668-0001-p3509-0000-sdmmc3-wifi-uartb460800.dtb`，舊 DTB 保留為 fallback；重啟後 kernel 錯誤消失。但修正後 120 秒測試最大空窗仍為 3129 ms、28 次超過 1 秒，再次重啟後 60 秒最大空窗 3382 ms、15 次超過 1 秒。因此 DTB 修正有效排除主機設定錯誤，卻不是 XRCE session 重建的最終解法。
 

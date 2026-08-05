@@ -38,16 +38,26 @@ Agent 測試沒有 session close/recreate，停用 `UXRCE_DDS_SYNCT` 也沒有�
 目前 XRCE continuity 與 Offboard 仍為 FAIL。詳見
 [`P450_PX4_V1154_XRCE_TEST_2026-08-04.md`](P450_PX4_V1154_XRCE_TEST_2026-08-04.md)。
 
-同日無槳輸入方向測試仍未通過：三段 RC 模式已確認為 STAB／ALTCTL／POSCTL，但移除發射機電池後飛控沒有偵測 RC loss；NX 的 `VehicleCommand` 可切換至 ALTCTL，外部 ARM 則未被接受。Offboard 零推力心跳在 NX 本地、DDS Agent 與 UART 發送端均連續，飛控端卻間歇回報 `offboard_control_signal_lost=true`。目前高度懷疑 `COM_OF_LOSS_T` 過短，必須先由 QGC 讀取確認。所有實體馬達步驟都被 watchdog 在解鎖前中止，馬達全程未轉；完整數據見 [`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`](P450_POSTFLASH_XRCE_TEST_2026-08-03.md)。
+2026-08-05 已完成 PX4 v1.13.3、v1.14.3、v1.15.4、v1.16.2、v1.17.0 與
+v1.18.0-beta1 的 XRCE client 原始碼對照。v1.15.4 至 v1.17.0 仍每輪只處理一次
+session；v1.18 development 的官方 `3169dc6` 才重新加入 inbound burst draining、
+降低 poll latency 並改善 output buffer。現有 v1.15.4 `d12a7dd` 候選版可作最小
+A/B，但不等於新版完整修正。原因分級、FTDI transport 隔離、候選韌體測試順序與
+NX CLI 停止條件見
+[`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
+
+同日無槳輸入方向測試仍未通過：三段 RC 模式已確認為 STAB／ALTCTL／POSCTL，但移除發射機電池後飛控沒有偵測 RC loss；NX 的 `VehicleCommand` 可切換至 ALTCTL，外部 ARM 則未被接受。Offboard 零推力心跳在 NX 本地、DDS Agent 與 UART 發送端均連續，飛控端卻間歇回報 `offboard_control_signal_lost=true`。2026-08-04 已確認 `COM_OF_LOSS_T=1.0 s`，不是 timeout 過短；PX4 uORB 內最新 heartbeat 曾落後約 0.724 秒，較符合飛控端 XRCE 收件未及時排空。所有實體馬達步驟都被 watchdog 在解鎖前中止，馬達全程未轉；完整數據見 [`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`](P450_POSTFLASH_XRCE_TEST_2026-08-03.md)。
 
 Git repository 內也保存一份可下載副本：
 [`firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`](firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4)。
 下載後必須先依 [`firmware/SHA256SUMS`](firmware/SHA256SUMS) 驗證；安全狀態與
 刷入前提見 [`firmware/README.md`](firmware/README.md)。
 
-PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步，因此沒有獨立 `TimesyncStatus` 樣本不是額外阻塞條件。PX4→NX 輸出與 session continuity 已通過；NX→PX4 Offboard heartbeat、RC loss、GPS fix、水平定位／速度、航向、failsafe 與控制流程仍須分別排除，不得概括為雙向控制已通過。
+PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步，因此沒有獨立 `TimesyncStatus` 樣本不是額外阻塞條件。v1.14.3 ping 回補版曾通過 PX4→NX 輸出與 session continuity；目前已刷入的 stock v1.15.4 則重新在活 session 內出現約 1 秒輸出空窗，因此目前 XRCE continuity 仍為 FAIL。NX→PX4 Offboard heartbeat、RC loss、GPS fix、水平定位／速度、航向、failsafe 與控制流程也必須分別排除，不得概括為雙向控制已通過。
 
-最新下一步指引：`P450_PROGRESS_2026-07-24_NEXT.md`。不要重刷系統或直接進行飛行測試。
+最新 XRCE 原因分析與下一步指引：
+[`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
+不要重刷系統或直接進行飛行測試。
 
 ## 本週目標（2026-07-23）
 
@@ -57,13 +67,15 @@ PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步�
 
 ## 閱讀順序
 
-1. `P450_PROGRESS_2026-07-24_NEXT.md`
-2. `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`
-3. `JETSON_HANDOFF_MASTER.md`
-4. `P450_PROGRESS_2026-07-20.md`
-5. `JETSON_HANDOFF_HISTORY.md`
-6. `JETSON_HANDOFF_COMMANDS.md`
-7. `JETSON_HANDOFF_PROMPT_FOR_CODEX_CLI.md`
+1. `P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
+2. `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
+3. `P450_PROGRESS_2026-07-24_NEXT.md`
+4. `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`
+5. `JETSON_HANDOFF_MASTER.md`
+6. `P450_PROGRESS_2026-07-20.md`
+7. `JETSON_HANDOFF_HISTORY.md`
+8. `JETSON_HANDOFF_COMMANDS.md`
+9. `JETSON_HANDOFF_PROMPT_FOR_CODEX_CLI.md`
 
 ## 注意
 

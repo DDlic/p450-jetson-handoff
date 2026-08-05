@@ -1,6 +1,12 @@
 # Jetson Xavier NX 目前命令與後續作業
 
-最後更新：2026-07-23（Asia/Taipei）
+最後更新：2026-08-05（Asia/Taipei）
+
+> **目前 XRCE 排障入口**：先閱讀
+> [`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
+> 該文件已依 stock PX4 v1.15.4 實測與 v1.18 上游修正更新版本矩陣、FTDI 隔離、
+> 候選韌體 A/B、Offboard heartbeat 與停止條件；本文件下方較早的歷史命令不得用來
+> 跳過最新安全順序。
 
 目前 Jetson 已由 eMMC 成功進入 Ubuntu。以下命令是開機後驗證與 P450 後續作業，不要重新執行已完成的刷寫命令。
 

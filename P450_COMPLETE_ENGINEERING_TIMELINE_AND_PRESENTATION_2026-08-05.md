@@ -1,11 +1,12 @@
 # P450／Jetson Xavier NX 完整工程歷程與簡報答辯資料
 
-最後更新：2026-08-05（Asia/Taipei）
+最後更新：2026-08-10（Asia/Taipei）
 
 > **後續決策（2026-08-10）**：本文到 2026-08-05 為止的 v1.15.4 路線是歷史診斷
 > 過程。最終 PX4 基線已由機主指定為 v1.14.3；其他版本的有效修正必須回補至
-> v1.14.3。最新執行範圍與 NX 證據需求見
-> `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`。
+> v1.14.3。2026-08-10 實測已確認 ping 回補版 PX4→NX 10 分鐘 continuity PASS，
+> 但 NX→PX4 2 Hz 樣本新鮮度 FAIL。最新完整結果見
+> `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`。
 
 ## 0. 文件目的、證據界線與敏感資料處理
 
@@ -24,8 +25,10 @@
 原始目標是讓 AMOV P450 上的 Jetson Xavier NX 以 ROS 2 Foxy 經 Pixhawk 6C 完成一次
 自動飛行。專案先修復 NX 開機與儲存，再建立 ROS 2／PX4 通訊；通訊從「完全找錯 UART」
 推進到「可雙向傳輸但有 session 重建」，再推進到「session 穩定但飛控端對 ROS 輸入
-出現約 1 秒處理空窗」。目前已把問題縮小到 PX4 uXRCE-DDS client 的接收排空與排程，
-並完成第二代 v1.15.4 診斷韌體，尚待實機 A/B 測試。
+出現長時間接收飢餓」。2026-08-10 的 v1.14.3 ping 回補版 10 分鐘純接收通過，但
+live 2 Hz marker 在飛控端落後 58.383400 秒；目前已把問題縮小到活 session 內的 PX4
+uXRCE-DDS client 接收排空與排程。下一個 v1.14.3 receive-drain 候選版已存在，但
+尚未取得新的刷寫授權。
 
 ## 2. 最初需求與操作介面
 
@@ -353,7 +356,10 @@ SHA-256=cb54e73327c95f2ceb0dbd9d53c5020b9d8c76cf1c045600e6c66106576dd660
 
 這是診斷候選版，不是已驗證飛行韌體；必須刷入後通過 A/B 才能決定是否保留。
 
-## 17. 下一次實機測試的嚴格順序
+## 17. 當時規劃的 v1.15.4 實機順序（歷史）
+
+本節是 2026-08-05 的診斷計畫，已被 2026-08-10 的 v1.14.3 最終基線決策覆寫，
+不得直接照此刷入 v1.15.4。
 
 1. 旋翼保持拆除、機體固定、穩定供電、飛控未解鎖。
 2. QGC 確認已保存完整參數；刷入第二代韌體。
@@ -404,8 +410,10 @@ ROS publisher 約 88 Hz、最大 gap 約 14 ms；Agent reader 與 serial send �
 
 ### Q5：為什麼不直接刷 v1.18？
 
-整版升級會同時改變飛控行為、參數、messages、drivers 與安全邏輯，A/B 無法歸因。現在以
-官方 v1.15.4 單一基底，只移植與 serial stall 直接相關的上游修改，變因最少。
+整版升級會同時改變飛控行為、參數、messages、drivers 與安全邏輯，A/B 無法歸因。
+機主已固定最終基線為 v1.14.3，因此現在只允許把與接收 stall 直接相關的最小修改
+回補至 v1.14.3，再與已通過純接收的 ping-only 版本做單一變因 A/B。過去 v1.15.4
+路線只保留作根因診斷。
 
 ### Q6：第一代 drain patch 為什麼失敗？
 
@@ -414,8 +422,9 @@ ROS publisher 約 88 Hz、最大 gap 約 14 ms；Agent reader 與 serial send �
 
 ### Q7：目前可不可以飛？
 
-不可以。第二代韌體尚未實機通過；RC loss、GPS/定位、heading、preflight、Kill Switch 與
-Offboard loss 都仍需各自驗證。專案目前完成的是可測試韌體與原因收斂，不是飛行放行。
+不可以。v1.14.3 ping-only 版雖通過 10 分鐘 PX4→NX 純接收，但 2 Hz NX→PX4
+新鮮度已明確 FAIL；20 Hz 與 Offboard 因此沒有執行。RC loss、GPS／定位、heading、
+preflight、Kill Switch 與 Offboard loss 也仍需各自驗證。
 
 ## 20. 原始證據索引
 
@@ -424,6 +433,9 @@ Offboard loss 都仍需各自驗證。專案目前完成的是可測試韌體與
   `P450_PROGRESS_2026-07-24_NEXT.md`
 - v1.14.3 刷入後完整數據：`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`
 - v1.15.4 stock／第一候選：`P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
+- v1.14.3 ping-only 最終雙向驗證：
+  `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
+- 2026-08-10 原始證據：`evidence/20260810_163557_px4_v1143_ping_postflash/`
 - 根因分級與停止規則：`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
 - 可重現韌體與 SHA：`firmware/README.md`、`firmware/SHA256SUMS`
 - 原始 console 範例：`px4_uxrce_dds_console_latest.txt`
@@ -435,5 +447,20 @@ Offboard loss 都仍需各自驗證。專案目前完成的是可測試韌體與
 - 「推論」：由多層證據支持，但仍需 A/B 才能定案。
 - 「未測」：不得在簡報中說成已完成。
 
-目前最重要的表述是：已找到高度吻合的上游修正並成功回移植、建置；是否真正消除
-P450 實機的 1 秒空窗，必須等第二代韌體刷入後依既定 stopping rule 測試。
+## 22. 2026-08-10 v1.14.3 回復與雙向驗證
+
+機主依權威決策刷回 v1.14.3 ping 回補版，QGC 確認 source `f9bc66c6f3`，NX 則切回
+`px4_msgs release/1.14` 對應 graph。清除舊 ROS discovery cache 後，正式 10 分鐘
+純接收得到 42,718 筆、平均 71.196 Hz、最大 gap 38.913 ms、0 次超過 100 ms，
+Agent PID 與 restart count 不變。
+
+接著只發布 2 Hz 非控制 `OnboardComputerStatus`。PX4→NX 輸出仍穩定，但 QGC 起初
+兩次顯示 `never published`。message SHA、NX 本地 echo、Agent DataReader 與 serial
+write call 均通過後，live marker 終於在 PX4 uORB 出現；然而該樣本在 NX 仍發布時
+已落後 58.383400 秒。這個結果排除「完全斷線」，並把失敗定義得更精確：飛控端沒有
+持續即時消費 2 Hz 輸入。
+
+因此目前最重要的答辯表述是：**ping 修正解決 session continuity，卻沒有解決
+inbound freshness；2 Hz gate 已以實機證據判定 FAIL。**所有 publisher 已停止，
+20 Hz／Offboard 未測。下一個 v1.14.3 receive-drain＋ping 候選版只能在機主重新明確
+授權後刷入並做單一變因 A/B，不能把「已建置」說成「已修復」。

@@ -4,11 +4,30 @@
 
 > **目前權威決策**：最終 PX4 版本固定為 v1.14.3；v1.15.4 只作診斷，不能成為
 > 最終韌體。任何有效的 XRCE 修改都必須回補至 v1.14.3 後重新驗收。現階段唯一
-> 優先是 XRCE 雙向穩定，完成前不進行室外 GPS 或飛行測試。NX CLI 應先閱讀
-> `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md` 並只收集
-> Phase A 證據。下方 v1.15.4 內容均為歷史診斷紀錄。
+> 優先是 XRCE 雙向穩定，完成前不進行室外 GPS 或飛行測試。2026-08-10 的 Phase A、
+> 10 分鐘純接收及 2 Hz 雙向測試已完成；目前停在 PX4→NX PASS、NX→PX4 新鮮度
+> FAIL。下一個 v1.14.3 候選版尚未取得刷寫授權。下方 v1.15.4 內容均為歷史診斷紀錄。
 
 ## 目前狀態
+
+### 2026-08-10 最新通訊停止點
+
+- 實際韌體：PX4 v1.14.3，source `f9bc66c6f30d8ddcceaeba2545dc9f6d0e71faf1`，
+  `p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`。
+- 正式 10 分鐘純接收：42,718 筆、71.196 Hz、最大 gap 38.913 ms、0 次超過
+  100 ms；Agent PID 與 restart count 不變，PASS。
+- 2 Hz 非控制輸入期間，PX4→NX 輸出仍穩定（60 秒最大 gap 37.397 ms），但 QGC
+  在 NX 持續發布時看到相同 uORB marker 已落後 58.383400 秒，故雙向新鮮度 FAIL。
+- message definitions、NX 本地 publisher／DDS、Agent DataReader 與 Agent serial
+  write call 已逐層排除；PX4 最終曾收到正確 marker，因此不是完全斷線，而是活
+  session 內的接收飢餓或極端延遲。
+- 所有測試 publisher 已停止，systemd Agent 已恢復正常。未執行 20 Hz、Offboard、
+  解鎖或飛行，也未刷下一版候選韌體。
+
+完整報告：
+[`P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`](P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md)。
+原始證據：
+[`evidence/20260810_163557_px4_v1143_ping_postflash/`](evidence/20260810_163557_px4_v1143_ping_postflash/)。
 
 Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 刷寫，並已由 eMMC 成功進入 Ubuntu 圖形介面。
 

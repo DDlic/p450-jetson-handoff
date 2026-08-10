@@ -7,9 +7,19 @@
 > **2026-08-10 決策覆寫**：最終 PX4 版本固定為 **v1.14.3**。v1.15.4 與其他
 > 版本只保留作診斷及上游修正參考；任何有效修正都必須最小回補至 v1.14.3 後重新
 > 驗收。目前唯一優先是 XRCE 雙向穩定，通過前不進行室外 GPS、裝槳、解鎖或飛行。
-> NX CLI 下一輪應先依
-> [`P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`](P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md)
-> 收集只讀證據，不得直接刷入現有候選韌體。
+> Phase A 與 ping 回補版的 2 Hz 雙向驗證已完成：PX4→NX 純接收 PASS，但 NX→PX4
+> 新鮮度 FAIL。下一個 v1.14.3 receive-drain 候選版尚未取得刷寫授權；目前停在文件
+> 更新，不得自行刷機、發布 20 Hz 或執行 Offboard。
+
+2026-08-10 最新停止點：實機已刷入
+`p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`。正式 10 分鐘純接收收到
+42,718 筆、平均 71.196 Hz、最大 gap 38.913 ms、0 次超過 100 ms，Agent 無重啟，
+因此 session continuity PASS。2 Hz `/fmu/in/onboard_computer_status` 不會破壞輸出
+continuity，但 QGC 在發布仍進行時看到完全相同 marker 已落後 58.383400 秒，故
+NX→PX4 即時新鮮度 FAIL。完整前因後果、排除項目與下一步見
+[`P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`](P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md)，
+原始證據見
+[`evidence/20260810_163557_px4_v1143_ping_postflash/`](evidence/20260810_163557_px4_v1143_ping_postflash/)。
 
 Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 eMMC 完整刷寫，並成功進入 Ubuntu 圖形介面。
 
@@ -41,8 +51,8 @@ USB-only 詳細測試結束後，PX4 client 一度沒有自行恢復 DDS entitie
 對齊。43 個 DDS message types 全部一致，但實機輸出仍週期性同步停約 1 秒；詳細
 Agent 測試沒有 session close/recreate，停用 `UXRCE_DDS_SYNCT` 也沒有改善。2 Hz
 非控制 status 已到達 Agent 仍無效，20 Hz 會使 PX4 輸出停止直到 Agent 重啟。
-已依 PX4 官方 `d12a7dd11d` 建立 v1.15.4 接收排空候選韌體；目前 XRCE continuity
-與 Offboard 仍為 FAIL。詳見
+已依 PX4 官方 `d12a7dd11d` 建立 v1.15.4 接收排空候選韌體；當時 XRCE continuity
+與 Offboard 在該歷史測試點均為 FAIL。詳見
 [`P450_PX4_V1154_XRCE_TEST_2026-08-04.md`](P450_PX4_V1154_XRCE_TEST_2026-08-04.md)。
 
 2026-08-05 已刷入上述 `996b1df7a1` 候選版。保留 `UXRCE_DDS_SYNCT=0` 的 60 秒
@@ -72,7 +82,11 @@ Git repository 內也保存一份可下載副本：
 下載後必須先依 [`firmware/SHA256SUMS`](firmware/SHA256SUMS) 驗證；安全狀態與
 刷入前提見 [`firmware/README.md`](firmware/README.md)。
 
-PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步，因此沒有獨立 `TimesyncStatus` 樣本不是額外阻塞條件。v1.14.3 ping 回補版曾通過 PX4→NX 輸出與 session continuity；目前已刷入的 stock v1.15.4 則重新在活 session 內出現約 1 秒輸出空窗，因此目前 XRCE continuity 仍為 FAIL。NX→PX4 Offboard heartbeat、RC loss、GPS fix、水平定位／速度、航向、failsafe 與控制流程也必須分別排除，不得概括為雙向控制已通過。
+PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步，因此沒有獨立
+`TimesyncStatus` 樣本不是額外阻塞條件。目前實機是 v1.14.3 ping 回補版；PX4→NX
+輸出與 session continuity 已通過，但 2 Hz NX→PX4 marker 新鮮度失敗，所以整體
+XRCE 雙向關卡仍為 FAIL。RC loss、GPS fix、水平定位／速度、航向、failsafe 與
+Offboard 控制流程也必須分別排除，不得概括為雙向控制已通過。
 
 最新 XRCE 原因分析與下一步指引：
 [`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
@@ -88,17 +102,18 @@ PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步�
 
 ## 閱讀順序
 
-1. `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
-2. `P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
-3. `P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
-4. `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
-5. `P450_PROGRESS_2026-07-24_NEXT.md`
-6. `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`
-7. `JETSON_HANDOFF_MASTER.md`
-8. `P450_PROGRESS_2026-07-20.md`
-9. `JETSON_HANDOFF_HISTORY.md`
-10. `JETSON_HANDOFF_COMMANDS.md`
-11. `JETSON_HANDOFF_PROMPT_FOR_CODEX_CLI.md`
+1. `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
+2. `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
+3. `P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
+4. `P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
+5. `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
+6. `P450_PROGRESS_2026-07-24_NEXT.md`
+7. `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`
+8. `JETSON_HANDOFF_MASTER.md`
+9. `P450_PROGRESS_2026-07-20.md`
+10. `JETSON_HANDOFF_HISTORY.md`
+11. `JETSON_HANDOFF_COMMANDS.md`
+12. `JETSON_HANDOFF_PROMPT_FOR_CODEX_CLI.md`
 
 ## 注意
 

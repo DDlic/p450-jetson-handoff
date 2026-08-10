@@ -2,9 +2,10 @@
 
 > **歷史文件提示（2026-08-10）**：本文件的 v1.15.4 測試矩陣保留作診斷證據，
 > 但不再定義最終版本。機主已指定最終 PX4 基線為 v1.14.3，且任何有效修改都必須
-> 回補至 v1.14.3 後重測。目前請先依
-> `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md` 執行
-> Phase A 只讀收證，不得直接執行本文件中的候選韌體刷寫步驟。
+> 回補至 v1.14.3 後重測。Phase A 與 ping-only 版的 2 Hz 驗證已於 2026-08-10
+> 完成：PX4→NX continuity PASS，NX→PX4 freshness FAIL。完整結果見
+> `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`；不得直接執行本文件中的
+> v1.15.4 候選韌體刷寫步驟。
 
 本文件供 Jetson Xavier NX 本機 CLI 接手目前的 PX4／ROS 2 Foxy／uXRCE-DDS
 排障工作。內容以 repository 實機紀錄、PX4 各 release tag 原始碼與官方文件交叉
@@ -27,9 +28,10 @@ Linux、ROS 2 與 Micro XRCE-DDS Agent；真正需要同時匹配的是：
 4. 與韌體完全一致的 `px4_msgs` definitions。
 5. `/dev/ttyTHS1`、AllSpark UART0、TELEM2 的實體雙向傳輸。
 
-目前 ROS 2 Foxy＋Agent v2.4.2 是 PX4 官方相容表指定的組合；v1.15.4 的 43 個
-DDS message types 也已逐一比對為完全一致。因此 Agent major version 與
-`px4_msgs` mismatch 都不是首要嫌疑。
+目前 ROS 2 Foxy＋Agent v2.4.2 是 PX4 官方相容表指定的組合；當前 v1.14.3 的
+`OnboardComputerStatus.msg` 已逐檔確認與 NX `px4_msgs release/1.14` 完全一致，
+過去 v1.15.4 的 43 個 DDS message types 也曾逐一比對。因此 Agent major version
+與 `px4_msgs` mismatch 都不是首要嫌疑。
 
 ## 二、目前不可混淆的實機基線
 
@@ -61,15 +63,26 @@ PX4 transport: /dev/ttyTHS1，460800 baud，8N1
 
 ```text
 Flight controller: Pixhawk 6C／PX4FMUv6C
-PX4: v1.15.4 RX-drain 最小候選版（2026-08-05 已刷入）
-source: 996b1df7a10a35b3e3534df9c5629f3675c7cab0
-firmware SHA-256: dbfd43085bbb4fe59744ad244a973b1243fb55d34ed36df52c9a0855be464949
-px4_msgs: release/1.15
-px4_msgs commit: a1045ec4feb6d709bdecaf3895f1d5b43a5dabb8
-UXRCE_DDS_SYNCT: 0（只為診斷；完成 A/B 後必須恢復 1）
+PX4: v1.14.3 session-ping 回補版（2026-08-10 已確認）
+source: f9bc66c6f30d8ddcceaeba2545dc9f6d0e71faf1
+firmware SHA-256: cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd
+px4_msgs: release/1.14 definitions
+UXRCE_DDS_CFG: 102
+SER_TEL2_BAUD: 460800
+MAV_1_CONFIG: 0
+UXRCE_DDS_PRT / UXRCE_DDS_SYNCT: 此 v1.14.3 build 無此參數
 ```
 
-stock v1.15.4 實測：
+當前 v1.14.3 實測：
+
+- 10 分鐘純接收：42,718 筆、平均 71.196 Hz、最大 gap 38.913 ms、0 次超過
+  100 ms；Agent PID／restart count 不變，PASS。
+- 2 Hz 非控制輸入不會破壞 PX4→NX continuity，但 PX4 uORB 在 active publication
+  時的最新相同 marker 已落後 58.383400 秒，雙向 freshness FAIL。
+- live marker 曾正確進入 PX4 uORB，因此不是 TX 方向完全斷路；問題是沒有持續即時接收。
+- 依停止規則未執行 20 Hz 或 Offboard。
+
+以下是歷史 stock v1.15.4 實測，不是當前實機狀態：
 
 - 60 秒純接收：最大 gap `1014.823 ms`，15 次超過 500 ms，FAIL。
 - 多個 `/fmu/out/*` topic 與 PX4 source timestamp 同時停約 1 秒。
@@ -157,6 +170,8 @@ output buffer 修改。
 - 上游兩次提交都直接描述單次 session／高 inbound load 引起的 delay 或 stall。
 - Offboard heartbeat 在 NX publisher、DDS DataReader 與 Agent serial send 都連續，
   但 PX4 uORB 最新樣本曾落後約 `0.724 s`。
+- 2026-08-10 v1.14.3 live 2 Hz marker 已證明可偶爾到達 uORB，但在發布仍進行時
+  落後 `58.383400 s`，直接證明活 session 內的 inbound freshness 失敗。
 
 ### B. Xavier NX `ttyTHS1`／DMA／實體 TX 路徑：中等機率
 
@@ -164,18 +179,23 @@ Agent log 只證明應用程式已把資料交給 serial transport，不能證�
 到達 Pixhawk。NVIDIA 的 `ttyTHS*` 是 Tegra DMA-capable UART，Xavier NX／L4T R35
 也有 460800 與 UART DMA 相關案例。
 
-反證是：UART clock 容差已修正、kernel 不再報錯，而且 v1.14.3 ping 回補版曾在同一
-條線完成 10 分鐘穩定 PX4→NX 輸出。因此這條路徑仍須隔離測試，但不是第一順位結論。
+反證是：UART clock 容差已修正、kernel 不再報錯，v1.14.3 ping 回補版在同一條線完成
+10 分鐘穩定 PX4→NX 輸出，而且 live NX marker 最終曾到達 PX4 uORB。因此 TX 方向
+不是完全斷路；未做示波器／FTDI 電氣層量測前仍不能百分之百排除 UART timing，但它
+已不是第一順位結論。
 
 ### C. Agent／Fast DDS／message mismatch：低機率
 
 - Foxy 對應 Agent v2.4.2，符合 PX4 官方版本表。
 - v1.15.4 的 43 個 DDS message types 全部一致。
 - entities 與 43 個 topics 可以完整建立。
+- 當前 v1.14.3 的 marker message definitions SHA 相同，NX 本地 echo 與 Agent
+  DataReader 均成功。
 
 ### D. `UXRCE_DDS_SYNCT`：目前已被實測降低
 
-停用後問題仍存在。不得把 `UXRCE_DDS_SYNCT=0` 留作最終飛行設定。
+歷史 v1.15.4 測試中停用後問題仍存在；當前 v1.14.3 build 沒有這個參數。因此不能
+把它當成本輪可調整的解法，也不得把歷史診斷值誤寫為當前設定。
 
 ### E. Offboard／RC 設定：獨立且仍會阻止飛行
 
@@ -442,13 +462,14 @@ failsafe 與 Offboard setpoint 測試；不能把它稱為 XRCE 已修復。
 ## 十、交接時的最短摘要
 
 ```text
-目前飛控是 stock PX4 v1.15.4，UXRCE_DDS_SYNCT=0 只是診斷值。
-Agent 2.4.2 與 px4_msgs release/1.15 已匹配，message mismatch 已排除。
-stock v1.15.4 會在活著的 session 內同步停約 1 秒；20 Hz NX→PX4 非控制輸入會讓
-PX4→NX 完全停止，需重啟 Agent。
-上游 v1.18 beta 的 3169dc6 已重新加入 RX burst drain，與本機症狀高度吻合。
-先做 stock 當日基準；有 FTDI 就先隔離 ttyTHS1；再測現有 v1.15.4 d12 候選版。
-現有候選版已刷入但第一個純接收 gate FAIL，只作診斷，不等於新版完整修正。
+目前飛控是 PX4 v1.14.3 session-ping 回補版 f9bc66c6f3。
+10 分鐘 PX4→NX 純接收最大 gap 38.913 ms、0 次超過 100 ms，continuity PASS。
+2 Hz NX→PX4 marker 可偶爾進入 uORB，但 active publication 時最新樣本落後
+58.383400 秒，freshness FAIL；這不是完全斷線，而是接收飢餓／極端延遲。
+message mismatch、NX 本地 DDS 與 Agent DataReader 已排除；Agent serial write call
+也有完整紀錄，但未做獨立電氣量測。
+20 Hz 與 Offboard 因 2 Hz gate 失敗而未測；所有測試 publisher 已停止。
+下一個 v1.14.3 receive-drain＋ping 候選版尚未取得新的刷寫授權。
 手動 Offboard／手動 ARM 仍不能省略 >2 Hz heartbeat、loss action、RC failsafe 與 estimator。
 任何步驟出現 output 歸零、session 重建、UART error 或意外解鎖，立即停止。
 ```

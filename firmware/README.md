@@ -2,9 +2,9 @@
 
 > **2026-08-10 決策覆寫**：P450 的最終 PX4 基線固定為 v1.14.3。下方 v1.15.4
 > 韌體全部只保留作歷史診斷與 backport 參考，不得因列在前面就視為下一個應刷版本。
-> 目前先依
-> `../P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
-> 收集只讀證據；任何刷寫都需重新取得機主明確授權。
+> 目前實機是 v1.14.3 ping 回補版：10 分鐘 PX4→NX continuity PASS，但 2 Hz
+> NX→PX4 freshness FAIL（live marker 落後 58.383400 秒）。下方 v1.14.3
+> receive-drain＋ping 候選版尚未取得刷寫授權；任何刷寫都需機主重新明確同意。
 
 ## PX4 v1.15.4 XRCE 完整 transport 排空候選版
 
@@ -154,7 +154,9 @@ p450-pixhawk6c-v1.14.3-xrce-rx-drain-ping-fix-49049d8555.px4
 2026-08-04 的刷入前診斷已確認 `COM_OF_LOSS_T=1.0 s`，不是 timeout 設得過短；
 NX 以 100 Hz 發送時，PX4 uORB 內最新 `offboard_control_mode` 曾落後約 0.724 秒，
 與上述官方修補的問題描述一致。此韌體已完整編譯並通過 SHA-256 檢查，但尚待刷入後
-以未解鎖、零推力 heartbeat 驗證，因此目前標記為候選版，不可直接裝槳飛行。
+驗證。2026-08-10 ping-only 版的 live 2 Hz marker 又在 PX4 uORB 落後
+58.383400 秒，使此候選版成為下一個合理的單一變因 A/B；但它**尚未取得新的刷寫
+授權**，目前只可列為候選，不可自動刷入或直接裝槳飛行。
 
 ## XRCE session ping 回補版
 
@@ -184,8 +186,13 @@ XRCE session ping 直接相關的最小回補。實際 patch 位於
 參數備份、刷入與參數恢復；10 分鐘 XRCE 純訂閱測試最大 gap 56.263 ms、
 0 次超過 100 ms，120 秒詳細 Agent 測試沒有 session close/recreate。
 
-此結果代表目前地面條件下的 XRCE 通訊穩定性通過，不代表 GPS、preflight、
-failsafe、Offboard 或飛行安全已通過。
+2026-08-10 再次刷入並核對 source 後，正式 10 分鐘純接收最大 gap 38.913 ms、
+0 次超過 100 ms，session continuity 再次 PASS；但 2 Hz NX→PX4 active stream 的
+最新 uORB marker 落後 58.383400 秒，因此此版本的**雙向新鮮度 FAIL**。20 Hz 與
+Offboard 依停止規則未測。完整結果見
+`../P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`。
+
+此結果不代表 GPS、preflight、failsafe、Offboard 或飛行安全已通過。
 
 若日後重刷，必須：
 
@@ -195,4 +202,5 @@ failsafe、Offboard 或飛行安全已通過。
 4. 刷入後核對 airframe、校正、RC、安全與 failsafe 參數。
 5. 先做至少 10 分鐘純訂閱地面測試，不可直接解鎖或進入 Offboard。
 
-完整測試結果見 `../P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。
+2026-08-03 初次結果見 `../P450_POSTFLASH_XRCE_TEST_2026-08-03.md`；2026-08-10
+雙向結果見 `../P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`。

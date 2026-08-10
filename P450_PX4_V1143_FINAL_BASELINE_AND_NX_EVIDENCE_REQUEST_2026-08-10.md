@@ -41,10 +41,26 @@ SHA-256: cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd
 - 120 秒 Agent lifecycle 只有一次 create／established，沒有 close／delete。
 - 這證明 v1.14.3 原始版的 session 誤判死亡問題可由 session-ping 回補消除。
 
-目前只能把這項結果稱為「PX4→NX 純接收與 session continuity 通過」。它尚未完整
-證明 NX→PX4 在 2 Hz、20 Hz 與 Offboard heartbeat 下都穩定。
+2026-08-10 重新確認相同韌體後，正式 10 分鐘純接收收到 42,718 筆，平均
+71.196 Hz，最大 gap 38.913 ms，0 次超過 100 ms；Agent PID 與 restart count
+全程不變。這再次確認「PX4→NX 純接收與 session continuity」為 PASS。
 
-### 3.2 只作診斷的部分
+### 3.2 2026-08-10 的 2 Hz 雙向結果
+
+2 Hz `/fmu/in/onboard_computer_status` 輸入期間，PX4→NX 60 秒輸出仍維持
+71.214 Hz、最大 gap 37.397 ms，沒有超過 100 ms 的 gap。但分層驗證得到：
+
+- PX4 與 NX 的 message definitions SHA 完全相同，source 無 diff。
+- NX 本地 subscriber 能收到所有 marker。
+- Agent v5 trace 收到 6/6 marker，並出現 6/6 對應 serial write call，無 error。
+- PX4 uORB 最終曾收到正確 live marker，排除方向完全斷線或永遠無法反序列化。
+- NX 仍以 2 Hz 發布時，PX4 最新 marker 已落後 58.383400 秒。
+
+因此 2 Hz NX→PX4 即時新鮮度為 **FAIL**，目前最符合飛控端 XRCE 收件飢餓或極端
+延遲。20 Hz 與 Offboard 依停止規則未執行。完整報告見
+[`P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`](P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md)。
+
+### 3.3 只作診斷的部分
 
 v1.15.4 stock 與第一代 receive-drain 候選版都曾在 session 未重建、Agent PID 穩定的
 狀態下出現約 1 秒同步空窗；20 Hz 輸入曾使 PX4→NX 輸出停止，需重啟 Agent 才恢復。
@@ -57,7 +73,7 @@ v1.15.4 stock 與第一代 receive-drain 候選版都曾在 session 未重建、
 `p450-pixhawk6c-v1.14.3-xrce-rx-drain-ping-fix-49049d8555.px4` 已完成建置，
 但沒有足夠實機驗收紀錄，仍只是候選版，不得直接宣稱成功。
 
-### 3.3 `gyro_clipping` 的位置
+### 3.4 `gyro_clipping` 的位置
 
 v1.14.3 `VehicleIMU.cpp` 沒有正確設定及重置 `delta_angle_clipping`，可能使 ROS 2
 `SensorCombined.gyro_clipping` 出現未初始化或殘留值。這是單一狀態欄位問題，
@@ -67,22 +83,24 @@ v1.14.3 `VehicleIMU.cpp` 沒有正確設定及重置 `delta_angle_clipping`，�
 UART payload 是否損壞。XRCE 雙向穩定後，再把初始化修正獨立回補至 v1.14.3 並做
 回歸測試。
 
-## 4. 尚待確認的關鍵事實
+## 4. 2026-08-10 已確認的關鍵事實
 
-開始任何刷寫或參數修改前，必須取得以下證據：
+1. QGC `ver all` 確認實機為 PX4 1.14.3、source
+   `f9bc66c6f30d8ddcceaeba2545dc9f6d0e71faf1`、Pixhawk 6C。
+2. `SYS_AUTOSTART=4001`、`UXRCE_DDS_CFG=102`、`SER_TEL2_BAUD=460800`、
+   `MAV_1_CONFIG=0`；此 build 沒有 `UXRCE_DDS_PRT` 與 `UXRCE_DDS_SYNCT`。
+3. Agent v2.4.2 由 `p450-micro-xrce-agent.service` 管理，以 `/dev/ttyTHS1`、
+   460800 baud 運行，且只有一個 UART 持有者。
+4. 清除舊 ROS daemon discovery cache 後，graph 為 13 個 `/fmu/in/*`、10 個
+   `/fmu/out/*`，`SensorCombined` 只有一個 publisher。
+5. 10 分鐘 PX4→NX continuity PASS；2 Hz NX→PX4 freshness FAIL。
+6. 本輪 raw evidence 已保存於
+   [`evidence/20260810_163557_px4_v1143_ping_postflash/`](evidence/20260810_163557_px4_v1143_ping_postflash/)。
 
-1. Pixhawk 目前實際 firmware version、source hash 與 board 資訊。
-2. `UXRCE_DDS_CFG`、`UXRCE_DDS_PRT`、`UXRCE_DDS_SYNCT`、`SER_TEL2_BAUD`、
-   `MAV_1_CONFIG` 的目前值。
-3. NX 上 Agent 版本、systemd PID／restart count、唯一 UART 持有者及啟動參數。
-4. NX ROS workspace 中 `px4_msgs`、`px4_ros_com` 的實際 branch、commit 與 dirty 狀態。
-5. `/fmu/out/sensor_combined` 的 publisher、QoS、65 秒到達 gap 與測試前後 Agent lifecycle。
-6. 當前 kernel boot 內是否新增 UART、DMA、overrun、framing 或 I/O error。
+## 5. 給 NX Codex CLI 的 Phase A：只讀證據收集（已完成，保留供重現）
 
-文件目前對飛控是 stock v1.15.4 或 `996b1df7a1` 候選版有互相矛盾的歷史敘述，
-因此不得只引用 Markdown 判定實機版本，必須以新的 `ver all` 輸出為準。
-
-## 5. 給 NX Codex CLI 的 Phase A：只讀證據收集
+本節命令已於 2026-08-10 執行並產生上述 evidence。除非日後需要建立新的同條件基準，
+不要把它誤認為目前待辦，也不要自動重跑會影響 Agent 或 discovery 的步驟。
 
 ### 5.1 停止條件
 
@@ -255,18 +273,18 @@ git diff -- evidence/
 確認沒有密碼、token、private key、大型 raw log 或無關個資後，才提交及推送。不得在
 同一提交內刷韌體、改 PX4 參數、切 ROS branch 或加入主動發布測試。
 
-## 6. 收到 Phase A 證據後的測試順序
+## 6. Phase A 後的實際結果與下一順序
 
-以下不是 Phase A 的立即執行命令，必須先審查證據並由機主再次確認：
-
-1. 以 v1.14.3 session-ping 回補版與 `px4_msgs release/1.14` 建立乾淨基準。
-2. 先做 10 分鐘純接收：session/topic/PID 穩定，最大 gap 小於 100 ms，
-   0 次超過 100 ms。
-3. 再做 2 Hz 非控制輸入，確認 PX4→NX continuity 不退化。
-4. 再做 20 Hz 非控制壓力，確認輸入停止後不需重啟 Agent 即可維持／恢復輸出。
-5. 最後才做未解鎖、零推力的 Offboard heartbeat／uORB 新鮮度測試。
-6. 若 session-ping 版仍在輸入壓力下失敗，才評估將必要的 receive-drain／poll 修正
-   最小回補到 v1.14.3；一次只改一組可解釋的變因。
+1. v1.14.3 session-ping 回補版與 `px4_msgs release/1.14` 乾淨基準：**完成**。
+2. 10 分鐘純接收：**PASS**，最大 gap 38.913 ms，0 次超過 100 ms。
+3. 2 Hz 非控制輸入對 PX4→NX continuity：**PASS**，但 PX4 端輸入新鮮度
+   **FAIL**，marker 落後 58.383400 秒。
+4. 20 Hz 非控制壓力與 Offboard：因上一關失敗，**未測且目前禁止**。
+5. 下一個單一變因 A/B 是 v1.14.3 session-ping＋receive-drain 候選版
+   `p450-pixhawk6c-v1.14.3-xrce-rx-drain-ping-fix-49049d8555.px4`。它尚未取得本次
+   刷寫授權，不得自行執行。
+6. 機主日後若明確授權刷入，必須重新核對 SHA、韌體身份與參數，再依乾淨 graph、
+   純接收、live 2 Hz freshness 的順序做 A/B；通過前仍不得進入 20 Hz。
 7. XRCE 雙向全部通過後，才獨立加入 `gyro_clipping` 初始化修正並回歸。
 
 任一階段若出現 session close/recreate、Agent restart、topic 消失、輸出完全停止、

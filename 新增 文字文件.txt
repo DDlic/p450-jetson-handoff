@@ -8,3 +8,145 @@ param show MAV_1_CONFIG
 uxrce_dds_client status
 listener vehicle_status 1
 listener failsafe_flags 1
+
+
+nsh: sysinit: fopen failed: No such file or directory
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> ver all
+HW arch: PX4_FMU_V6C
+HW type: V6C000000
+HW version: 0x000
+HW revision: 0x000
+PX4 git-hash: f9bc66c6f30d8ddcceaeba2545dc9f6d0e71faf1
+PX4 version: 1.14.3 0 (17695488)
+PX4 git-branch: p450-v1.14.3-xrce-fix
+OS: NuttX
+OS version: Release 11.0.0 (184549631)
+OS git-hash: de41e7feaeffaec3ce65327e9569e8fdb553ca3d
+Build datetime: Jul 29 2026 16:23:47
+Build uri: localhost
+Build variant: default
+Toolchain: GNU GCC, 9.3.1 20200408 (release)
+PX4GUID: 000600000000323534333131510500280019
+MCU: STM32H7[4|5]xxx, rev. V
+nsh> param show SYS_AUTOSTART
+Symbols: x = used, + = saved, * = unsaved
+x + SYS_AUTOSTART [961,1463] : 4001
+
+ 1093/1813 parameters used.
+nsh> param show UXRCE_DDS_CFG
+Symbols: x = used, + = saved, * = unsaved
+x + UXRCE_DDS_CFG [1084,1768] : 102
+
+ 1093/1813 parameters used.
+nsh> param show UXRCE_DDS_PRT
+Symbols: x = used, + = saved, * = unsaved
+
+ 1093/1813 parameters used.
+nsh> param show UXRCE_DDS_SYNCT
+Symbols: x = used, + = saved, * = unsaved
+
+ 1093/1813 parameters used.
+nsh> param show SER_TEL2_BAUD
+Symbols: x = used, + = saved, * = unsaved
+x + SER_TEL2_BAUD [959,1433] : 460800
+
+ 1093/1813 parameters used.
+nsh> param show MAV_1_CONFIG
+Symbols: x = used, + = saved, * = unsaved
+x   MAV_1_CONFIG [529,907] : 0
+
+ 1093/1813 parameters used.
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 34904 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+nsh> listener vehicle_status 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 1543540539 (0.473779 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 7283115
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 0
+    latest_disarming_reason: 0
+    nav_state_user_intention: 4
+    nav_state: 4
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    gcs_connection_lost: False
+    gcs_connection_lost_counter: 1
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: True
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    avoidance_system_required: False
+    avoidance_system_valid: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: False
+
+nsh> listener failsafe_flags 1
+
+TOPIC: failsafe_flags
+ failsafe_flags
+    timestamp: 1549623718 (0.131362 seconds ago)
+    mode_req_angular_velocity: 8311870
+    mode_req_attitude: 8310846
+    mode_req_local_alt: 8261694
+    mode_req_local_position: 8257592
+    mode_req_local_position_relaxed: 4
+    mode_req_global_position: 56
+    mode_req_mission: 8
+    mode_req_offboard_signal: 16384
+    mode_req_home_position: 32
+    mode_req_wind_and_flight_time_compliance: 2621464
+    mode_req_prevent_arming: 3944480
+    mode_req_manual_control: 33799
+    mode_req_other: 0
+    angular_velocity_invalid: False
+    attitude_invalid: False
+    local_altitude_invalid: False
+    local_position_invalid: True
+    local_position_invalid_relaxed: True
+    local_velocity_invalid: True
+    global_position_invalid: True
+    auto_mission_missing: True
+    offboard_control_signal_lost: True
+    home_position_invalid: True
+    manual_control_signal_lost: True
+    gcs_connection_lost: False
+    battery_warning: 0
+    battery_low_remaining_time: False
+    battery_unhealthy: False
+    primary_geofence_breached: False
+    mission_failure: False
+    vtol_fixed_wing_system_failure: False
+    wind_limit_exceeded: False
+    flight_time_limit_exceeded: False
+    local_position_accuracy_low: False
+    fd_critical_failure: False
+    fd_esc_arming_failure: False
+    fd_imbalanced_prop: False
+    fd_motor_failure: False
+
+nsh> 

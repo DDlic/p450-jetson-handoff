@@ -1,2 +1,34 @@
 uxrce_dds_client status
 listener onboard_computer_status 5
+
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 34551 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+nsh> listener onboard_computer_status 5
+
+TOPIC: onboard_computer_status
+ onboard_computer_status
+    timestamp: 2960128064 (58.383400 seconds ago)
+    uptime: 515151
+    ram_usage: 0
+    ram_total: 0
+    storage_type: [0, 0, 0, 0]
+    storage_usage: [0, 0, 0, 0]
+    storage_total: [0, 0, 0, 0]
+    link_type: [0, 0, 0, 0, 0, 0]
+    link_tx_rate: [0, 0, 0, 0, 0, 0]
+    link_rx_rate: [0, 0, 0, 0, 0, 0]
+    link_tx_max: [0, 0, 0, 0, 0, 0]
+    link_rx_max: [0, 0, 0, 0, 0, 0]
+    fan_speed: [0, 0, 0, 0]
+    type: 6
+    cpu_cores: [0, 0, 0, 0, 0, 0, 0, 0]
+    cpu_combined: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    gpu_cores: [0, 0, 0, 0]
+    gpu_combined: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    temperature_board: 0
+    temperature_core: [0, 0, 0, 0, 0, 0, 0, 0]
+
+nsh> 

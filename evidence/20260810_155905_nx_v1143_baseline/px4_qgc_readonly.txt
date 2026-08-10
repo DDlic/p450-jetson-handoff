@@ -1,26 +1,140 @@
-PARTIAL QGC EVIDENCE
-Source: repository file "新增 文字文件.txt" added in main commit 6c82b9060d84e5d8b1af441598e9011ec1d39411.
-The remaining Phase A commands listed below still require fresh QGC MAVLink Console output.
-
-nsh: sysinit: fopen failed: No such file or directory
-
-NuttShell (NSH) NuttX-11.0.0
+nsh> ver all
+HW arch: PX4_FMU_V6C
+HW type: V6C000000
+HW version: 0x000
+HW revision: 0x000
+PX4 git-hash: 996b1df7a10a35b3e3534df9c5629f3675c7cab0
+PX4 version: 1.15.4 0 (17761280)
+PX4 git-branch: p450-v1.15.4-xrce-rx-drain
+OS: NuttX
+OS version: Release 11.0.0 (184549631)
+OS git-hash: 5d74bc138955e6f010a38e0f87f34e9a9019aecc
+Build datetime: Aug  4 2026 15:50:33
+Build uri: localhost
+Build variant: default
+Toolchain: GNU GCC, 9.3.1 20200408 (release)
+PX4GUID: 000600000000323534333131510500280019
+MCU: STM32H7[4|5]xxx, rev. V
 nsh> uxrce_dds_client status
 INFO  [uxrce_dds_client] Running, connected
 INFO  [uxrce_dds_client] Using transport:     serial
-INFO  [uxrce_dds_client] Payload tx:          63978 B/s
+INFO  [uxrce_dds_client] Payload tx:          64647 B/s
 INFO  [uxrce_dds_client] Payload rx:          0 B/s
 INFO  [uxrce_dds_client] timesync converged: false
-uxrce_dds_client: cycle: 78969 events, 513487705us elapsed, 6502.40us avg, min 85us max 1012003us 47973.324us rms
-uxrce_dds_client: cycle interval: 78970 events, 6503.40us avg, min 85us max 1012004us 47973.000us rms
-nsh>
+uxrce_dds_client: cycle: 343152 events, 2228642369us elapsed, 6494.62us avg, min 85us max 1012003us 47941.008us rms
+uxrce_dds_client: cycle interval: 343153 events, 6495.68us avg, min 85us max 1012004us 47940.988us rms
+nsh> param show UXRCE_DDS_CFG
+Symbols: x = used, + = saved, * = unsaved
+x + UXRCE_DDS_CFG [1111,1894] : 102
 
-PENDING FRESH OUTPUT:
-- ver all
-- param show UXRCE_DDS_CFG
-- param show UXRCE_DDS_PRT
-- param show UXRCE_DDS_SYNCT
-- param show SER_TEL2_BAUD
-- param show MAV_1_CONFIG
-- listener vehicle_status 1
-- listener failsafe_flags 1
+ 1122/1942 parameters used.
+nsh> param show UXRCE_DDS_PRT
+Symbols: x = used, + = saved, * = unsaved
+
+ 1122/1942 parameters used.
+nsh> param show UXRCE_DDS_SYNCT
+Symbols: x = used, + = saved, * = unsaved
+x + UXRCE_DDS_SYNCT [1116,1899] : 0
+
+ 1122/1942 parameters used.
+nsh> param show SER_TEL2_BAUD
+Symbols: x = used, + = saved, * = unsaved
+x + SER_TEL2_BAUD [982,1490] : 460800
+
+ 1122/1942 parameters used.
+nsh> param show MAV_1_CONFIG
+Symbols: x = used, + = saved, * = unsaved
+x   MAV_1_CONFIG [539,949] : 0
+
+ 1122/1942 parameters used.
+nsh> listener vehicle_status 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 2300756119 (0.222816 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 296542
+    valid_nav_states_mask: 2147411071
+    can_set_nav_states_mask: 8307839
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 0
+    latest_disarming_reason: 0
+    nav_state_user_intention: 4
+    nav_state: 4
+    executor_in_charge: 0
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    failsafe_defer_state: 0
+    gcs_connection_lost: False
+    gcs_connection_lost_counter: 0
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: True
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    avoidance_system_required: False
+    avoidance_system_valid: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: False
+
+nsh> listener failsafe_flags 1
+
+TOPIC: failsafe_flags
+ failsafe_flags
+    timestamp: 2304360336 (0.406375 seconds ago)
+    mode_req_angular_velocity: 8311934
+    mode_req_attitude: 8310910
+    mode_req_local_alt: 8261758
+    mode_req_local_position: 8257592
+    mode_req_local_position_relaxed: 68
+    mode_req_global_position: 56
+    mode_req_mission: 8
+    mode_req_offboard_signal: 16384
+    mode_req_home_position: 32
+    mode_req_wind_and_flight_time_compliance: 2621464
+    mode_req_prevent_arming: 3944480
+    mode_req_manual_control: 33863
+    mode_req_other: 2139095040
+    angular_velocity_invalid: False
+    attitude_invalid: False
+    local_altitude_invalid: False
+    local_position_invalid: True
+    local_position_invalid_relaxed: True
+    local_velocity_invalid: True
+    global_position_invalid: True
+    auto_mission_missing: True
+    offboard_control_signal_lost: True
+    home_position_invalid: True
+    manual_control_signal_lost: True
+    gcs_connection_lost: False
+    battery_warning: 0
+    battery_low_remaining_time: False
+    battery_unhealthy: False
+    geofence_breached: False
+    mission_failure: False
+    vtol_fixed_wing_system_failure: False
+    wind_limit_exceeded: False
+    flight_time_limit_exceeded: False
+    local_position_accuracy_low: False
+    fd_critical_failure: False
+    fd_esc_arming_failure: False
+    fd_imbalanced_prop: False
+    fd_motor_failure: False
+
+nsh>

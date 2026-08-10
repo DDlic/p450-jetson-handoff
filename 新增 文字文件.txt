@@ -1,0 +1,12 @@
+nsh: sysinit: fopen failed: No such file or directory
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport:     serial
+INFO  [uxrce_dds_client] Payload tx:          63978 B/s
+INFO  [uxrce_dds_client] Payload rx:          0 B/s
+INFO  [uxrce_dds_client] timesync converged: false
+uxrce_dds_client: cycle: 78969 events, 513487705us elapsed, 6502.40us avg, min 85us max 1012003us 47973.324us rms
+uxrce_dds_client: cycle interval: 78970 events, 6503.40us avg, min 85us max 1012004us 47973.000us rms
+nsh> 

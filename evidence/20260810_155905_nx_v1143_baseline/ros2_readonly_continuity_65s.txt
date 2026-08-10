@@ -1,0 +1,26 @@
+2026-08-10T16:00:44+08:00
+
+--- service before ---
+MainPID=7017
+NRestarts=0
+
+--- readonly continuity ---
+elapsed_s=65.003
+messages=2647
+average_hz=40.721
+median_gap_ms=1.131
+max_gap_ms=1023.395
+gaps_over_100ms=23
+gaps_over_500ms=23
+gaps_over_1s=10
+result=FAIL reason=max_gap_exceeded threshold_ms=100.000
+
+--- service after ---
+MainPID=7017
+NRestarts=0
+
+--- recent agent journal ---
+-- Logs begin at Wed 2023-11-22 05:10:22 CST, end at Mon 2026-08-10 16:01:00 CST. --
+-- No entries --
+
+monitor_exit=2

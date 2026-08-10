@@ -1,0 +1,125 @@
+2026-08-10T15:59:47+08:00
+
+--- px4_msgs source (documented path) ---
+fatal: cannot change to '/home/p450/p450_ros2_ws/src/px4_msgs': No such file or directory
+fatal: cannot change to '/home/p450/p450_ros2_ws/src/px4_msgs': No such file or directory
+
+--- px4_ros_com source (documented path) ---
+fatal: cannot change to '/home/p450/p450_ros2_ws/src/px4_ros_com': No such file or directory
+fatal: cannot change to '/home/p450/p450_ros2_ws/src/px4_ros_com': No such file or directory
+
+--- installed ROS packages ---
+/home/p450/p450_ros2_ws/install/px4_msgs
+/home/p450/p450_ros2_ws/install/px4_ros_com
+# Sensor readings in SI-unit form.
+# These fields are scaled and offset-compensated where possible and do not
+# change with board revisions and sensor updates.
+
+uint64 timestamp                                # time since system start (microseconds)
+
+int32 RELATIVE_TIMESTAMP_INVALID = 2147483647   # (0x7fffffff) If one of the relative timestamps is set to this value, it means the associated sensor values are invalid
+
+# gyro timstamp is equal to the timestamp of the message
+float32[3] gyro_rad                     # average angular rate measured in the FRD body frame XYZ-axis in rad/s over the last gyro sampling period
+uint32 gyro_integral_dt                 # gyro measurement sampling period in microseconds
+
+int32 accelerometer_timestamp_relative  # timestamp + accelerometer_timestamp_relative = Accelerometer timestamp
+float32[3] accelerometer_m_s2           # average value acceleration measured in the FRD body frame XYZ-axis in m/s^2 over the last accelerometer sampling period
+uint32 accelerometer_integral_dt        # accelerometer measurement sampling period in microseconds
+
+uint8 CLIPPING_X = 1
+uint8 CLIPPING_Y = 2
+uint8 CLIPPING_Z = 4
+
+uint8 accelerometer_clipping    # bitfield indicating if there was any accelerometer clipping (per axis) during the integration time frame
+uint8 gyro_clipping             # bitfield indicating if there was any gyro clipping (per axis) during the integration time frame
+
+uint8 accel_calibration_count   # Calibration changed counter. Monotonically increases whenever accelermeter calibration changes.
+uint8 gyro_calibration_count    # Calibration changed counter. Monotonically increases whenever rate gyro calibration changes.
+
+--- FMU topics and sensor publisher ---
+/fmu/in/actuator_motors
+/fmu/in/actuator_servos
+/fmu/in/arming_check_reply
+/fmu/in/aux_global_position
+/fmu/in/config_control_setpoints
+/fmu/in/config_overrides_request
+/fmu/in/differential_drive_setpoint
+/fmu/in/goto_setpoint
+/fmu/in/manual_control_input
+/fmu/in/message_format_request
+/fmu/in/mode_completed
+/fmu/in/obstacle_distance
+/fmu/in/offboard_control_mode
+/fmu/in/onboard_computer_status
+/fmu/in/register_ext_component_request
+/fmu/in/sensor_optical_flow
+/fmu/in/telemetry_status
+/fmu/in/trajectory_setpoint
+/fmu/in/unregister_ext_component
+/fmu/in/vehicle_attitude_setpoint
+/fmu/in/vehicle_command
+/fmu/in/vehicle_command_mode_executor
+/fmu/in/vehicle_mocap_odometry
+/fmu/in/vehicle_rates_setpoint
+/fmu/in/vehicle_thrust_setpoint
+/fmu/in/vehicle_torque_setpoint
+/fmu/in/vehicle_trajectory_bezier
+/fmu/in/vehicle_trajectory_waypoint
+/fmu/in/vehicle_visual_odometry
+/fmu/out/battery_status
+/fmu/out/estimator_status_flags
+/fmu/out/failsafe_flags
+/fmu/out/manual_control_setpoint
+/fmu/out/position_setpoint_triplet
+/fmu/out/sensor_combined
+/fmu/out/vehicle_attitude
+/fmu/out/vehicle_command_ack
+/fmu/out/vehicle_control_mode
+/fmu/out/vehicle_gps_position
+/fmu/out/vehicle_local_position
+/fmu/out/vehicle_odometry
+/fmu/out/vehicle_status
+/parameter_events
+/rosout
+Type: px4_msgs/msg/SensorCombined
+
+Publisher count: 1
+
+Node name: _CREATED_BY_BARE_DDS_APP_
+Node namespace: _CREATED_BY_BARE_DDS_APP_
+Topic type: px4_msgs/msg/SensorCombined
+Endpoint type: PUBLISHER
+GID: 01.0f.a1.40.69.1b.41.09.01.00.00.00.00.00.25.03.00.00.00.00.00.00.00.00
+QoS profile:
+  Reliability: RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT
+  Durability: RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL
+  Lifespan: 2147483651294967295 nanoseconds
+  Deadline: 2147483651294967295 nanoseconds
+  Liveliness: RMW_QOS_POLICY_LIVELINESS_AUTOMATIC
+  Liveliness lease duration: 2147483651294967295 nanoseconds
+
+Subscription count: 0
+
+--- actual workspace layout follow-up ---
+workspace root: /home/p450/p450_ros2_ws
+build cache px4_msgs source: /home/p450/p450_ros2_ws/src/px4_msgs-release-1.14
+build cache px4_ros_com source: /home/p450/p450_ros2_ws/src/px4_ros_com-release-v1.14
+installed px4_msgs package version: 2.0.1
+installed px4_ros_com package version: 0.1.0
+
+Both actual source directories exist as extracted release snapshots but contain no .git metadata.
+Therefore branch names are indicated by directory names and CMake cache only; exact source commits
+and dirty status cannot be proven from this workspace.
+
+Git commands against actual source directories:
+
+--- /home/p450/p450_ros2_ws/src/px4_msgs-release-1.14 ---
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+
+--- /home/p450/p450_ros2_ws/src/px4_ros_com-release-v1.14 ---
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git

@@ -1,0 +1,148 @@
+2026-08-10T15:59:27+08:00
+Linux P450-NX 5.10.216-tegra #1 SMP PREEMPT Wed Aug 28 01:46:00 PDT 2024 aarch64 aarch64 aarch64 GNU/Linux
+NAME="Ubuntu"
+VERSION="20.04.6 LTS (Focal Fossa)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 20.04.6 LTS"
+VERSION_ID="20.04"
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies.html"
+VERSION_CODENAME=focal
+UBUNTU_CODENAME=focal
+# R35 (release), REVISION: 6.0, GCID: 37391689, BOARD: t186ref, EABI: aarch64, DATE: Wed Aug 28 09:12:27 UTC 2024
+
+--- repository ---
+## main...origin/main
+commit 6c82b9060d84e5d8b1af441598e9011ec1d39411
+Author:     DDlic <145752047+DDlic@users.noreply.github.com>
+AuthorDate: 2026-08-10 15:52:22 +0800
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2026-08-10 15:52:22 +0800
+
+    Add files via upload
+
+--- agent binary and service ---
+Error: chosen transport '--version' is invalid!
+Usage: 'MicroXRCEAgent <udp4|udp6|tcp4|tpc6|canfd|serial|multiserial|pseudoterminal> <<args>>'
+For a more detailed description about all the available arguments, please execute the agent with '-h/--help' option.
+active
+MainPID=7017
+NRestarts=0
+ExecMainStatus=0
+FragmentPath=/etc/systemd/system/p450-micro-xrce-agent.service
+# /etc/systemd/system/p450-micro-xrce-agent.service
+[Unit]
+Description=P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0
+Documentation=https://docs.px4.io/v1.14/en/middleware/uxrce_dds
+After=multi-user.target
+ConditionPathExists=/dev/ttyTHS1
+
+[Service]
+Type=simple
+User=p450
+Group=p450
+SupplementaryGroups=dialout
+Environment=ROS_DOMAIN_ID=0
+ExecStart=/usr/local/bin/MicroXRCEAgent serial --dev /dev/ttyTHS1 -b 460800 -v 2
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
+
+--- UART device and holders ---
+crw-rw---- 1 root dialout 237, 1 Aug 10  2026 /dev/ttyTHS1
+DEVPATH=/devices/platform/3110000.serial/tty/ttyTHS1
+DEVNAME=/dev/ttyTHS1
+MAJOR=237
+MINOR=1
+SUBSYSTEM=tty
+USEC_INITIALIZED=10599850
+ID_MM_CANDIDATE=1
+TAGS=:systemd:
+                     USER        PID ACCESS COMMAND
+/dev/ttyTHS1:        p450       7017 F.... MicroXRCEAgent
+COMMAND    PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+MicroXRCE 7017 p450    3u   CHR  237,1      0t0  220 /dev/ttyTHS1
+
+--- recent agent journal ---
+-- Logs begin at Wed 2023-11-22 05:10:22 CST, end at Mon 2026-08-10 15:57:32 CST. --
+Aug 10 11:54:11 P450-NX systemd[1]: Started P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 11:54:11 P450-NX MicroXRCEAgent[1699]: [1786334051.644228] info     | TermiosAgentLinux.cpp | init                     | running...             | fd: 3
+Aug 10 15:24:47 P450-NX systemd[1]: Stopping P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0...
+Aug 10 15:24:47 P450-NX systemd[1]: p450-micro-xrce-agent.service: Succeeded.
+Aug 10 15:24:47 P450-NX systemd[1]: Stopped P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:24:47 P450-NX systemd[1]: Started P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:24:47 P450-NX MicroXRCEAgent[5840]: [1786346687.377142] info     | TermiosAgentLinux.cpp | init                     | running...             | fd: 3
+Aug 10 15:25:50 P450-NX systemd[1]: Stopping P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0...
+Aug 10 15:25:50 P450-NX systemd[1]: p450-micro-xrce-agent.service: Succeeded.
+Aug 10 15:25:50 P450-NX systemd[1]: Stopped P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:25:50 P450-NX systemd[1]: Started P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:25:50 P450-NX MicroXRCEAgent[6001]: [1786346750.775880] info     | TermiosAgentLinux.cpp | init                     | running...             | fd: 3
+Aug 10 15:26:10 P450-NX systemd[1]: Stopping P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0...
+Aug 10 15:26:10 P450-NX systemd[1]: p450-micro-xrce-agent.service: Succeeded.
+Aug 10 15:26:10 P450-NX systemd[1]: Stopped P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:26:19 P450-NX systemd[1]: Started P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:26:19 P450-NX MicroXRCEAgent[6123]: [1786346779.166866] info     | TermiosAgentLinux.cpp | init                     | running...             | fd: 3
+Aug 10 15:27:35 P450-NX systemd[1]: Stopping P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0...
+Aug 10 15:27:36 P450-NX systemd[1]: p450-micro-xrce-agent.service: Succeeded.
+Aug 10 15:27:36 P450-NX systemd[1]: Stopped P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:27:41 P450-NX systemd[1]: Started P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:27:41 P450-NX MicroXRCEAgent[6256]: [1786346861.228071] info     | TermiosAgentLinux.cpp | init                     | running...             | fd: 3
+Aug 10 15:29:31 P450-NX systemd[1]: Stopping P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0...
+Aug 10 15:29:31 P450-NX systemd[1]: p450-micro-xrce-agent.service: Succeeded.
+Aug 10 15:29:31 P450-NX systemd[1]: Stopped P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:29:44 P450-NX systemd[1]: Started P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:29:44 P450-NX MicroXRCEAgent[6505]: [1786346984.684649] info     | TermiosAgentLinux.cpp | init                     | running...             | fd: 3
+Aug 10 15:30:17 P450-NX systemd[1]: Stopping P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0...
+Aug 10 15:30:17 P450-NX systemd[1]: p450-micro-xrce-agent.service: Succeeded.
+Aug 10 15:30:17 P450-NX systemd[1]: Stopped P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:30:54 P450-NX systemd[1]: Started P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:30:54 P450-NX MicroXRCEAgent[6681]: [1786347054.303179] info     | TermiosAgentLinux.cpp | init                     | running...             | fd: 3
+Aug 10 15:31:30 P450-NX systemd[1]: Stopping P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0...
+Aug 10 15:31:30 P450-NX systemd[1]: p450-micro-xrce-agent.service: Succeeded.
+Aug 10 15:31:30 P450-NX systemd[1]: Stopped P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:32:58 P450-NX systemd[1]: Started P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:32:58 P450-NX MicroXRCEAgent[6925]: [1786347178.977663] info     | TermiosAgentLinux.cpp | init                     | running...             | fd: 3
+Aug 10 15:33:33 P450-NX systemd[1]: Stopping P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0...
+Aug 10 15:33:33 P450-NX systemd[1]: p450-micro-xrce-agent.service: Succeeded.
+Aug 10 15:33:33 P450-NX systemd[1]: Stopped P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:33:54 P450-NX systemd[1]: Started P450 PX4 Micro XRCE-DDS Agent on AllSpark UART0.
+Aug 10 15:33:54 P450-NX MicroXRCEAgent[7017]: [1786347234.141498] info     | TermiosAgentLinux.cpp | init                     | running...             | fd: 3
+
+--- current-boot UART/kernel warnings ---
+Nov 22 05:10:22 P450-NX kernel:   DMA      [mem 0x0000000080000000-0x00000000ffffffff]
+Nov 22 05:10:22 P450-NX kernel:   DMA32    empty
+Nov 22 05:10:22 P450-NX kernel:   DMA zone: 4619 pages used for memmap
+Nov 22 05:10:22 P450-NX kernel:   DMA zone: 0 pages reserved
+Nov 22 05:10:22 P450-NX kernel:   DMA zone: 295599 pages, LIFO batch:63
+Nov 22 05:10:22 P450-NX kernel: On node 0, zone DMA: 1 pages in unavailable ranges
+Nov 22 05:10:22 P450-NX kernel: DMA: preallocated 1024 KiB GFP_KERNEL pool for atomic allocations
+Nov 22 05:10:22 P450-NX kernel: DMA: preallocated 1024 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+Nov 22 05:10:22 P450-NX kernel: DMA: preallocated 1024 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+Nov 22 05:10:22 P450-NX kernel: Serial: AMBA PL011 UART driver
+Nov 22 05:10:22 P450-NX kernel: tegradccommon 15200000.display-hub: dma mapping done
+Nov 22 05:10:22 P450-NX kernel: tegra-gpcdma 2600000.dma: Adding to iommu group 2
+Nov 22 05:10:22 P450-NX kernel: tegra-gpcdma 2600000.dma: GPC DMA driver register 31 channels
+Nov 22 05:10:22 P450-NX kernel: 3100000.serial: ttyTHS0 at MMIO 0x3100000 (irq = 31, base_baud = 0) is a TEGRA_UART
+Nov 22 05:10:22 P450-NX kernel: serial-tegra 3110000.serial: Adding to iommu group 2
+Nov 22 05:10:22 P450-NX kernel: 3110000.serial: ttyTHS1 at MMIO 0x3110000 (irq = 32, base_baud = 0) is a TEGRA_UART
+Nov 22 05:10:22 P450-NX kernel: 3140000.serial: ttyTHS4 at MMIO 0x3140000 (irq = 33, base_baud = 0) is a TEGRA_UART
+Nov 22 05:10:22 P450-NX kernel: nvethernet 2490000.ethernet: setting to default DMA bit mask
+Nov 22 05:10:22 P450-NX kernel: mmc0: SDHCI controller on 3460000.sdhci [3460000.sdhci] using ADMA 64-bit
+Nov 22 05:10:22 P450-NX kernel: mmc1: SDHCI controller on 3440000.sdhci [3440000.sdhci] using ADMA 64-bit
+Nov 22 05:10:22 P450-NX kernel: nvethernet 2490000.ethernet: Failed to read DMA Tx ring size, using default [1024]
+Nov 22 05:10:22 P450-NX kernel: nvethernet 2490000.ethernet: Failed to read DMA Rx ring size, using default [1024]
+Nov 22 05:10:22 P450-NX kernel: nvethernet 2490000.ethernet: eth0 (HW ver: 50) created with 1 DMA channels
+Nov 22 05:10:22 P450-NX kernel: tegra-carveouts tegra-carveouts: vpr :dma coherent mem declare 0x00000000ce000000,704643072
+Nov 22 05:10:22 P450-NX kernel: misc nvmap: cvsram :dma coherent mem declare 0x0000000050000000,4194304
+Aug 07 16:29:02 P450-NX kernel: tegra-adma 2930000.adma: Tegra210 ADMA driver registered 16 channels
+Aug 07 16:29:02 P450-NX kernel: tegra210-adsp tegra210-adsp: adma channel page address dt entry not found
+Aug 07 16:29:02 P450-NX kernel: tegra210-adsp tegra210-adsp: using adma channel page 0
+Aug 07 16:29:02 P450-NX kernel: tegra210-adsp tegra210-adsp: Loaded app adma
+Aug 07 16:29:02 P450-NX kernel: tegra210-adsp tegra210-adsp: Loaded app adma_tx
+Aug 07 16:29:02 P450-NX kernel: nvadsp_set_adma_dump_reg: callback for adma reg dump is sent to 0000000003fb1e7f
+Aug 10 15:18:22 P450-NX kernel: Modules linked in: fuse lzo_rle lzo_compress zram ramoops reed_solomon realtek bnep 88x2bu(OE) input_leds cfg80211 btusb btrtl btbcm snd_soc_tegra186_asrc btintel snd_soc_tegra186_arad snd_soc_tegra210_ope snd_soc_tegra186_dspk snd_soc_tegra210_iqc snd_soc_tegra210_mvc snd_soc_tegra210_afc snd_soc_tegra210_dmic snd_soc_tegra210_adx snd_soc_tegra210_amx snd_soc_tegra210_mixer snd_soc_tegra210_admaif snd_soc_tegra_pcm snd_soc_tegra210_sfc loop aes_ce_blk crypto_simd cryptd aes_ce_cipher ghash_ce sha2_ce sha256_arm64 sha1_ce snd_soc_tegra_machine_driver snd_soc_spdif_tx leds_gpio tegra_bpmp_thermal max77620_thermal snd_soc_tegra210_adsp nv_imx219 snd_soc_tegra_utils userspace_alert snd_soc_simple_card_utils snd_soc_tegra210_ahub snd_hda_codec_hdmi nvadsp tegra210_adma snd_hda_tegra snd_hda_codec snd_hda_core spi_tegra114 binfmt_misc ina3221 pwm_fan nvgpu nvmap ip_tables x_tables [last unloaded: mtd]

@@ -1,0 +1,26 @@
+PARTIAL QGC EVIDENCE
+Source: repository file "新增 文字文件.txt" added in main commit 6c82b9060d84e5d8b1af441598e9011ec1d39411.
+The remaining Phase A commands listed below still require fresh QGC MAVLink Console output.
+
+nsh: sysinit: fopen failed: No such file or directory
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport:     serial
+INFO  [uxrce_dds_client] Payload tx:          63978 B/s
+INFO  [uxrce_dds_client] Payload rx:          0 B/s
+INFO  [uxrce_dds_client] timesync converged: false
+uxrce_dds_client: cycle: 78969 events, 513487705us elapsed, 6502.40us avg, min 85us max 1012003us 47973.324us rms
+uxrce_dds_client: cycle interval: 78970 events, 6503.40us avg, min 85us max 1012004us 47973.000us rms
+nsh>
+
+PENDING FRESH OUTPUT:
+- ver all
+- param show UXRCE_DDS_CFG
+- param show UXRCE_DDS_PRT
+- param show UXRCE_DDS_SYNCT
+- param show SER_TEL2_BAUD
+- param show MAV_1_CONFIG
+- listener vehicle_status 1
+- listener failsafe_flags 1

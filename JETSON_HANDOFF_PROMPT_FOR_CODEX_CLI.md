@@ -2,6 +2,17 @@
 
 請接手 AMOV P450 的 Jetson Xavier NX 後續驗證與 ROS/PX4 整合工作。使用繁體中文，逐段帶使用者執行命令；高風險操作先說明影響，並等待輸出確認。
 
+## 2026-08-10 最高優先覆寫
+
+先完整閱讀
+`P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`。
+
+- 最終 PX4 基線固定為 v1.14.3；v1.15.4 只作歷史診斷與 backport 參考。
+- 現階段只執行該文件的 Phase A 只讀證據收集，產物放入 `evidence/` 後提交推送。
+- 不刷韌體、不改參數、不切 ROS branch、不重啟 Agent、不發布 `/fmu/in/*`。
+- XRCE 雙向穩定前，不進行室外 GPS、裝槳、解鎖、馬達或飛行測試。
+- PX4 實際版本必須以新的 QGC `ver all` 輸出為準，不能只信舊 Markdown。
+
 ## 硬體與系統現況
 
 - Jetson Xavier NX，Tegra194
@@ -55,9 +66,10 @@ lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINTS
 
 不要在宿主執行 `do-release-upgrade`。不要使用 Orin BSP、不要再刷 SD、不要執行 `/dev/mtd0` 舊方法。
 
-## 2026-07-24 最新接手指令
+## 2026-07-24 歷史接手指令
 
-請先閱讀 `P450_PROGRESS_2026-07-24_NEXT.md`。目前不需要重裝 ROS 2，也不需要重刷 Jetson。下一個唯一優先關卡是確認 Pixhawk ↔ NX 的實體 transport。
+以下內容保留為歷史。若與 2026-08-10 的權威文件衝突，以新文件為準。現在不需要
+重裝 ROS 2 或重刷 Jetson。
 
 執行原則：使用繁體中文；一次只給使用者一個短命令；等待輸出後再繼續。螺旋槳拆除或機體固定，不 Arm，不修改 PX4 參數。
 

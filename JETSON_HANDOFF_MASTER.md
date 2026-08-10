@@ -1,6 +1,12 @@
 # AMOV P450 Jetson Xavier NX 交接總覽
 
-最後更新：2026-08-05（Asia/Taipei）
+最後更新：2026-08-10（Asia/Taipei）
+
+> **目前權威決策**：最終 PX4 版本固定為 v1.14.3；v1.15.4 只作診斷，不能成為
+> 最終韌體。任何有效的 XRCE 修改都必須回補至 v1.14.3 後重新驗收。現階段唯一
+> 優先是 XRCE 雙向穩定，完成前不進行室外 GPS 或飛行測試。NX CLI 應先閱讀
+> `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md` 並只收集
+> Phase A 證據。下方 v1.15.4 內容均為歷史診斷紀錄。
 
 ## 目前狀態
 

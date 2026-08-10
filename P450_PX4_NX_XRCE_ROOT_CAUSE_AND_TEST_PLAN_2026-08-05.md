@@ -1,5 +1,11 @@
 # P450 PX4／Jetson Xavier NX XRCE 原因分析與測試計畫（2026-08-05）
 
+> **歷史文件提示（2026-08-10）**：本文件的 v1.15.4 測試矩陣保留作診斷證據，
+> 但不再定義最終版本。機主已指定最終 PX4 基線為 v1.14.3，且任何有效修改都必須
+> 回補至 v1.14.3 後重測。目前請先依
+> `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md` 執行
+> Phase A 只讀收證，不得直接執行本文件中的候選韌體刷寫步驟。
+
 本文件供 Jetson Xavier NX 本機 CLI 接手目前的 PX4／ROS 2 Foxy／uXRCE-DDS
 排障工作。內容以 repository 實機紀錄、PX4 各 release tag 原始碼與官方文件交叉
 比對後整理。

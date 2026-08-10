@@ -3,8 +3,8 @@
 Collected: 2026-08-10 (Asia/Taipei)
 
 Status: firmware identity and ROS 2 receive-continuity gates PASS. The 2 Hz non-control input did
-not degrade PX4-to-NX continuity, but two QGC checks reported `never published`; the 2 Hz
-bidirectional gate is FAIL/pending root cause and 20 Hz remains blocked.
+not degrade PX4-to-NX continuity, but live QGC evidence showed a 58-second-stale input sample while
+2 Hz publication continued. The 2 Hz bidirectional gate is FAIL and 20 Hz/Offboard remain blocked.
 
 ## Firmware and graph identity
 
@@ -98,9 +98,24 @@ Agent-received and Agent-written marker frames produced a PX4 uORB sample. The s
 the PX4 callback never ran. Source inspection shows `num_payload_received` is incremented before
 deserialization; a live status snapshot during an active 2 Hz window is the next discriminator.
 
+During the live discriminator, NX continuously published `uptime=515151`, `type=6` at 2 Hz. PX4
+uORB did eventually contain that exact marker, proving that the physical direction and
+deserialization path are not completely broken. However, while NX publication was still active,
+the newest PX4 uORB marker was already 58.383400 seconds old and instantaneous `Payload rx` was
+zero. PX4 was therefore not consuming the 2 Hz stream continuously. This is receive starvation or
+extreme receive latency, not a total TX wire break.
+
 ## Remaining evidence gate
 
-Run the QGC commands currently stored in `新增 文字文件.txt` while the NX announces that the live
-2 Hz marker publisher is running. If live `Payload rx` remains zero, the PX4 callback is not seeing
-the frames. If live RX becomes nonzero but the listener remains `never published`, deserialization
-or uORB publication is failing. Do not proceed to 20 Hz or Offboard in either failure case.
+The ping-only firmware must not proceed to 20 Hz or Offboard. Per the authoritative test sequence,
+the next single-variable A/B is the existing PX4 v1.14.3 session-ping plus receive-drain candidate:
+
+```text
+firmware/p450-pixhawk6c-v1.14.3-xrce-rx-drain-ping-fix-49049d8555.px4
+source: 49049d855552c39879234bf4f19229baf0939a48
+SHA-256: d371a5e7ccde6da7832c9dd0dcbce8a078d459b6239d97a79924b0b1aa0a8bdd
+```
+
+This firmware change requires a new explicit owner authorization. After flashing, repeat exact
+firmware/parameter verification, a clean receive baseline, and the 2 Hz live freshness test before
+considering 20 Hz.

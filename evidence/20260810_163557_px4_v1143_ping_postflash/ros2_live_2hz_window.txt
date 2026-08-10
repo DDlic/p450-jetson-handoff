@@ -1,0 +1,37 @@
+Live PX4 receive discriminator
+Collected: 2026-08-10 (Asia/Taipei)
+
+NX publisher:
+- Start: 2026-08-10T17:15:36+08:00
+- Topic: `/fmu/in/onboard_computer_status`
+- Type: `px4_msgs/msg/OnboardComputerStatus`
+- Rate: 2 Hz
+- QoS: Best Effort, Volatile
+- Marker: `timestamp=0`, `uptime=515151`, `type=6`
+- Explicit maximum timeout: 600 seconds
+- Observed publication milestones: message 200 and message 400
+- The publisher was stopped immediately after the owner pushed the live QGC result.
+- Post-stop publisher count: 0
+- No control, mode, setpoint, thrust, torque, or actuator message was published.
+
+Agent and safety state:
+- Agent PID at start and after stop: 12167
+- Agent NRestarts: 0
+- Agent ExecMainStatus: 0
+
+QGC result while the 2 Hz publisher was still active:
+- XRCE client: running and connected over serial
+- Payload TX: 34551 B/s
+- Payload RX at snapshot: 0 B/s
+- PX4 uORB contained marker `uptime=515151`, `type=6`
+- That latest uORB sample was already 58.383400 seconds old even though NX publication continued.
+
+Interpretation:
+- At least one live marker traversed NX DDS, Agent serial write, Pixhawk UART/XRCE processing,
+  deserialization, and PX4 uORB publication.
+- Therefore the NX-to-Pixhawk direction is not completely disconnected and the message definition
+  is decodable by the active firmware.
+- The sample was stale by 58 seconds during continuous 2 Hz input, and instantaneous Payload RX was
+  zero. PX4 was not consuming input continuously at the required rate.
+- This is a receive-starvation/processing-latency failure, not a total wiring break.
+- The 2 Hz bidirectional gate is FAIL. Do not run 20 Hz or Offboard on this firmware.

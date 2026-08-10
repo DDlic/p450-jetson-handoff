@@ -92,10 +92,15 @@ receipt and its serial write call: physical UART TX/RX, PX4 XRCE receive/frame p
 deserialization-to-uORB. The normal systemd Agent was automatically restored as PID 12167; a clean
 13-in/10-out graph and 10-second read-only monitor passed after recovery.
 
+The QGC listener after that trace still reported `never published`. This confirms none of the six
+Agent-received and Agent-written marker frames produced a PX4 uORB sample. The subsequent
+`Payload rx: 0 B/s` snapshot was taken after publication stopped, so it is not by itself proof that
+the PX4 callback never ran. Source inspection shows `num_payload_received` is incremented before
+deserialization; a live status snapshot during an active 2 Hz window is the next discriminator.
+
 ## Remaining evidence gate
 
-Run the QGC commands currently stored in `新增 文字文件.txt` after the foreground Agent trace. The
-listener must show `uptime=424242` and `type=5` (with a PX4 receive timestamp) before this gate can
-pass. If it still reports `never published`, all six Agent-received and Agent-written frames failed
-to reach PX4 uORB; continue physical/PX4 receive-path diagnosis and do not proceed to 20 Hz or
-Offboard.
+Run the QGC commands currently stored in `新增 文字文件.txt` while the NX announces that the live
+2 Hz marker publisher is running. If live `Payload rx` remains zero, the PX4 callback is not seeing
+the frames. If live RX becomes nonzero but the listener remains `never published`, deserialization
+or uORB publication is failing. Do not proceed to 20 Hz or Offboard in either failure case.

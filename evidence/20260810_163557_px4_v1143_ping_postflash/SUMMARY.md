@@ -3,7 +3,8 @@
 Collected: 2026-08-10 (Asia/Taipei)
 
 Status: firmware identity and ROS 2 receive-continuity gates PASS. The 2 Hz non-control input did
-not degrade PX4-to-NX continuity; QGC confirmation of PX4 uORB receipt remains pending before 20 Hz.
+not degrade PX4-to-NX continuity, but the first QGC check reported `never published`; the 2 Hz
+bidirectional gate is therefore not yet passed and 20 Hz remains blocked.
 
 ## Firmware and graph identity
 
@@ -76,12 +77,17 @@ result=PASS
 - No Agent journal event occurred.
 - No control, mode, setpoint, thrust, torque, or actuator topic was published.
 
-This proves that 2 Hz NX input did not degrade PX4-to-NX continuity. It does not yet independently
-prove PX4 uORB receipt; that requires the pending QGC listener snapshot.
+This proves that 2 Hz NX input did not degrade PX4-to-NX continuity. The first QGC listener check
+afterward reported `onboard_computer_status: never published`, so it did not prove PX4 uORB receipt.
+
+A follow-up definition and local DDS check found identical PX4/NX message SHA-256 values and no
+source diff. An unbuffered local subscriber then received all three marker samples sent at 2 Hz with
+`uptime=271828` and `type=4`. This proves the NX publisher and local serialization/DDS path. A second
+QGC listener check is pending to determine whether failure remains downstream toward PX4 uORB.
 
 ## Remaining evidence gate
 
-Run the QGC commands currently stored in `新增 文字文件.txt` to confirm that the 2 Hz sample reached
-PX4 `onboard_computer_status` uORB and that the vehicle remained disarmed. Only after that evidence
-is accepted should the project proceed to 20 Hz non-control pressure, then disarmed zero-thrust
-Offboard heartbeat freshness.
+Run the QGC commands currently stored in `新增 文字文件.txt` immediately after the verified marker
+test. The listener must show `uptime=271828` and `type=4` (with a PX4 receive timestamp) before this
+gate can pass. If it still reports `never published`, stop at 2 Hz and diagnose the Agent-to-PX4
+receive path; do not proceed to 20 Hz or Offboard.

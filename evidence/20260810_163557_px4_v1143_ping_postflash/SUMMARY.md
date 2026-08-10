@@ -2,8 +2,8 @@
 
 Collected: 2026-08-10 (Asia/Taipei)
 
-Status: ROS 2 receive-continuity gate PASS. Exact PX4 source hash and post-flash parameter values
-remain pending until the owner pushes the requested QGC MAVLink Console output.
+Status: firmware identity and ROS 2 receive-continuity gates PASS. The 2 Hz non-control input did
+not degrade PX4-to-NX continuity; QGC confirmation of PX4 uORB receipt remains pending before 20 Hz.
 
 ## Firmware and graph identity
 
@@ -13,8 +13,14 @@ remain pending until the owner pushes the requested QGC MAVLink Console output.
 - After flashing and clearing stale ROS CLI discovery state, the live DDS graph contained exactly
   13 `/fmu/in/*` and 10 `/fmu/out/*` topics, matching the PX4 v1.14 topic set.
 - `/fmu/out/sensor_combined` had exactly one publisher.
-- `ver all` is still required to independently prove source hash `f9bc66c6f3...`; the graph alone
-  cannot distinguish stock v1.14.3 from the session-ping build.
+- QGC `ver all` independently confirmed PX4 1.14.3, source
+  `f9bc66c6f30d8ddcceaeba2545dc9f6d0e71faf1`, branch `p450-v1.14.3-xrce-fix`, and Pixhawk 6C.
+- `SYS_AUTOSTART=4001`, `UXRCE_DDS_CFG=102`, `SER_TEL2_BAUD=460800`, and `MAV_1_CONFIG=0`.
+- `UXRCE_DDS_PRT` and `UXRCE_DDS_SYNCT` returned no matching parameter in this v1.14.3 build.
+- The PX4 XRCE client reported `Running, connected`, serial transport, TX 34904 B/s, and RX 0 B/s
+  in the no-input snapshot.
+- QGC confirmed `arming_state=1`, `armed_time=0`, `failsafe=false`, battery warning zero, and no
+  critical failure flag. Preflight and position requirements remained invalid, so flight is blocked.
 
 ## Clean test starting point
 
@@ -52,17 +58,30 @@ result=PASS threshold_ms=100.000
 This reproduces the previously verified v1.14.3 session-ping receive-continuity behavior and removes
 the approximately one-second gap seen with the v1.15.4 diagnostic firmware.
 
+## 2 Hz non-control input gate
+
+The NX published only `/fmu/in/onboard_computer_status` at 2 Hz for 63 seconds under an explicit
+timeout while simultaneously monitoring `/fmu/out/sensor_combined` for 60 seconds:
+
+```text
+messages=4273
+average_hz=71.214
+max_gap_ms=37.397
+gaps_over_100ms=0
+result=PASS
+```
+
+- Agent remained PID 9922 with `NRestarts=0`.
+- The publisher stopped automatically and publisher count returned to zero.
+- No Agent journal event occurred.
+- No control, mode, setpoint, thrust, torque, or actuator topic was published.
+
+This proves that 2 Hz NX input did not degrade PX4-to-NX continuity. It does not yet independently
+prove PX4 uORB receipt; that requires the pending QGC listener snapshot.
+
 ## Remaining evidence gate
 
-The owner still needs to run the commands currently stored in `新增 文字文件.txt`, append the
-complete QGC output, and push it. Before any 2 Hz input test, verify:
-
-- PX4 version and exact source hash from `ver all`.
-- `SYS_AUTOSTART`.
-- `UXRCE_DDS_CFG`, `UXRCE_DDS_SYNCT`, and `SER_TEL2_BAUD`.
-- `MAV_1_CONFIG` and XRCE client connection state.
-- Disarmed vehicle and failsafe status.
-
-Only after that read-only evidence is accepted should the project proceed to the authorized test
-sequence: 2 Hz non-control input, then 20 Hz non-control pressure, then disarmed zero-thrust
+Run the QGC commands currently stored in `新增 文字文件.txt` to confirm that the 2 Hz sample reached
+PX4 `onboard_computer_status` uORB and that the vehicle remained disarmed. Only after that evidence
+is accepted should the project proceed to 20 Hz non-control pressure, then disarmed zero-thrust
 Offboard heartbeat freshness.

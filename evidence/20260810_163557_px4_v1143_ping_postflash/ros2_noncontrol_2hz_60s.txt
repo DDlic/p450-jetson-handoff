@@ -1,0 +1,40 @@
+2026-08-10T16:56:43+08:00
+MainPID=9922
+NRestarts=0
+ExecMainStatus=0
+
+Input publisher:
+- Topic: /fmu/in/onboard_computer_status
+- Type: px4_msgs/msg/OnboardComputerStatus
+- Rate: 2 Hz
+- QoS: Best Effort, Transient Local
+- Payload: {timestamp: 0, uptime: 0, type: 0}; all omitted fields used zero defaults
+- Duration: 63 seconds under an explicit timeout
+- No VehicleCommand, Offboard, setpoint, thrust, torque, or actuator topic was published
+
+Output continuity during input:
+elapsed_s=60.002
+messages=4273
+average_hz=71.214
+median_gap_ms=12.760
+max_gap_ms=37.397
+gaps_over_100ms=0
+gaps_over_500ms=0
+gaps_over_1s=0
+result=PASS threshold_ms=100.000
+
+monitor_rc=0
+publisher_timeout_rc=124
+MainPID=9922
+NRestarts=0
+ExecMainStatus=0
+Type: px4_msgs/msg/OnboardComputerStatus
+Publisher count: 0
+Subscription count: 1
+Agent journal during test: no entries
+
+Interpretation:
+- publisher_timeout_rc=124 is the expected result of the explicit safety timeout.
+- PX4-to-NX output continuity did not degrade under the 2 Hz input.
+- QGC `listener onboard_computer_status 1` is still required to prove PX4 uORB receipt before
+  proceeding to the 20 Hz pressure test.

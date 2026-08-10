@@ -1,0 +1,43 @@
+Controlled Micro XRCE-DDS Agent input trace
+Collected: 2026-08-10 (Asia/Taipei)
+
+Purpose:
+- Locate the 2 Hz OnboardComputerStatus loss boundary after two QGC checks reported
+  `onboard_computer_status: never published`.
+
+Method:
+- Stopped the systemd Agent and started the same `/usr/local/bin/MicroXRCEAgent` in the foreground.
+- Transport: serial `/dev/ttyTHS1`, 460800 baud, ROS domain 0, verbosity 5.
+- A shell EXIT trap restored `p450-micro-xrce-agent.service` even if the trace failed.
+- Published exactly six `/fmu/in/onboard_computer_status` samples at 2 Hz.
+- QoS: Best Effort, Volatile.
+- Marker payload: `timestamp=0`, `uptime=424242`, `type=5`.
+- No control, mode, setpoint, thrust, torque, or actuator message was published.
+
+Trace result:
+- `create_client`: 1
+- `session established`: 1
+- Agent DataReader `[==>> DDS <<==]`: 6 records, each 240 bytes.
+- Agent UART send `[** <<SER>> **]` corresponding to input: 6 records, each 252 bytes.
+- Publisher exit code: 0.
+- Agent error/warning during marker input: none in the filtered trace.
+
+Interpretation:
+- NX publisher generation was already verified by a local unbuffered subscriber.
+- This trace additionally proves all six DDS samples reached the Agent DataReader.
+- It also proves the Agent serial transport accepted and wrote all six 252-byte XRCE frames.
+- The unresolved boundary is after the Agent write call: physical NX UART TX / Pixhawk UART RX /
+  PX4 XRCE frame handling / deserialization-to-uORB.
+- The trace alone cannot prove every physical byte reached the Pixhawk UART peripheral.
+
+Automatic recovery verification:
+- systemd Agent: active, PID 12167, `NRestarts=0`, `ExecMainStatus=0`.
+- Exactly one Agent process and one `/dev/ttyTHS1` holder.
+- Clean DDS graph: 13 `/fmu/in/*`, 10 `/fmu/out/*`.
+- Post-recovery 10-second read-only monitor:
+  messages=717, average_hz=71.591, max_gap_ms=31.182, gaps_over_100ms=0, result=PASS.
+
+Pending QGC proof:
+- Run `listener onboard_computer_status 1` after this trace.
+- A successful result must show `uptime=424242` and `type=5`.
+- `never published` would confirm that all six Agent-written frames failed to reach PX4 uORB.

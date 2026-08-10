@@ -3,8 +3,8 @@
 Collected: 2026-08-10 (Asia/Taipei)
 
 Status: firmware identity and ROS 2 receive-continuity gates PASS. The 2 Hz non-control input did
-not degrade PX4-to-NX continuity, but the first QGC check reported `never published`; the 2 Hz
-bidirectional gate is therefore not yet passed and 20 Hz remains blocked.
+not degrade PX4-to-NX continuity, but two QGC checks reported `never published`; the 2 Hz
+bidirectional gate is FAIL/pending root cause and 20 Hz remains blocked.
 
 ## Firmware and graph identity
 
@@ -83,11 +83,19 @@ afterward reported `onboard_computer_status: never published`, so it did not pro
 A follow-up definition and local DDS check found identical PX4/NX message SHA-256 values and no
 source diff. An unbuffered local subscriber then received all three marker samples sent at 2 Hz with
 `uptime=271828` and `type=4`. This proves the NX publisher and local serialization/DDS path. A second
-QGC listener check is pending to determine whether failure remains downstream toward PX4 uORB.
+QGC listener check still reported `never published`.
+
+A controlled foreground Agent trace then sent six new markers with `uptime=424242` and `type=5`.
+The Agent logged all six DataReader receipts at 240 bytes and all six corresponding serial writes at
+252 bytes, with no input-path error or warning. The problem is therefore downstream of Agent DDS
+receipt and its serial write call: physical UART TX/RX, PX4 XRCE receive/frame processing, or PX4
+deserialization-to-uORB. The normal systemd Agent was automatically restored as PID 12167; a clean
+13-in/10-out graph and 10-second read-only monitor passed after recovery.
 
 ## Remaining evidence gate
 
-Run the QGC commands currently stored in `新增 文字文件.txt` immediately after the verified marker
-test. The listener must show `uptime=271828` and `type=4` (with a PX4 receive timestamp) before this
-gate can pass. If it still reports `never published`, stop at 2 Hz and diagnose the Agent-to-PX4
-receive path; do not proceed to 20 Hz or Offboard.
+Run the QGC commands currently stored in `新增 文字文件.txt` after the foreground Agent trace. The
+listener must show `uptime=424242` and `type=5` (with a PX4 receive timestamp) before this gate can
+pass. If it still reports `never published`, all six Agent-received and Agent-written frames failed
+to reach PX4 uORB; continue physical/PX4 receive-path diagnosis and do not proceed to 20 Hz or
+Offboard.

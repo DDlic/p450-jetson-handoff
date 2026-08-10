@@ -1,0 +1,33 @@
+Post-flash cleanup and formal-baseline context
+Collected: 2026-08-10 (Asia/Taipei)
+
+Before cleanup:
+- The Agent had remained on pre-flash PID 7017 with NRestarts=0.
+- A 20-second read-only monitor received 1427 messages at 71.346 Hz.
+- Maximum gap was 34.534 ms and gaps over 100 ms were zero.
+- ROS CLI initially reported two SensorCombined publishers and retained v1.15-only endpoints.
+- Exactly one MicroXRCEAgent process and one UART holder were present. The extra endpoints were
+  stale DDS/ROS CLI graph state, not extra Agent processes.
+
+Intentional cleanup before the formal baseline:
+- Restarted p450-micro-xrce-agent.service once to replace the pre-flash Agent participant.
+- New formal-baseline Agent PID: 9922.
+- Cleared the ROS 2 CLI daemon graph cache once with `ros2 daemon stop`.
+- No PX4 parameter, mode, firmware, or /fmu/in publication was changed by this cleanup.
+
+Clean graph before and after the formal test:
+- MicroXRCEAgent command: /usr/local/bin/MicroXRCEAgent serial --dev /dev/ttyTHS1 -b 460800 -v 2
+- Agent PID: 9922
+- Agent NRestarts: 0
+- /fmu/in count: 13
+- /fmu/out count: 10
+- /fmu/out/sensor_combined publisher count: 1
+- SensorCombined QoS: Best Effort, Transient Local
+- This graph matches the PX4 v1.14 DDS topic set and no longer contains the v1.15 graph.
+
+Post-test snapshot:
+- Timestamp: 2026-08-10T16:46:21+08:00
+- MainPID=9922
+- NRestarts=0
+- ExecMainStatus=0
+- One MicroXRCEAgent process remained.

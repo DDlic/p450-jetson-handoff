@@ -1,0 +1,18 @@
+2026-08-10T16:35:57+08:00
+MainPID=9922
+NRestarts=0
+ExecMainStatus=0
+elapsed_s=600.005
+messages=42718
+average_hz=71.196
+median_gap_ms=12.841
+max_gap_ms=38.913
+gaps_over_100ms=0
+gaps_over_500ms=0
+gaps_over_1s=0
+result=PASS threshold_ms=100.000
+MainPID=9922
+NRestarts=0
+ExecMainStatus=0
+-- Logs begin at Wed 2023-11-22 05:10:22 CST, end at Mon 2026-08-10 16:43:32 CST. --
+-- No entries --

@@ -180,8 +180,13 @@ NX→PX4 輸入**。舊故障與新故障不可混為一談：
 ```text
 firmware/p450-pixhawk6c-v1.14.3-xrce-rx-drain-ping-fix-49049d8555.px4
 source: 49049d855552c39879234bf4f19229baf0939a48
-SHA-256: d371a5e7ccde6da7832c9dd0dcbce8a078d459b6239d97a79924b0b1aa0a8bdd
+git_identity: v1.14.3-2-g49049d8555
+SHA-256: ba1a57ad2b48fba9908d7caf34ad5f32d7aea8c0d7bdbe74016b2862aad8e1b5
 ```
+
+2026-08-11 刷寫前發現舊封裝 metadata 仍顯示 ping-only hash，已由相同
+`49049d8555` source 重新連結／封裝並以上述新 SHA 取代；功能變因不變，但刷後可由
+QGC `ver all` 明確識別。舊 SHA `d371a5e7…a0a8bdd` 已淘汰。
 
 這個候選版**尚未取得新的刷寫授權**。下次只有在機主明確同意後，才能先備份／核對
 目前韌體與參數、刷入候選版，再依相同順序重做乾淨 graph、純接收 continuity 與 live

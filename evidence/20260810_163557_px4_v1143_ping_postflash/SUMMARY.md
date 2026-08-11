@@ -113,8 +113,14 @@ the next single-variable A/B is the existing PX4 v1.14.3 session-ping plus recei
 ```text
 firmware/p450-pixhawk6c-v1.14.3-xrce-rx-drain-ping-fix-49049d8555.px4
 source: 49049d855552c39879234bf4f19229baf0939a48
-SHA-256: d371a5e7ccde6da7832c9dd0dcbce8a078d459b6239d97a79924b0b1aa0a8bdd
+git_identity: v1.14.3-2-g49049d8555
+SHA-256: ba1a57ad2b48fba9908d7caf34ad5f32d7aea8c0d7bdbe74016b2862aad8e1b5
 ```
+
+Pre-flash verification on 2026-08-11 found that the earlier package retained the ping-only Git
+identity even though its receive-drain object had been rebuilt. The same clean `49049d8555` source
+was relinked and repackaged so QGC can identify it unambiguously. The former SHA-256
+`d371a5e7ccde6da7832c9dd0dcbce8a078d459b6239d97a79924b0b1aa0a8bdd` is superseded.
 
 This firmware change requires a new explicit owner authorization. After flashing, repeat exact
 firmware/parameter verification, a clean receive baseline, and the 2 Hz live freshness test before

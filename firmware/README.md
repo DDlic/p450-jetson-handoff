@@ -142,7 +142,10 @@ p450-pixhawk6c-v1.14.3-xrce-rx-drain-ping-fix-49049d8555.px4
 - PX4 基底：v1.14.3
 - source commit：`49049d855552c39879234bf4f19229baf0939a48`
 - 檔案大小：1,808,290 bytes
-- SHA-256：`d371a5e7ccde6da7832c9dd0dcbce8a078d459b6239d97a79924b0b1aa0a8bdd`
+- firmware `git_identity`：`v1.14.3-2-g49049d8555`
+- firmware `git_hash`：`49049d855552c39879234bf4f19229baf0939a48`
+- image size：1,937,764 bytes
+- SHA-256：`ba1a57ad2b48fba9908d7caf34ad5f32d7aea8c0d7bdbe74016b2862aad8e1b5`
 
 此候選版保留已驗證的 session ping 回補，另回補 PX4 官方提交
 [`d12a7dd11da5`](https://github.com/PX4/PX4-Autopilot/commit/d12a7dd11da521ebbdd6ba07be1987b459d39ace)
@@ -157,6 +160,13 @@ NX 以 100 Hz 發送時，PX4 uORB 內最新 `offboard_control_mode` 曾落後�
 驗證。2026-08-10 ping-only 版的 live 2 Hz marker 又在 PX4 uORB 落後
 58.383400 秒，使此候選版成為下一個合理的單一變因 A/B；但它**尚未取得新的刷寫
 授權**，目前只可列為候選，不可自動刷入或直接裝槳飛行。
+
+2026-08-11 刷寫前覆核發現舊封裝雖已在 source commit 前編譯 receive-drain object，
+但 `.px4` 的版本字串仍沿用 ping-only `f9bc66c6f3`，刷後無法由 QGC 唯一辨識。已在
+同一 clean source `49049d8555` 上重新增量連結與封裝；FLASH 仍為 1,937,764 bytes，
+新檔 metadata 正確顯示 `v1.14.3-2-g49049d8555`。舊 SHA
+`d371a5e7ccde6da7832c9dd0dcbce8a078d459b6239d97a79924b0b1aa0a8bdd` 已淘汰，
+不得再拿來刷寫或驗證。
 
 ## XRCE session ping 回補版
 

@@ -4,3 +4,56 @@ param show UXRCE_DDS_CFG
 param show SER_TEL2_BAUD
 param show MAV_1_CONFIG
 uxrce_dds_client status
+
+nsh: sysinit: fopen failed: No such file or directory
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> ver all
+HW arch: PX4_FMU_V6C
+HW type: V6C000000
+HW version: 0x000
+HW revision: 0x000
+PX4 git-hash: f6beb984ca0b8805735475cc57cf1db278d53a67
+PX4 version: 1.14.3 0 (17695488)
+PX4 git-branch: p450-v1.14.3-xrce-rxdiag
+OS: NuttX
+OS version: Release 11.0.0 (184549631)
+OS git-hash: de41e7feaeffaec3ce65327e9569e8fdb553ca3d
+Build datetime: Jul 29 2026 16:23:47
+Build uri: localhost
+Build variant: default
+Toolchain: GNU GCC, 9.3.1 20200408 (release)
+PX4GUID: 000600000000323534333131510500280019
+MCU: STM32H7[4|5]xxx, rev. V
+nsh> param show SYS_AUTOSTART
+Symbols: x = used, + = saved, * = unsaved
+x + SYS_AUTOSTART [961,1463] : 4001
+
+ 1093/1813 parameters used.
+nsh> param show UXRCE_DDS_CFG
+Symbols: x = used, + = saved, * = unsaved
+x + UXRCE_DDS_CFG [1084,1768] : 102
+
+ 1093/1813 parameters used.
+nsh> param show SER_TEL2_BAUD
+Symbols: x = used, + = saved, * = unsaved
+x + SER_TEL2_BAUD [959,1433] : 460800
+
+ 1093/1813 parameters used.
+nsh> param show MAV_1_CONFIG
+Symbols: x = used, + = saved, * = unsaved
+x   MAV_1_CONFIG [529,907] : 0
+
+ 1093/1813 parameters used.
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 34467 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 2
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 39
+INFO  [uxrce_dds_client] Serial RX pending max: 20 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 0
+INFO  [uxrce_dds_client] Serial framing: state 0, buffered 0 B, message 36/36 B
+nsh> 

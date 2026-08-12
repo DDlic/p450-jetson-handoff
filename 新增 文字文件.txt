@@ -2,3 +2,28 @@ ver all
 param set SER_TEL2_BAUD 115200
 param save
 reboot
+
+nsh: sysinit: fopen failed: No such file or directory
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> ver all
+HW arch: PX4_FMU_V6C
+HW type: V6C000000
+HW version: 0x000
+HW revision: 0x000
+PX4 git-hash: 0438dbc6fd16fe4fb1df1adfda6ddf543373e47e
+PX4 version: 1.14.3 0 (17695488)
+PX4 git-branch: p450-v1.14.3-xrce-minimal-115200
+OS: NuttX
+OS version: Release 11.0.0 (184549631)
+OS git-hash: de41e7feaeffaec3ce65327e9569e8fdb553ca3d
+Build datetime: Jul 29 2026 16:23:47
+Build uri: localhost
+Build variant: default
+Toolchain: GNU GCC, 9.3.1 20200408 (release)
+PX4GUID: 000600000000323534333131510500280019
+MCU: STM32H7[4|5]xxx, rev. V
+nsh> param set SER_TEL2_BAUD 115200
++ SER_TEL2_BAUD: curr: 230400 -> new: 115200
+nsh> param save
+nsh> reboot

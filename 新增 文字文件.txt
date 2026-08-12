@@ -2,3 +2,61 @@ param show SER_TEL2_BAUD
 uxrce_dds_client status
 listener onboard_computer_status 1
 uxrce_dds_client status
+
+
+nsh: sysinit: fopen failed: No such file or directory
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> param show SER_TEL2_BAUD
+Symbols: x = used, + = saved, * = unsaved
+x + SER_TEL2_BAUD [959,1433] : 230400
+
+ 1093/1813 parameters used.
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 18979 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 429
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 88464
+INFO  [uxrce_dds_client] Serial RX pending max: 255 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 240
+INFO  [uxrce_dds_client] Serial framing: state 5, buffered 0 B, message 248/252 B
+nsh> listener onboard_computer_status 1
+
+TOPIC: onboard_computer_status
+ onboard_computer_status
+    timestamp: 319151839 (45.776581 seconds ago)
+    uptime: 8121230
+    ram_usage: 0
+    ram_total: 0
+    storage_type: [0, 0, 0, 0]
+    storage_usage: [0, 0, 0, 0]
+    storage_total: [0, 0, 0, 0]
+    link_type: [0, 0, 0, 0, 0, 0]
+    link_tx_rate: [0, 0, 0, 0, 0, 0]
+    link_rx_rate: [0, 0, 0, 0, 0, 0]
+    link_tx_max: [0, 0, 0, 0, 0, 0]
+    link_rx_max: [0, 0, 0, 0, 0, 0]
+    fan_speed: [0, 0, 0, 0]
+    type: 6
+    cpu_cores: [0, 0, 0, 0, 0, 0, 0, 0]
+    cpu_combined: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    gpu_cores: [0, 0, 0, 0]
+    gpu_combined: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    temperature_board: 0
+    temperature_core: [0, 0, 0, 0, 0, 0, 0, 0]
+
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 19085 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 435
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 89917
+INFO  [uxrce_dds_client] Serial RX pending max: 255 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 240
+INFO  [uxrce_dds_client] Serial framing: state 5, buffered 0 B, message 250/252 B
+nsh> 

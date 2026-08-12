@@ -1,0 +1,67 @@
+Firmware source: 49049d855552c39879234bf4f19229baf0939a48
+
+30-second post-flash smoke test
+elapsed_s=30.007
+messages=2131
+average_hz=71.018
+median_gap_ms=13.034
+max_gap_ms=34.492
+gaps_over_100ms=0
+gaps_over_500ms=0
+gaps_over_1s=0
+result=PASS threshold_ms=100.000
+
+Formal ten-minute no-input test
+elapsed_s=600.014
+messages=42594
+average_hz=70.988
+median_gap_ms=12.968
+max_gap_ms=83.200
+gaps_over_100ms=0
+gaps_over_500ms=0
+gaps_over_1s=0
+result=PASS threshold_ms=100.000
+Agent PID before/after=1693
+Agent NRestarts before/after=0
+input publishers before/after=0
+Agent journal events=0
+
+2 Hz concurrent PX4-to-NX continuity
+elapsed_s=60.010
+messages=4049
+average_hz=67.472
+median_gap_ms=12.919
+max_gap_ms=77.056
+gaps_over_100ms=0
+gaps_over_500ms=0
+gaps_over_1s=0
+result=PASS threshold_ms=100.000
+publisher count during gate=1
+subscription count during gate=1
+Agent PID=1693
+Agent NRestarts=0
+
+Valid live marker
+uptime=8121052
+type=9
+rate_hz=2
+publisher count=1
+subscription count=1
+publisher emitted at least 200 samples before stop
+QGC uORB result=never published
+result=FAIL
+
+Post-stop recovery
+publisher count=0
+subscription count=1
+Agent PID=1687
+Agent NRestarts=0
+elapsed_s=30.025
+messages=2136
+average_hz=71.140
+median_gap_ms=12.838
+max_gap_ms=39.628
+gaps_over_100ms=0
+gaps_over_500ms=0
+gaps_over_1s=0
+result=PASS threshold_ms=100.000

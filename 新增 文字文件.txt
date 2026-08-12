@@ -1,3 +1,4 @@
-param set SER_TEL2_BAUD 230400
-param save
-reboot
+param show SER_TEL2_BAUD
+uxrce_dds_client status
+listener onboard_computer_status 1
+uxrce_dds_client status

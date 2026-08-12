@@ -43,9 +43,9 @@ Failsafe activated, triggering fallback to position control
 No offboard signal
 ```
 
-ROS monitoring simultaneously observed repeated transitions between Offboard (`nav_state=14`, failsafe false) and Position (`nav_state=2`, failsafe true). The 10 Hz heartbeat was still active at the publisher. This is a transport delivery failure, not an intentionally stopped publisher.
+ROS monitoring simultaneously observed repeated transitions between Offboard (`nav_state=14`, failsafe false) and Position (`nav_state=2`, failsafe true). The 10 Hz heartbeat process had not been intentionally stopped. However, this exact outdoor run did not retain a local monotonic send-gap trace, so the evidence proves only that PX4 did not receive a sufficiently continuous heartbeat; it does not by itself distinguish an NX publisher scheduling gap from loss or delay after the Agent.
 
-The minimal firmware still reported approximately 10.1 KB/s PX4-to-NX payload at 115200 baud, close to the 11.52 KB/s theoretical 8N1 ceiling. The result is consistent with UART/XRCE congestion delaying inbound Offboard heartbeat beyond the PX4 timeout.
+The minimal firmware still reported approximately 10.1 KB/s PX4-to-NX serialized/offered payload at 115200 baud. The theoretical 8N1 wire capacity is 11.52 KB/s before XRCE/HDLC framing and byte-stuffing overhead, so this output direction had very little headroom. The v1.14.3 counter does not prove every counted byte reached the wire if a non-blocking transport write failed. Output saturation and the PX4 XRCE client's single-loop scheduling are therefore strong candidates, but UART is full duplex and this observation alone does not prove the causal path for the inbound heartbeat loss. The detailed evidence-ranked analysis is in `../20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md`.
 
 ## Safe termination
 

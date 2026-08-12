@@ -4,22 +4,21 @@
 
 ## 目前狀態
 
-> **2026-08-10 決策覆寫**：最終 PX4 版本固定為 **v1.14.3**。v1.15.4 與其他
-> 版本只保留作診斷及上游修正參考；任何有效修正都必須最小回補至 v1.14.3 後重新
-> 驗收。目前唯一優先是 XRCE 雙向穩定，通過前不進行室外 GPS、裝槳、解鎖或飛行。
-> Phase A 與 ping 回補版的 2 Hz 雙向驗證已完成：PX4→NX 純接收 PASS，但 NX→PX4
-> 新鮮度 FAIL。下一個 v1.14.3 receive-drain 候選版尚未取得刷寫授權；目前停在文件
-> 更新，不得自行刷機、發布 20 Hz 或執行 Offboard。
+> **2026-08-12 最新停止點**：實機目前使用 PX4 v1.14.3 custom
+> `0438dbc6fd`，TELEM2 ↔ NX UART0 固定 115200。115200 已證明能把 NX 的完整 XRCE
+> marker 解碼進 PX4 uORB；室外 GPS／EKF 與 disarmed Offboard 切入切回通過，ROS 2
+> normal Arm 也由 QGC 證實成功。armed 後仍反覆出現 `No offboard signal` 並退回
+> Position；normal Disarm 則因 land detector 誤判 `Takeoff detected/not landed` 被拒絕，
+> 最後由操作者 Kill 安全上鎖。全程無槳，目前所有 ROS 控制 publisher 均為 0，仍禁止
+> 裝槳與飛行。
 
-2026-08-10 最新停止點：實機已刷入
-`p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`。正式 10 分鐘純接收收到
-42,718 筆、平均 71.196 Hz、最大 gap 38.913 ms、0 次超過 100 ms，Agent 無重啟，
-因此 session continuity PASS。2 Hz `/fmu/in/onboard_computer_status` 不會破壞輸出
-continuity，但 QGC 在發布仍進行時看到完全相同 marker 已落後 58.383400 秒，故
-NX→PX4 即時新鮮度 FAIL。完整前因後果、排除項目與下一步見
-[`P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`](P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md)，
-原始證據見
-[`evidence/20260810_163557_px4_v1143_ping_postflash/`](evidence/20260810_163557_px4_v1143_ping_postflash/)。
+最新根因分析已把「UART full duplex」、「NX publisher 是否真的有當次 send-gap trace」
+與「PX4 output 接近 115200 線速」分開處理。網路與上游原始碼交叉查證顯示：Xavier NX
+高速 UART 確有相似 clock／CRC 案例；PX4 新版也已加入 XRCE 高負載 loop／flush 改善與
+per-topic `rate_limit`。下一步不是繼續輪刷大版本，而是為 heartbeat 建立雙端 gap 證據，
+並製作 v1.14.3 rate-limited minimal firmware，把 PX4→NX payload 壓到 5 KB/s 以下。
+完整證據與官方來源見
+[`evidence/20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md`](evidence/20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md)。
 
 Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 eMMC 完整刷寫，並成功進入 Ubuntu 圖形介面。
 
@@ -102,18 +101,18 @@ Offboard 控制流程也必須分別排除，不得概括為雙向控制已通�
 
 ## 閱讀順序
 
-1. `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
-2. `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
-3. `P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
-4. `P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
-5. `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
-6. `P450_PROGRESS_2026-07-24_NEXT.md`
-7. `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`
-8. `JETSON_HANDOFF_MASTER.md`
-9. `P450_PROGRESS_2026-07-20.md`
-10. `JETSON_HANDOFF_HISTORY.md`
-11. `JETSON_HANDOFF_COMMANDS.md`
-12. `JETSON_HANDOFF_PROMPT_FOR_CODEX_CLI.md`
+1. `evidence/20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md`
+2. `evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md`
+3. `evidence/20260812_outdoor_gps_offboard_ground/SUMMARY.md`
+4. `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
+5. `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
+6. `P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
+7. `P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
+8. `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
+9. `P450_PROGRESS_2026-07-24_NEXT.md`
+10. `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`
+11. `JETSON_HANDOFF_MASTER.md`
+12. `JETSON_HANDOFF_COMMANDS.md`
 
 ## 注意
 

@@ -1,3 +1,8 @@
 param set SER_TEL2_BAUD 115200
 param save
 reboot
+
+nsh> param set SER_TEL2_BAUD 115200
++ SER_TEL2_BAUD: curr: 460800 -> new: 115200
+nsh> param save
+nsh> reboot

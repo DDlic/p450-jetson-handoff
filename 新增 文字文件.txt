@@ -1,3 +1,29 @@
 uxrce_dds_client status
 listener onboard_computer_status 5
 uxrce_dds_client status
+
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 34709 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 1912
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 330703
+INFO  [uxrce_dds_client] Serial RX pending max: 255 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 0
+INFO  [uxrce_dds_client] Serial framing: state 5, buffered 0 B, message 236/252 B
+nsh> listener onboard_computer_status 5
+never published
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 34709 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 1913
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 330946
+INFO  [uxrce_dds_client] Serial RX pending max: 255 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 0
+INFO  [uxrce_dds_client] Serial framing: state 5, buffered 0 B, message 238/256 B
+nsh> 

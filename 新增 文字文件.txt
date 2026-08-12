@@ -1,5 +1,189 @@
+[15:27:21.396 ] Info: Kill-switch disengaged
+[15:26:18.449 ] Info: Disarmed by kill switch
+[15:26:18.202 ] Critical: Failsafe activated, triggering fallback to position control
+- No offboard signal
+- Flight termination active
+
+[15:26:13.472 ] Critical: Kill-switch engaged
+[15:26:11.877 ] Critical: Failsafe activated, triggering fallback to position control
+[15:26:11.447 ] Info: Kill-switch disengaged
+[15:26:10.265 ] Critical: Kill-switch engaged
+[15:26:09.714 ] Critical: Failsafe activated, triggering fallback to position control
+No offboard signal
+[15:26:07.624 ] Critical: Failsafe activated, triggering fallback to position control
+No offboard signal
+[15:25:54.249 ] Critical: Failsafe activated, triggering fallback to position control
+No offboard signal
+[15:25:48.997 ] Critical: Disarming denied, not landed
+[15:25:48.942 ] Critical: Disarming denied, not landed
+[15:25:48.942 ] Critical: Disarming denied, not landed
+[15:25:48.818 ] Critical: Failsafe activated, triggering fallback to position control
+[15:25:47.947 ] Critical: Disarming denied, not landed
+[15:25:47.947 ] Critical: Disarming denied, not landed
+[15:25:47.947 ] Critical: Disarming denied, not landed
+[15:25:47.741 ] Critical: Failsafe activated, triggering fallback to position control
+[15:25:47.630 ] Critical: Disarming denied, not landed
+[15:25:46.828 ] Critical: Disarming denied, not landed
+[15:25:46.828 ] Critical: Disarming denied, not landed
+[15:25:46.828 ] Critical: Disarming denied, not landed
+[15:25:46.828 ] Critical: Disarming denied, not landed
+[15:25:46.827 ] Critical: Disarming denied, not landed
+[15:25:46.543 ] Critical: Disarming denied, not landed
+[15:25:46.494 ] Critical: Disarming denied, not landed
+[15:25:46.221 ] Critical: Disarming denied, not landed
+[15:25:45.751 ] Critical: Disarming denied, not landed
+[15:25:45.751 ] Critical: Disarming denied, not landed
+[15:25:45.751 ] Critical: Disarming denied, not landed
+[15:25:45.461 ] Critical: Disarming denied, not landed
+[15:25:44.694 ] Critical: Disarming denied, not landed
+[15:25:44.694 ] Critical: Disarming denied, not landed
+[15:25:44.036 ] Critical: Disarming denied, not landed
+[15:25:43.752 ] Critical: Failsafe activated, triggering fallback to position control
+No offboard signal
+[15:25:43.628 ] Critical: Disarming denied, not landed
+[15:25:42.660 ] Critical: Disarming denied, not landed
+[15:25:42.601 ] Critical: Disarming denied, not landed
+[15:25:42.601 ] Critical: Failsafe activated, triggering fallback to position control
+No offboard signal
+[15:25:41.518 ] Critical: Disarming denied, not landed
+[15:25:41.518 ] Critical: Disarming denied, not landed
+[15:25:41.285 ] Critical: Disarming denied, not landed
+[15:25:39.887 ] Info: Takeoff detected
+[15:25:37.969 ] Info: logging: opening log file 2026-8-12/7_25_37.ulg
+[15:25:37.969 ] Info: Armed by external command
+[15:23:56.319 ] Info: GCS connection regained
+紅字結果
+
+
 commander status
 listener vehicle_land_detected 1
 listener vehicle_status 1
 listener failsafe_flags 1
 uxrce_dds_client status
+
+nsh: sysinit: fopen failed: No such file or directory
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> commander status
+INFO  [commander] Arm state: Standby
+INFO  [commander] navigation mode: STAB
+INFO  [commander] user intended navigation mode: STAB
+INFO  [commander] in failsafe: no
+commander: cycle: 70641 events, 5138540us elapsed, 72.74us avg, min 21us max 24587us 377.710us rms
+commander: preflight check: 7114 events, 2120064us elapsed, 298.01us avg, min 155us max 24543us 1053.410us rms
+nsh> listener vehicle_land_detected 1
+
+TOPIC: vehicle_land_detected
+ vehicle_land_detected
+    timestamp: 2568542871 (0.540863 seconds ago)
+    freefall: False
+    ground_contact: True
+    maybe_landed: True
+    landed: True
+    in_ground_effect: False
+    in_descend: False
+    has_low_throttle: False
+    vertical_movement: False
+    horizontal_movement: False
+    rotational_movement: False
+    close_to_ground_or_skipped_check: True
+    at_rest: True
+
+nsh> listener vehicle_status 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 2568777377 (0.324264 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 2272722399
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 4
+    latest_disarming_reason: 8
+    nav_state_user_intention: 15
+    nav_state: 15
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    gcs_connection_lost: False
+    gcs_connection_lost_counter: 2
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: True
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    avoidance_system_required: False
+    avoidance_system_valid: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: True
+
+nsh> listener failsafe_flags 1
+
+TOPIC: failsafe_flags
+ failsafe_flags
+    timestamp: 2568986547 (0.166010 seconds ago)
+    mode_req_angular_velocity: 8311870
+    mode_req_attitude: 8310846
+    mode_req_local_alt: 8261694
+    mode_req_local_position: 8257592
+    mode_req_local_position_relaxed: 4
+    mode_req_global_position: 56
+    mode_req_mission: 8
+    mode_req_offboard_signal: 16384
+    mode_req_home_position: 32
+    mode_req_wind_and_flight_time_compliance: 2621464
+    mode_req_prevent_arming: 3944480
+    mode_req_manual_control: 33799
+    mode_req_other: 0
+    angular_velocity_invalid: False
+    attitude_invalid: False
+    local_altitude_invalid: False
+    local_position_invalid: True
+    local_position_invalid_relaxed: True
+    local_velocity_invalid: True
+    global_position_invalid: True
+    auto_mission_missing: True
+    offboard_control_signal_lost: True
+    home_position_invalid: True
+    manual_control_signal_lost: False
+    gcs_connection_lost: False
+    battery_warning: 0
+    battery_low_remaining_time: False
+    battery_unhealthy: False
+    primary_geofence_breached: False
+    mission_failure: False
+    vtol_fixed_wing_system_failure: False
+    wind_limit_exceeded: False
+    flight_time_limit_exceeded: False
+    local_position_accuracy_low: False
+    fd_critical_failure: False
+    fd_esc_arming_failure: False
+    fd_imbalanced_prop: False
+    fd_motor_failure: False
+
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 10079 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 19866
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 3684305
+INFO  [uxrce_dds_client] Serial RX pending max: 255 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 117616
+INFO  [uxrce_dds_client] Serial framing: state 0, buffered 0 B, message 36/36 B
+nsh> 

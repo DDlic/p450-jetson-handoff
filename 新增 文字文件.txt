@@ -12,3 +12,13 @@ INFO  [uxrce_dds_client] Payload rx: 0 B/s
 nsh> listener onboard_computer_status 5
 never published
 nsh> 
+
+
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 34503 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+nsh> listener onboard_computer_status 5
+never published
+nsh> 

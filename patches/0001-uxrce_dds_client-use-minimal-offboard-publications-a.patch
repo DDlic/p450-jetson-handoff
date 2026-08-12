@@ -1,0 +1,60 @@
+From 0438dbc6fd16fe4fb1df1adfda6ddf543373e47e Mon Sep 17 00:00:00 2001
+From: DDlic <DDlic@users.noreply.github.com>
+Date: Wed, 12 Aug 2026 12:02:49 +0800
+Subject: [PATCH] uxrce_dds_client: use minimal offboard publications at 115200
+
+---
+ src/modules/uxrce_dds_client/dds_topics.yaml | 15 ---------------
+ 1 file changed, 15 deletions(-)
+
+diff --git a/src/modules/uxrce_dds_client/dds_topics.yaml b/src/modules/uxrce_dds_client/dds_topics.yaml
+index 8b62f01cdb..f1bbf51c4c 100644
+--- a/src/modules/uxrce_dds_client/dds_topics.yaml
++++ b/src/modules/uxrce_dds_client/dds_topics.yaml
+@@ -5,27 +5,18 @@
+ #####
+ publications:
+ 
+-  - topic: /fmu/out/collision_constraints
+-    type: px4_msgs::msg::CollisionConstraints
+-
+   - topic: /fmu/out/failsafe_flags
+     type: px4_msgs::msg::FailsafeFlags
+ 
+   - topic: /fmu/out/position_setpoint_triplet
+     type: px4_msgs::msg::PositionSetpointTriplet
+ 
+-  - topic: /fmu/out/sensor_combined
+-    type: px4_msgs::msg::SensorCombined
+-
+   - topic: /fmu/out/timesync_status
+     type: px4_msgs::msg::TimesyncStatus
+ 
+   # - topic: /fmu/out/vehicle_angular_velocity
+   #   type: px4_msgs::msg::VehicleAngularVelocity
+ 
+-  - topic: /fmu/out/vehicle_attitude
+-    type: px4_msgs::msg::VehicleAttitude
+-
+   - topic: /fmu/out/vehicle_control_mode
+     type: px4_msgs::msg::VehicleControlMode
+ 
+@@ -38,15 +29,9 @@ publications:
+   - topic: /fmu/out/vehicle_local_position
+     type: px4_msgs::msg::VehicleLocalPosition
+ 
+-  - topic: /fmu/out/vehicle_odometry
+-    type: px4_msgs::msg::VehicleOdometry
+-
+   - topic: /fmu/out/vehicle_status
+     type: px4_msgs::msg::VehicleStatus
+ 
+-  - topic: /fmu/out/vehicle_trajectory_waypoint_desired
+-    type: px4_msgs::msg::VehicleTrajectoryWaypoint
+-
+ subscriptions:
+ 
+   - topic: /fmu/in/offboard_control_mode
+-- 
+2.25.1
+

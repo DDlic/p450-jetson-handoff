@@ -10,8 +10,8 @@ User=p450
 Group=p450
 SupplementaryGroups=dialout
 Environment=ROS_DOMAIN_ID=0
-ExecStartPre=/bin/stty -F /dev/ttyTHS1 230400 raw -echo cs8 -parenb -cstopb -crtscts
-ExecStart=/usr/local/bin/MicroXRCEAgent serial --dev /dev/ttyTHS1 -b 230400 -v 2
+ExecStartPre=/bin/stty -F /dev/ttyTHS1 115200 raw -echo cs8 -parenb -cstopb -crtscts
+ExecStart=/usr/local/bin/MicroXRCEAgent serial --dev /dev/ttyTHS1 -b 115200 -v 2
 Restart=on-failure
 RestartSec=2
 

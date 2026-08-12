@@ -2,7 +2,9 @@
 """Read-only arrival/source gap monitor for PX4 vehicle_local_position."""
 
 import argparse
+import os
 import statistics
+import sys
 import time
 
 import rclpy
@@ -58,8 +60,6 @@ def main():
             rclpy.spin_once(node, timeout_sec=0.25)
     finally:
         elapsed = time.monotonic() - started
-        node.destroy_node()
-        rclpy.shutdown()
 
     arrival_gaps = [
         (current - previous) * 1000.0
@@ -73,7 +73,11 @@ def main():
     print(f"elapsed_s={elapsed:.3f} messages={len(node.arrivals)} average_hz={len(node.arrivals) / elapsed:.3f}")
     print(f"arrival {summarize(arrival_gaps)}")
     print(f"source {summarize(source_gaps)}")
-    return 0 if arrival_gaps and max(arrival_gaps) <= 100.0 else 2
+    result = 0 if arrival_gaps and max(arrival_gaps) <= 100.0 else 2
+    sys.stdout.flush()
+    # Fast DDS teardown can hang on this Jetson after a serial XRCE gap. The
+    # process is a read-only, one-shot diagnostic, so exit after reporting.
+    os._exit(result)
 
 
 if __name__ == "__main__":

@@ -4,3 +4,128 @@ uxrce_dds_client status
 listener onboard_computer_status 1
 listener vehicle_local_position 1
 uxrce_dds_client status
+
+nsh: sysinit: fopen failed: No such file or directory
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> ver all
+HW arch: PX4_FMU_V6C
+HW type: V6C000000
+HW version: 0x000
+HW revision: 0x000
+PX4 git-hash: 0438dbc6fd16fe4fb1df1adfda6ddf543373e47e
+PX4 version: 1.14.3 0 (17695488)
+PX4 git-branch: p450-v1.14.3-xrce-minimal-115200
+OS: NuttX
+OS version: Release 11.0.0 (184549631)
+OS git-hash: de41e7feaeffaec3ce65327e9569e8fdb553ca3d
+Build datetime: Jul 29 2026 16:23:47
+Build uri: localhost
+Build variant: default
+Toolchain: GNU GCC, 9.3.1 20200408 (release)
+PX4GUID: 000600000000323534333131510500280019
+MCU: STM32H7[4|5]xxx, rev. V
+nsh> param show SER_TEL2_BAUD
+Symbols: x = used, + = saved, * = unsaved
+x + SER_TEL2_BAUD [959,1433] : 115200
+
+ 1093/1813 parameters used.
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 10239 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 1475
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 302371
+INFO  [uxrce_dds_client] Serial RX pending max: 255 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 6960
+INFO  [uxrce_dds_client] Serial framing: state 0, buffered 0 B, message 36/36 B
+nsh> listener onboard_computer_status 1
+
+TOPIC: onboard_computer_status
+ onboard_computer_status
+    timestamp: 448132855 (581.519104 seconds ago)
+    uptime: 8121150
+    ram_usage: 0
+    ram_total: 0
+    storage_type: [0, 0, 0, 0]
+    storage_usage: [0, 0, 0, 0]
+    storage_total: [0, 0, 0, 0]
+    link_type: [0, 0, 0, 0, 0, 0]
+    link_tx_rate: [0, 0, 0, 0, 0, 0]
+    link_rx_rate: [0, 0, 0, 0, 0, 0]
+    link_tx_max: [0, 0, 0, 0, 0, 0]
+    link_rx_max: [0, 0, 0, 0, 0, 0]
+    fan_speed: [0, 0, 0, 0]
+    type: 5
+    cpu_cores: [0, 0, 0, 0, 0, 0, 0, 0]
+    cpu_combined: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    gpu_cores: [0, 0, 0, 0]
+    gpu_combined: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    temperature_board: 0
+    temperature_core: [0, 0, 0, 0, 0, 0, 0, 0]
+
+nsh> listener vehicle_local_position 1
+
+TOPIC: vehicle_local_position
+ vehicle_local_position
+    timestamp: 1029683510 (0.001449 seconds ago)
+    timestamp_sample: 1029683098 (412 us before timestamp)
+    ref_timestamp: 0
+    ref_lat: nan
+    ref_lon: nan
+    x: 0.00089
+    y: 0.00055
+    z: 0.52666
+    delta_xy: [0.00000, 0.00000]
+    delta_z: 0.00000
+    vx: 0.00384
+    vy: 0.00235
+    vz: -0.00337
+    z_deriv: -0.00506
+    delta_vxy: [0.00000, 0.00000]
+    delta_vz: -0.00035
+    ax: 0.11551
+    ay: 0.05166
+    az: 0.00771
+    heading: 2.41657
+    delta_heading: 2.40464
+    ref_alt: nan
+    dist_bottom: 0.09666
+    eph: 0.01576
+    epv: 0.27164
+    evh: 0.04211
+    evv: 0.07069
+    vxy_max: inf
+    vz_max: inf
+    hagl_min: inf
+    hagl_max: inf
+    xy_valid: False
+    z_valid: True
+    v_xy_valid: False
+    v_z_valid: True
+    xy_reset_counter: 1
+    z_reset_counter: 1
+    vxy_reset_counter: 1
+    vz_reset_counter: 1
+    heading_reset_counter: 1
+    heading_good_for_control: False
+    xy_global: False
+    z_global: False
+    dist_bottom_valid: False
+    dist_bottom_sensor_bitfield: 0
+    dead_reckoning: True
+
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 10216 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 1475
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 302371
+INFO  [uxrce_dds_client] Serial RX pending max: 255 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 6960
+INFO  [uxrce_dds_client] Serial framing: state 0, buffered 0 B, message 36/36 B
+nsh> 

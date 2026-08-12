@@ -22,8 +22,9 @@ NAV_OFFBOARD = 14
 
 
 class GroundProbe(Node):
-    def __init__(self):
+    def __init__(self, allow_armed=False):
         super().__init__("p450_offboard_ground_probe")
+        self.allow_armed = allow_armed
         qos = QoSProfile(
             history=QoSHistoryPolicy.KEEP_LAST,
             depth=10,
@@ -50,6 +51,12 @@ class GroundProbe(Node):
                 flush=True,
             )
             self.last_nav = message.nav_state
+        if message.arming_state != DISARMED:
+            print(
+                f"ARMED_OBSERVED arming_state={message.arming_state} "
+                f"nav_state={message.nav_state} failsafe={message.failsafe}",
+                flush=True,
+            )
 
     def control_cb(self, message):
         self.control = message
@@ -83,7 +90,7 @@ class GroundProbe(Node):
         )
 
     def publish(self):
-        if self.status.arming_state != DISARMED or self.control.flag_armed:
+        if not self.allow_armed and (self.status.arming_state != DISARMED or self.control.flag_armed):
             raise RuntimeError("vehicle became armed; probe stopped")
         timestamp = self.get_clock().now().nanoseconds // 1000
         mode = OffboardControlMode()
@@ -109,9 +116,14 @@ class GroundProbe(Node):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--duration", type=float, default=120.0)
+    parser.add_argument(
+        "--allow-armed",
+        action="store_true",
+        help="continue heartbeat while observing a manual no-prop arming test",
+    )
     args = parser.parse_args()
     rclpy.init()
-    node = GroundProbe()
+    node = GroundProbe(allow_armed=args.allow_armed)
     deadline = time.monotonic() + 15.0
     while time.monotonic() < deadline and not node.ready():
         rclpy.spin_once(node, timeout_sec=0.1)
@@ -130,6 +142,11 @@ def main():
     except (KeyboardInterrupt, RuntimeError) as error:
         print(f"GROUND_PROBE_STOP: {error}", flush=True)
         os._exit(3 if isinstance(error, RuntimeError) else 0)
+    if node.status is not None and node.status.arming_state != DISARMED:
+        print("REFUSED_TO_EXIT_WHILE_ARMED", flush=True)
+        while node.status is not None and node.status.arming_state != DISARMED:
+            rclpy.spin_once(node, timeout_sec=0.02)
+            node.publish()
     print("GROUND_PROBE_COMPLETE", flush=True)
     os._exit(0)
 

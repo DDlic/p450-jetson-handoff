@@ -1,0 +1,90 @@
+From f6beb984ca0b8805735475cc57cf1db278d53a67 Mon Sep 17 00:00:00 2001
+From: DDlic <DDlic@users.noreply.github.com>
+Date: Wed, 12 Aug 2026 11:00:10 +0800
+Subject: [PATCH] uxrce_dds_client: add serial RX diagnostics
+
+---
+ .../uxrce_dds_client/uxrce_dds_client.cpp     | 38 +++++++++++++++++++
+ .../uxrce_dds_client/uxrce_dds_client.h       |  4 ++
+ 2 files changed, 42 insertions(+)
+
+diff --git a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+index 44d49de22b..966017687f 100644
+--- a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
++++ b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+@@ -44,6 +44,7 @@
+ #include <termios.h>
+ #include <fcntl.h>
+ #include <stdlib.h>
++#include <sys/ioctl.h>
+ #include <unistd.h>
+ 
+ #if defined(CONFIG_NET) || defined(__PX4_POSIX)
+@@ -328,6 +329,27 @@ void UxrceddsClient::run()
+ 
+ 			_subs->update(&session, reliable_out, best_effort_out, participant_id, _client_namespace);
+ 
++			// Diagnostic only: sample bytes waiting in the NuttX UART RX queue before the
++			// XRCE client consumes them. This distinguishes a silent physical/driver RX
++			// path from bytes that reach the client but fail to form a complete payload.
++			if ((_transport_serial != nullptr) && (_fd >= 0)) {
++				int bytes_available = 0;
++
++				if (ioctl(_fd, FIONREAD, (unsigned long)&bytes_available) == 0) {
++					if (bytes_available > 0) {
++						_serial_rx_pending_samples++;
++						_serial_rx_pending_bytes_observed += static_cast<uint32_t>(bytes_available);
++
++						if (static_cast<uint32_t>(bytes_available) > _serial_rx_pending_max) {
++							_serial_rx_pending_max = static_cast<uint32_t>(bytes_available);
++						}
++					}
++
++				} else {
++					_serial_rx_fionread_errors++;
++				}
++			}
++
+ 			// Run the session until we receive no more data or up to a maximum number of iterations.
+ 			// Backported from PX4 commit d12a7dd11d: processing only one message per loop can delay
+ 			// received data enough to make registered flight modes time out.
+@@ -586,6 +608,22 @@ int UxrceddsClient::print_status()
+ 	if (_connected) {
+ 		PX4_INFO("Payload tx: %i B/s", _last_payload_tx_rate);
+ 		PX4_INFO("Payload rx: %i B/s", _last_payload_rx_rate);
++
++		if (_transport_serial != nullptr) {
++			PX4_INFO("Serial RX pending samples: %u", (unsigned)_serial_rx_pending_samples);
++			PX4_INFO("Serial RX pending bytes observed: %llu",
++				 (unsigned long long)_serial_rx_pending_bytes_observed);
++			PX4_INFO("Serial RX pending max: %u B", (unsigned)_serial_rx_pending_max);
++			PX4_INFO("Serial RX FIONREAD errors: %u", (unsigned)_serial_rx_fionread_errors);
++			PX4_INFO("Complete payload bytes received: %u", (unsigned)_pubs->num_payload_received);
++
++			const uxrFramingIO &framing = _transport_serial->framing_io;
++			const unsigned buffered = framing.rb_head >= framing.rb_tail ?
++						  framing.rb_head - framing.rb_tail :
++						  sizeof(framing.rb) - framing.rb_tail + framing.rb_head;
++			PX4_INFO("Serial framing: state %u, buffered %u B, message %u/%u B",
++				 (unsigned)framing.state, buffered, (unsigned)framing.msg_pos, (unsigned)framing.msg_len);
++		}
+ 	}
+ 
+ 	return 0;
+diff --git a/src/modules/uxrce_dds_client/uxrce_dds_client.h b/src/modules/uxrce_dds_client/uxrce_dds_client.h
+index aab381b73d..88230ca235 100644
+--- a/src/modules/uxrce_dds_client/uxrce_dds_client.h
++++ b/src/modules/uxrce_dds_client/uxrce_dds_client.h
+@@ -99,6 +99,10 @@ private:
+ 
+ 	int _last_payload_tx_rate{}; ///< in B/s
+ 	int _last_payload_rx_rate{}; ///< in B/s
++	uint64_t _serial_rx_pending_bytes_observed{};
++	uint32_t _serial_rx_pending_samples{};
++	uint32_t _serial_rx_pending_max{};
++	uint32_t _serial_rx_fionread_errors{};
+ 	bool _connected{false};
+ 
+ 	Timesync _timesync{timesync_status_s::SOURCE_PROTOCOL_DDS};
+-- 
+2.25.1

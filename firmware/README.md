@@ -6,6 +6,42 @@
 > NX→PX4 freshness FAIL（live marker 落後 58.383400 秒）。下方 v1.14.3
 > receive-drain＋ping 候選版尚未取得刷寫授權；任何刷寫都需機主重新明確同意。
 
+## PX4 v1.14.3 UART RX 診斷版
+
+檔案：
+
+```text
+p450-pixhawk6c-v1.14.3-xrce-rxdiag-f6beb984ca.px4
+```
+
+建置與封裝驗證：
+
+- 目標板：Pixhawk 6C／`PX4FMUv6C`
+- 基底：已測試的 receive-drain＋session-ping source `49049d8555`
+- 診斷 source：`f6beb984ca0b8805735475cc57cf1db278d53a67`
+- firmware `git_identity`：`v1.14.3-3-gf6beb984ca`
+- firmware `git_hash`：`f6beb984ca0b8805735475cc57cf1db278d53a67`
+- `board_id`：56
+- image size：1,938,252／1,966,080 bytes（FLASH 98.58%）
+- 檔案大小：1,808,998 bytes
+- SHA-256：`419565d7ad6239272e0854c7b9da2a20a8133d6306f1b554475bfaa0f141b875`
+- source patch：`../patches/px4-v1.14.3-uxrce-rxdiag.patch`
+
+這不是新的飛行修正，而是為 2026-08-12 有效 2 Hz FAIL 建立的最小診斷版。它不改
+DDS topics、控制器、參數、飛行模式、failsafe、輸出頻率或 receive-drain 行為；只在
+`uxrce_dds_client status` 增加以下唯讀資訊：
+
+- NuttX UART RX queue 出現 pending bytes 的樣本次數。
+- 抽樣觀察到的 pending bytes 累計與最大值。
+- `FIONREAD` 錯誤次數。
+- 完整 XRCE payload 累計 bytes。
+- serial framing state、ring-buffer bytes 與 message progress。
+
+若 2 Hz 發布期間 raw pending counters 始終為 0，問題在 PX4 XRCE parser 之前，優先查
+實體 RX、level shifter、UART driver／DMA。若 raw counters 增加但完整 payload 仍為 0，
+則優先查 serial framing、CRC、地址或 XRCE protocol parsing。此韌體尚未刷入；必須先
+取得機主明確確認，刷後只執行未解鎖的 2 Hz 非控制 marker 與 status 查詢。
+
 ## PX4 v1.15.4 XRCE 完整 transport 排空候選版
 
 檔案：

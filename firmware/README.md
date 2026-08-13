@@ -1,9 +1,45 @@
 # P450 Pixhawk 6C 測試韌體
 
-> **2026-08-13 最新候選**：目前實機仍是 v1.14.3 custom `0438dbc6fd`；新建立的
-> `50c989f85b` rate-limit＋heartbeat receipt diagnostics 版已完成 clean build 與封裝
-> 驗證，但尚未刷入。它是下一個單一變因 A/B 候選，不是已驗證飛行韌體。未通過
-> disarmed 雙端 gap 測試與無槳 armed hold 前，禁止裝槳或飛行。
+> **2026-08-13 最新候選**：`50c989f85b` rate-limit 版已刷入並完成 Best-Effort A 組；
+> NX 發 601 筆、PX4 收 586 筆，最大 receipt gap 307.002 ms，因此 receipt gate FAIL。
+> 新建立的 `e6f3d83ff5` 只把 Offboard heartbeat 改為 Reliable，已完成 clean build，
+> 尚未刷入。它不是已驗證飛行韌體；通過 disarmed Reliable A/B 前禁止裝槳或飛行。
+
+## PX4 v1.14.3 Reliable Offboard heartbeat A/B 版
+
+檔案：
+
+```text
+p450-pixhawk6c-v1.14.3-xrce-reliable-offboard-e6f3d83ff5.px4
+```
+
+建置與封裝驗證：
+
+- 目標板：Pixhawk 6C／`PX4FMUv6C`
+- 基底：rate-limit＋receipt diagnostics `50c989f85b`
+- source branch：`p450-v1.14.3-xrce-reliable-offboard`
+- source commit：`e6f3d83ff5004c2fd634f12b3c4bfb2983a1c157`
+- source patch：`../patches/0002-uxrce_dds_client-make-offboard-heartbeat-reliable.patch`
+- compiler：GNU Arm Embedded 9-2020-q2-update／GCC 9.3.1
+- clean build：`1114/1114` 成功
+- firmware `git_identity`：`v1.14.3-6-ge6f3d83ff5`
+- `board_id`：56，`board_revision`：0
+- container size：1,805,698 bytes
+- image size：1,934,700／1,966,080 bytes（FLASH 98.40%）
+- container SHA-256：`da2c86fc51b89c3b8851e2a002d6debb2befc21ee586011abceee3754ac8d948`
+- image SHA-256：`c5cc0920257117ba19e2b54978f0cb21518bc0bf8e420bf9970ca80231b71adb`
+
+唯一傳輸行為變因是 `/fmu/in/offboard_control_mode` 同時使用 Reliable DDS DataReader
+QoS 與 Reliable XRCE input stream；其他 12 個 input subscriptions 仍是 Best-Effort，
+輸出限流、115200、commander、failsafe、arming 與 setpoint 均未更動。PX4 status 額外顯示：
+
+```text
+Offboard RX stream: reliable
+```
+
+刷入後必須用 NX probe 的 `--reliability reliable` 做同樣 10 Hz／60 秒 disarmed A/B。
+若 receipt count 仍少於 NX publish count或出現 >250 ms gap，Reliable 假設即 FAIL，
+下一步改做 FTDI／USB transport 與實體 UART 電氣 A/B。
 
 ## PX4 v1.14.3 115200 rate-limit＋heartbeat receipt 診斷版
 

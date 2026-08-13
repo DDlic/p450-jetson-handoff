@@ -24,30 +24,48 @@ NAV_OFFBOARD = 14
 
 
 class HeartbeatProbe(Node):
-    def __init__(self, csv_path):
+    def __init__(self, csv_path, reliability):
         super().__init__("p450_offboard_heartbeat_probe")
-        qos = QoSProfile(
+        subscription_qos = QoSProfile(
             history=QoSHistoryPolicy.KEEP_LAST,
             depth=10,
             reliability=QoSReliabilityPolicy.BEST_EFFORT,
             durability=QoSDurabilityPolicy.VOLATILE,
         )
+        publisher_qos = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=10,
+            reliability=(
+                QoSReliabilityPolicy.RELIABLE
+                if reliability == "reliable"
+                else QoSReliabilityPolicy.BEST_EFFORT
+            ),
+            durability=QoSDurabilityPolicy.VOLATILE,
+        )
+        self.reliability = reliability
         self.status = None
         self.control = None
         self.started_ns = time.monotonic_ns()
         self.previous_publish_ns = None
         self.publish_count = 0
         self.gaps_ms = []
-        self.create_subscription(VehicleStatus, "/fmu/out/vehicle_status", self._status, qos)
-        self.create_subscription(VehicleControlMode, "/fmu/out/vehicle_control_mode", self._control, qos)
+        self.create_subscription(
+            VehicleStatus, "/fmu/out/vehicle_status", self._status, subscription_qos
+        )
+        self.create_subscription(
+            VehicleControlMode,
+            "/fmu/out/vehicle_control_mode",
+            self._control,
+            subscription_qos,
+        )
         self.publisher = self.create_publisher(
-            OffboardControlMode, "/fmu/in/offboard_control_mode", qos
+            OffboardControlMode, "/fmu/in/offboard_control_mode", publisher_qos
         )
 
         path = Path(csv_path).expanduser().resolve()
         path.parent.mkdir(parents=True, exist_ok=True)
         self.csv_file = path.open("w", newline="", buffering=1)
-        self.csv_writer = csv.writer(self.csv_file)
+        self.csv_writer = csv.writer(self.csv_file, lineterminator="\n")
         self.csv_writer.writerow(
             [
                 "sequence",
@@ -55,6 +73,7 @@ class HeartbeatProbe(Node):
                 "elapsed_ms",
                 "publish_gap_ms",
                 "ros_timestamp_us",
+                "reliability",
                 "subscription_count",
                 "arming_state",
                 "nav_state",
@@ -111,6 +130,7 @@ class HeartbeatProbe(Node):
                 f"{(monotonic_ns - self.started_ns) / 1_000_000.0:.3f}",
                 "" if math.isnan(gap_ms) else f"{gap_ms:.3f}",
                 timestamp_us,
+                self.reliability,
                 self.publisher.get_subscription_count(),
                 self.status.arming_state,
                 self.status.nav_state,
@@ -140,6 +160,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--duration", type=float, default=60.0)
     parser.add_argument("--rate", type=float, default=10.0)
+    parser.add_argument(
+        "--reliability",
+        choices=("best_effort", "reliable"),
+        default="best_effort",
+    )
     parser.add_argument("--csv", required=True)
     args = parser.parse_args()
     if args.duration <= 0 or args.rate < 2.0 or args.rate > 20.0:
@@ -147,7 +172,7 @@ def main():
         return 2
 
     rclpy.init()
-    node = HeartbeatProbe(args.csv)
+    node = HeartbeatProbe(args.csv, args.reliability)
     ready_deadline = time.monotonic() + 15.0
     while time.monotonic() < ready_deadline and not node.safe():
         rclpy.spin_once(node, timeout_sec=0.1)
@@ -166,7 +191,8 @@ def main():
 
     print(
         "HEARTBEAT_PROBE_READY disarmed=true offboard=false "
-        f"subscriptions={node.publisher.get_subscription_count()} rate_hz={args.rate:.3f}",
+        f"subscriptions={node.publisher.get_subscription_count()} "
+        f"rate_hz={args.rate:.3f} reliability={args.reliability}",
         flush=True,
     )
     period = 1.0 / args.rate

@@ -79,6 +79,16 @@ A/B，或用示波器／logic analyzer 測 bit timing、電平與 framing；不�
 若成立，先修 session lifecycle。每次 Pixhawk-only reboot 後應重啟 NX Agent，再驗證
 endpoint；不能把 stale graph 當成 connected。
 
+### H5：關鍵 heartbeat 使用 Best-Effort，本身允許遺失
+
+預測：即使 `P(n)` 正常、output 已低於 5 KB/s、session 沒重建，PX4 的 receipt count
+仍可能小於 NX publish count。因為目前 ROS 2 DataReader QoS 與 Agent→PX4 XRCE input
+stream 都是 Best-Effort，任何一層丟掉 sample 都不會重傳。
+
+若成立，對 `OffboardControlMode` 做單一 topic Reliable A/B；其他 topic、115200、輸出
+限流與 failsafe 全部不變。若 receipt count 與 gap 同時恢復，底層解法是把具 deadline
+意義的 control heartbeat 可靠化，而不是繼續放寬 `COM_OF_LOSS_T`。
+
 ## 4. 已完成的底層實作
 
 ### 4.1 PX4 rate-limited bridge
@@ -157,20 +167,38 @@ DDS subscription count、arming、nav 與 failsafe 狀態。
 firmware/p450-pixhawk6c-v1.14.3-xrce-ratelimit115200-50c989f85b.px4
 ```
 
-## 6. 目前仍未完成的驗證
+## 6. `50c989f85b` 實機 A 組結果
 
-截至寫檔時飛控沒有建立新 DDS graph：Agent active、UART 為 115200 8N1、沒有控制
-publisher，但 `/fmu/out/vehicle_status` 沒有 publisher。最可能是飛控未供電；本輪沒有
-重啟 Agent、沒有發布 heartbeat、沒有切模式或解鎖。
+2026-08-13 已刷入 rate-limit 候選版。重啟 NX Agent 建立乾淨 XRCE session 後，已移除的
+`position_setpoint_triplet` 與 `timesync_status` writer 消失，證明新韌體確實生效。
 
-因此目前完成的是：
+全程無槳、disarmed、非 Offboard，只發布 10 Hz `OffboardControlMode`，不送 setpoint、
+VehicleCommand、模式切換或解鎖：
 
-- PASS：問題可測量化；
-- PASS：rate-limit／雙端 gap 診斷 source 可生成及編譯；
-- PASS：artifact identity、board、flash 與 hash；
-- PENDING：刷入後實機 transport A/B；
-- PENDING：是否真正消除 Offboard loss；
-- FAIL／禁止：尚未具備飛行許可。
+```text
+NX:  publishes 601, max gap 119.813 ms, >150/250/500 ms 0/0/0
+PX4: count 586, max gap 307002 us, >150/250/500 ms 11/4/0
+PX4: Payload tx 2874 B/s, FIONREAD errors 0, framing state 0
+PX4: Complete payload bytes received 9376
+```
+
+`9376 / 586 = 16 bytes`，精確等於每一筆成功解序列化 heartbeat 的 payload 大小；NX
+發出 601 筆但 PX4 只收到 586 筆，少 15 筆（2.50%）。同場 NX publish-side 完全沒有
+>150 ms gap，PX4 output 也已低於 5 KB/s，因此：
+
+- H1 在本場否證：不是 NX 10 Hz scheduler 產生 1 秒停頓；
+- H2 的「單純頻寬飽和」不足：限流成功但 receipt gate 仍 FAIL；
+- H4 在本場否證：Agent PID/session 穩定，沒有 reconnect；
+- 問題已縮到 ROS 2 publisher 之後、PX4 deserialize 之前；
+- 本場最大 gap 307 ms，沒有重現 1 秒 failsafe，但已違反 250 ms 工程 gate，且
+  Best-Effort 遺失具機率性，不能據此允許飛行。
+
+原始 NX CSV：
+
+```text
+live_20260813_heartbeat_10hz.csv
+SHA-256 4f3f2d0548bab86a526e7dc3dc024856134922d9e89de492e7e117502d40b3cf
+```
 
 ## 7. 刷入後的嚴格驗證流程
 
@@ -262,17 +290,66 @@ PASS 必須同時滿足：
 ground probe 重做 Offboard 切入／切回。再通過後才可做 normal Arm hold。任何一次
 `No offboard signal`、Position fallback 或 >250 ms receipt gap 都是 FAIL。
 
+### 7.6 Gate D：Reliable 單一變因 A/B
+
+因 A 組 receipt gate 已 FAIL，Gate C 暫停。刷入 `e6f3d83ff5` 後，NX 改用：
+
+```bash
+python3 scripts/p450_offboard_heartbeat_probe.py \
+  --duration 60 --rate 10 --reliability reliable \
+  --csv /media/p450/P450_DATA/rosbags/offboard-heartbeat-reliable-10hz.csv
+```
+
+PX4 console 必須先看到：
+
+```text
+Offboard RX stream: reliable
+```
+
+B 組 PASS 必須同時滿足：NX subscription count 1、NX 601 筆左右、PX4 receipt count
+與 NX 差值不超過起停邊界 1 筆、PX4 `>250/500 ms=0/0`、session 不重建。若 Reliable
+仍遺失或出現大 gap，才轉做 FTDI／USB transport 與實體電氣 A/B。
+
 ## 8. 真正的底層解法界線
 
-若本候選通過，解法不是「把 baud 降到 115200」本身，而是：
+Best-Effort A 組已證明限流是必要但不充分條件。下一個可證偽解法是：
 
 ```text
 可靠可解碼的 baud
 + 有明確 budget 的 telemetry rate
++ 對 deadline-critical heartbeat 使用端到端 Reliable stream
 + receive-side deadline measurement
 + session lifecycle reset
 + 在 COM_OF_LOSS_T 前保留數倍 timing margin
 ```
 
-若本候選在 3.74 KB/s 下仍失敗，軟體限速不是底層答案；最短路徑是替換 transport 並做
-電氣量測，而不是繼續修改 QoS、timeout 或 commander failsafe。
+不能用增大 `COM_OF_LOSS_T` 掩蓋遺失，因為那只延後 commander 發現失聯。若 Reliable
+B 組仍失敗，才表示問題低於 XRCE reliability 可恢復的範圍，最短路徑是替換 transport
+並做 UART 電氣／driver 量測。
+
+## 9. Reliable Offboard B 組候選韌體
+
+source：
+
+```text
+branch: p450-v1.14.3-xrce-reliable-offboard
+commit: e6f3d83ff5004c2fd634f12b3c4bfb2983a1c157
+base:   50c989f85bffb6bd080540a2dba88da424f3f065
+```
+
+最小修改只有：
+
+- YAML 允許 subscription 選擇 `reliable: true`；
+- `offboard_control_mode` DataReader QoS 改為 Reliable；
+- 該 DataReader 的 XRCE delivery stream 改為 `reliable_in_stream_id`；
+- 其他 12 個 PX4 input subscriptions 仍是 Best-Effort；
+- NX probe 新增 `--reliability reliable`；
+- commander、failsafe、setpoint、arming 與輸出限流完全不變。
+
+clean build `1114/1114` 成功，ARM GCC 9.3.1，FMUv6C image
+1,934,700／1,966,080 B（98.40%）。容器 metadata：`board_id=56`、
+`git_identity=v1.14.3-6-ge6f3d83ff5`。container SHA-256：
+`da2c86fc51b89c3b8851e2a002d6debb2befc21ee586011abceee3754ac8d948`；image SHA-256：
+`c5cc0920257117ba19e2b54978f0cb21518bc0bf8e420bf9970ca80231b71adb`。
+
+此版本只完成 source/build/artifact 驗證，尚未刷入、尚未通過 B 組，因此仍禁止裝槳與飛行。

@@ -4,12 +4,12 @@
 
 ## 目前狀態
 
-> **2026-08-13 第一性原理候選已建立、尚未刷入**：以目前 `0438dbc6fd` 為基底的
-> v1.14.3 rate-limit＋heartbeat receipt diagnostics 韌體已完成 clean build。新版本
-> `50c989f85b` 將 PX4→NX serialized output 上限降至 3740 B/s，並在 PX4 成功反序列化
-> 每個 `OffboardControlMode` 時直接計算 receipt gap；NX probe 同步輸出 monotonic CSV。
-> 這能用同一場測試區分 Linux publish gap、Agent/UART 後段 gap與 PX4 client 排程。
-> 韌體尚未刷入，因此目前只能說「底層解法已具備可驗證實作」，不能說實機問題已解決。
+> **2026-08-13 第一性原理 A 組已完成、Reliable B 組待刷**：`50c989f85b` 已證明
+> PX4→NX output 可降至 2874 B/s，但 10 Hz／60 秒 Best-Effort heartbeat 仍是 NX 發
+> 601 筆、PX4 收 586 筆，PX4 最大 gap 307.002 ms；NX 自身最大 gap 119.813 ms。
+> 因此單純頻寬飽和與 Linux publish scheduling 均不足以解釋遺失，責任範圍已縮到
+> ROS 2 publisher 之後、PX4 deserialize 之前。`e6f3d83ff5` 只把 Offboard heartbeat
+> 改成 Reliable，已完成 clean build，下一步做相同條件 B 組；目前仍不能宣稱已解決。
 > 詳見
 > [`evidence/20260813_first_principles_offboard_transport/SUMMARY.md`](evidence/20260813_first_principles_offboard_transport/SUMMARY.md)。
 

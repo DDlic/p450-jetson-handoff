@@ -4,16 +4,18 @@
 
 ## 目前狀態
 
-> **2026-08-13 第一性原理 Reliable B 組已通過**：`50c989f85b` 已證明
+> **2026-08-13 Reliable 長測：零遺失但 deadline FAIL**：`50c989f85b` 已證明
 > PX4→NX output 可降至 2874 B/s，但 10 Hz／60 秒 Best-Effort heartbeat 仍是 NX 發
 > 601 筆、PX4 收 586 筆，PX4 最大 gap 307.002 ms；NX 自身最大 gap 119.813 ms。
 > 因此單純頻寬飽和與 Linux publish scheduling 均不足以解釋遺失，責任範圍已縮到
 > ROS 2 publisher 之後、PX4 deserialize 之前。`e6f3d83ff5` 只把 Offboard heartbeat
 > 改成 Reliable；相同 B 組得到 NX 601 筆、PX4 601 筆、最大 receipt gap 207.733 ms，
-> `>250/500 ms=0/0`，證明 Reliable 消除了本場遺失並通過 250 ms transport gate。
-> 這是 disarmed transport 解法通過，不等同已完成無槳 Offboard／armed 長時間驗證。
+> `>250/500 ms=0/0`，短測 PASS；但 10 分鐘為 6001/6001、零最終遺失，PX4 最大
+> gap 601.548 ms、`>250/500 ms=16/2`，所以 250 ms 長測 gate FAIL。Reliable 解決
+> 最終遺失，但預設 200 ms recovery 週期仍未提供足夠 deadline margin；禁止裝槳／飛行。
 > 詳見
-> [`evidence/20260813_first_principles_offboard_transport/SUMMARY.md`](evidence/20260813_first_principles_offboard_transport/SUMMARY.md)。
+> [`10 分鐘雙端結果`](evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md)
+> 與 [`第一性原理總結`](evidence/20260813_first_principles_offboard_transport/SUMMARY.md)。
 
 > **2026-08-12 最新停止點**：實機目前使用 PX4 v1.14.3 custom
 > `0438dbc6fd`，TELEM2 ↔ NX UART0 固定 115200。115200 已證明能把 NX 的完整 XRCE

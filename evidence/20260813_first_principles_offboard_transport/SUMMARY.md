@@ -334,10 +334,29 @@ Gate D：**PASS**。Reliable 相較 Best-Effort 將 receipt loss 從 15/601 降�
 吸收的短暫延遲／重傳；目前 207.733 ms 最大值通過 250 ms 工程 gate，但不應把
 60 秒結果外推為飛行可靠性保證。
 
+### 7.7 Reliable 10 分鐘 soak
+
+相同條件延長到 600 秒後：
+
+```text
+NX:  6001 publishes, max 159.999 ms, >150/250/500 ms 1/0/0
+PX4: 6001 receipts, max 601.548 ms, >150/250/500 ms 80/16/2
+```
+
+count 6001/6001 證明零最終遺失，但 16 次 >250 ms、2 次 >500 ms，使長時間 deadline
+gate **FAIL**。最大 601.548 ms 仍小於 `COM_OF_LOSS_T=1 s`，本場不會觸發 Offboard
+loss，卻只剩 398.452 ms margin，不能進入飛行測試。
+
+本機 Agent 2.4.2 實際設定為 Reliable history 16、heartbeat period 200 ms；
+`601.548 / 200 = 3.008`。這支持「Reliable 用 1–3 個 heartbeat／ACKNACK recovery cycle
+補回 Best-Effort 原本遺失的資料」的推論，但尚未直接量到 sequence／ACKNACK，不能視為
+UART 電氣根因證明。完整證據、counter 算式與下一步見
+[`TEN_MINUTE_RELIABLE_RESULT.md`](TEN_MINUTE_RELIABLE_RESULT.md)。
+
 ## 8. 真正的底層解法界線
 
-Best-Effort A 組證明限流是必要但不充分條件；Reliable B 組則以相同 10 Hz、115200、
-output load 與飛控狀態通過，支持以下底層解法：
+Best-Effort A 組證明限流是必要但不充分條件；Reliable 版本證明可消除最終遺失，但
+10 分鐘測試否證「預設 Reliable timing 已足夠」：
 
 ```text
 可靠可解碼的 baud
@@ -348,10 +367,10 @@ output load 與飛控狀態通過，支持以下底層解法：
 + 在 COM_OF_LOSS_T 前保留數倍 timing margin
 ```
 
-不能用增大 `COM_OF_LOSS_T` 掩蓋遺失，因為那只延後 commander 發現失聯。本次 60 秒
-結果證明 Reliable 在目前地面條件可恢復 Best-Effort 遺失；後續仍須以長時間 disarmed
-與無槳 Offboard 測試確認尾端風險。若再出現 >250 ms 或 count mismatch，才轉做 transport
-替換與 UART 電氣／driver 量測。
+不能用增大 `COM_OF_LOSS_T` 掩蓋遺失，因為那只延後 commander 發現失聯。下一個最小
+A/B 是只將 Agent heartbeat period 從 200 ms 降至 50 ms，其他條件不變，再跑 10 分鐘。
+這是縮短 recovery deadline 的 mitigation，不是 UART 根因證明。若仍 >250 ms，轉做
+ACKNACK／retransmission instrumentation、transport 替換與 UART 電氣／driver 量測。
 
 ## 9. Reliable Offboard B 組候選韌體
 
@@ -378,5 +397,5 @@ clean build `1114/1114` 成功，ARM GCC 9.3.1，FMUv6C image
 `da2c86fc51b89c3b8851e2a002d6debb2befc21ee586011abceee3754ac8d948`；image SHA-256：
 `c5cc0920257117ba19e2b54978f0cb21518bc0bf8e420bf9970ca80231b71adb`。
 
-此版本已刷入並通過 60 秒 disarmed Reliable B 組。尚未完成長時間與無槳 Offboard／armed
-測試，因此仍禁止裝槳與飛行。
+此版本已刷入並通過 60 秒 disarmed Reliable B 組，但 10 分鐘 250 ms deadline gate FAIL。
+仍禁止裝槳、無槳 armed 與飛行；先完成 Agent 50 ms recovery A/B。

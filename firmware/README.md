@@ -4,7 +4,8 @@
 > NX 發 601 筆、PX4 收 586 筆，最大 receipt gap 307.002 ms，因此 receipt gate FAIL。
 > `e6f3d83ff5` 只把 Offboard heartbeat 改為 Reliable；刷入後相同 B 組為 NX 601 筆、
 > PX4 601 筆、最大 gap 207.733 ms、`>250/500 ms=0/0`，disarmed transport gate PASS。
-> 它仍不是已驗證飛行韌體；無槳 Offboard 與長時間測試完成前禁止裝槳或飛行。
+> 但 10 分鐘長測雖為 6001/6001，最大 gap 上升至 601.548 ms，且有 16/2 次
+> >250/>500 ms，長時間 deadline gate FAIL。它不是已驗證飛行韌體；禁止裝槳或飛行。
 
 ## PX4 v1.14.3 Reliable Offboard heartbeat A/B 版
 
@@ -47,8 +48,17 @@ PX4: Payload tx 2860 B/s, FIONREAD errors 0, framing state 0
 ```
 
 601 筆全程 subscription=1、disarmed、非 Offboard、failsafe=0；Agent PID 未變且沒有
-disconnect／reset。Reliable 單一變因 transport gate PASS，但還要做長時間 disarmed
-測試與無槳 Offboard gate，才能評估是否進入 armed 測試。
+disconnect／reset。此 60 秒短測 PASS，但後續 10 分鐘長測為：
+
+```text
+NX:  publishes 6001, max gap 159.999 ms, >150/250/500 ms 1/0/0
+PX4: count 6001, max gap 601548 us, >150/250/500 ms 80/16/2
+PX4: Payload tx 2998 B/s, FIONREAD errors 0, framing state 0
+```
+
+Reliable 消除最終遺失，但未通過 250 ms deadline gate。完整算式、200 ms Agent recovery
+period 證據與下一個 50 ms A/B 見
+`../evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md`。
 
 ## PX4 v1.14.3 115200 rate-limit＋heartbeat receipt 診斷版
 

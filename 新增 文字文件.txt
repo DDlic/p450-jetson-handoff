@@ -187,3 +187,21 @@ INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
 INFO  [uxrce_dds_client] Complete payload bytes received: 117616
 INFO  [uxrce_dds_client] Serial framing: state 0, buffered 0 B, message 36/36 B
 nsh> 
+
+nsh: sysinit: fopen failed: No such file or directory
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 2874 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 1390
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 19793
+INFO  [uxrce_dds_client] Serial RX pending max: 35 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 9376
+INFO  [uxrce_dds_client] Serial framing: state 0, buffered 0 B, message 36/36 B
+INFO  [uxrce_dds_client] Offboard RX: count 586, max gap 307002 us, >150/250/500 ms 11/4/0
+INFO  [uxrce_dds_client] Offboard RX last age: 329523501 us
+nsh> 

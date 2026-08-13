@@ -1,0 +1,172 @@
+From 50c989f85bffb6bd080540a2dba88da424f3f065 Mon Sep 17 00:00:00 2001
+From: DDlic <DDlic@users.noreply.github.com>
+Date: Thu, 13 Aug 2026 15:24:07 +0800
+Subject: [PATCH] uxrce_dds_client: rate-limit outputs and measure offboard
+ gaps
+
+---
+ src/modules/uxrce_dds_client/dds_topics.h.em  | 33 +++++++++++++++++--
+ src/modules/uxrce_dds_client/dds_topics.yaml  | 12 +++----
+ .../uxrce_dds_client/generate_dds_topics.py   | 12 +++++++
+ .../uxrce_dds_client/uxrce_dds_client.cpp     | 11 +++++++
+ 4 files changed, 60 insertions(+), 8 deletions(-)
+
+diff --git a/src/modules/uxrce_dds_client/dds_topics.h.em b/src/modules/uxrce_dds_client/dds_topics.h.em
+index dc79e0fabd..d3dc791492 100644
+--- a/src/modules/uxrce_dds_client/dds_topics.h.em
++++ b/src/modules/uxrce_dds_client/dds_topics.h.em
+@@ -21,8 +21,9 @@ import os
+ #include <uxr/client/client.h>
+ #include <ucdr/microcdr.h>
+ 
+-#include <uORB/Subscription.hpp>
++#include <uORB/SubscriptionInterval.hpp>
+ #include <uORB/Publication.hpp>
++#include <drivers/drv_hrt.h>
+ @[for include in type_includes]@
+ #include <uORB/ucdr/@(include).h>
+ @[end for]@
+@@ -30,7 +31,7 @@ import os
+ // Subscribers for messages to send
+ struct SendTopicsSubs {
+ @[    for pub in publications]@
+-	uORB::Subscription @(pub['topic_simple'])_sub{ORB_ID(@(pub['topic_simple']))};
++	uORB::SubscriptionInterval @(pub['topic_simple'])_sub{ORB_ID(@(pub['topic_simple'])), @(pub['publish_interval_us'])};
+ 	uxrObjectId @(pub['topic_simple'])_data_writer{};
+ @[    end for]@
+ 
+@@ -92,6 +93,12 @@ struct RcvTopicsPubs {
+ @[    end for]@
+ 
+ 	uint32_t num_payload_received{};
++	uint32_t offboard_control_mode_received{};
++	uint32_t offboard_control_mode_max_gap_us{};
++	uint32_t offboard_control_mode_gaps_over_150ms{};
++	uint32_t offboard_control_mode_gaps_over_250ms{};
++	uint32_t offboard_control_mode_gaps_over_500ms{};
++	hrt_abstime offboard_control_mode_last_receipt{};
+ 
+ 	bool init(uxrSession *session, uxrStreamId reliable_out_stream_id, uxrStreamId reliable_in_stream_id, uxrStreamId best_effort_in_stream_id, uxrObjectId participant_id, const char *client_namespace);
+ };
+@@ -109,6 +116,22 @@ static void on_topic_update(uxrSession *session, uxrObjectId object_id, uint16_t
+ 			@(sub['simple_base_type'])_s data;
+ 
+ 			if (ucdr_deserialize_@(sub['simple_base_type'])(*ub, data, time_offset_us)) {
++@[        if sub['topic_simple'] == 'offboard_control_mode']@
++				const hrt_abstime now = hrt_absolute_time();
++
++				if (pubs->offboard_control_mode_last_receipt != 0) {
++					const uint32_t gap_us = static_cast<uint32_t>(now - pubs->offboard_control_mode_last_receipt);
++					if (gap_us > pubs->offboard_control_mode_max_gap_us) {
++						pubs->offboard_control_mode_max_gap_us = gap_us;
++					}
++					pubs->offboard_control_mode_gaps_over_150ms += gap_us > 150000;
++					pubs->offboard_control_mode_gaps_over_250ms += gap_us > 250000;
++					pubs->offboard_control_mode_gaps_over_500ms += gap_us > 500000;
++				}
++
++				pubs->offboard_control_mode_last_receipt = now;
++				pubs->offboard_control_mode_received++;
++@[        end if]@
+ 				//print_message(ORB_ID(@(sub['simple_base_type'])), data);
+ 				pubs->@(sub['topic_simple'])_pub.publish(data);
+ 			}
+@@ -125,6 +148,12 @@ static void on_topic_update(uxrSession *session, uxrObjectId object_id, uint16_t
+ 
+ bool RcvTopicsPubs::init(uxrSession *session, uxrStreamId reliable_out_stream_id, uxrStreamId reliable_in_stream_id, uxrStreamId best_effort_in_stream_id, uxrObjectId participant_id, const char *client_namespace)
+ {
++	offboard_control_mode_received = 0;
++	offboard_control_mode_max_gap_us = 0;
++	offboard_control_mode_gaps_over_150ms = 0;
++	offboard_control_mode_gaps_over_250ms = 0;
++	offboard_control_mode_gaps_over_500ms = 0;
++	offboard_control_mode_last_receipt = 0;
+ @[    for idx, sub in enumerate(subscriptions)]@
+ 	{
+ 			uint16_t queue_depth = uORB::DefaultQueueSize<@(sub['simple_base_type'])_s>::value * 2; // use a bit larger queue size than internal
+diff --git a/src/modules/uxrce_dds_client/dds_topics.yaml b/src/modules/uxrce_dds_client/dds_topics.yaml
+index f1bbf51c4c..26d442c9c0 100644
+--- a/src/modules/uxrce_dds_client/dds_topics.yaml
++++ b/src/modules/uxrce_dds_client/dds_topics.yaml
+@@ -7,30 +7,30 @@ publications:
+ 
+   - topic: /fmu/out/failsafe_flags
+     type: px4_msgs::msg::FailsafeFlags
+-
+-  - topic: /fmu/out/position_setpoint_triplet
+-    type: px4_msgs::msg::PositionSetpointTriplet
+-
+-  - topic: /fmu/out/timesync_status
+-    type: px4_msgs::msg::TimesyncStatus
++    rate_limit: 5
+ 
+   # - topic: /fmu/out/vehicle_angular_velocity
+   #   type: px4_msgs::msg::VehicleAngularVelocity
+ 
+   - topic: /fmu/out/vehicle_control_mode
+     type: px4_msgs::msg::VehicleControlMode
++    rate_limit: 5
+ 
+   - topic: /fmu/out/vehicle_global_position
+     type: px4_msgs::msg::VehicleGlobalPosition
++    rate_limit: 5
+ 
+   - topic: /fmu/out/vehicle_gps_position
+     type: px4_msgs::msg::SensorGps
++    rate_limit: 5
+ 
+   - topic: /fmu/out/vehicle_local_position
+     type: px4_msgs::msg::VehicleLocalPosition
++    rate_limit: 10
+ 
+   - topic: /fmu/out/vehicle_status
+     type: px4_msgs::msg::VehicleStatus
++    rate_limit: 5
+ 
+ subscriptions:
+ 
+diff --git a/src/modules/uxrce_dds_client/generate_dds_topics.py b/src/modules/uxrce_dds_client/generate_dds_topics.py
+index 75fd6dbd9c..85fa38d5b5 100644
+--- a/src/modules/uxrce_dds_client/generate_dds_topics.py
++++ b/src/modules/uxrce_dds_client/generate_dds_topics.py
+@@ -102,6 +102,18 @@ for p in msg_map['publications']:
+     # topic_simple: eg vehicle_status
+     p['topic_simple'] = p['topic'].split('/')[-1]
+ 
++    # Optional PX4-to-DDS publication rate limit. SubscriptionInterval uses
++    # microseconds and forwards the newest uORB sample at each interval.
++    rate_limit = p.get('rate_limit', 0)
++    if not isinstance(rate_limit, (int, float)) or rate_limit < 0:
++        raise ValueError(
++            f"invalid rate_limit {rate_limit!r} for {p['topic']}: "
++            "expected a non-negative number"
++        )
++    p['publish_interval_us'] = (
++        max(1, round(1_000_000.0 / rate_limit)) if rate_limit > 0 else 0
++    )
++
+ 
+ merged_em_globals['publications'] = msg_map['publications']
+ 
+diff --git a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+index 966017687f..49223e4bb7 100644
+--- a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
++++ b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+@@ -623,6 +623,17 @@ int UxrceddsClient::print_status()
+ 						  sizeof(framing.rb) - framing.rb_tail + framing.rb_head;
+ 			PX4_INFO("Serial framing: state %u, buffered %u B, message %u/%u B",
+ 				 (unsigned)framing.state, buffered, (unsigned)framing.msg_pos, (unsigned)framing.msg_len);
++			PX4_INFO("Offboard RX: count %u, max gap %u us, >150/250/500 ms %u/%u/%u",
++				 (unsigned)_pubs->offboard_control_mode_received,
++				 (unsigned)_pubs->offboard_control_mode_max_gap_us,
++				 (unsigned)_pubs->offboard_control_mode_gaps_over_150ms,
++				 (unsigned)_pubs->offboard_control_mode_gaps_over_250ms,
++				 (unsigned)_pubs->offboard_control_mode_gaps_over_500ms);
++
++			if (_pubs->offboard_control_mode_last_receipt != 0) {
++				PX4_INFO("Offboard RX last age: %llu us",
++					 (unsigned long long)hrt_elapsed_time(&_pubs->offboard_control_mode_last_receipt));
++			}
+ 		}
+ 	}
+ 

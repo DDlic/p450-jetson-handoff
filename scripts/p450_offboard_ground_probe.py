@@ -6,10 +6,12 @@ never publishes VehicleCommand and exits immediately if the vehicle is armed.
 """
 
 import argparse
+import csv
 import math
 import os
 import sys
 import time
+from pathlib import Path
 
 import rclpy
 from px4_msgs.msg import OffboardControlMode, TrajectorySetpoint, VehicleControlMode, VehicleLocalPosition, VehicleStatus
@@ -22,9 +24,35 @@ NAV_OFFBOARD = 14
 
 
 class GroundProbe(Node):
-    def __init__(self, allow_armed=False):
+    def __init__(self, allow_armed=False, csv_path=None):
         super().__init__("p450_offboard_ground_probe")
         self.allow_armed = allow_armed
+        self.started_ns = time.monotonic_ns()
+        self.previous_publish_ns = None
+        self.publish_count = 0
+        self.publish_gaps_ms = []
+        self.csv_file = None
+        self.csv_writer = None
+        if csv_path:
+            path = Path(csv_path).expanduser().resolve()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            self.csv_file = path.open("w", newline="", buffering=1)
+            self.csv_writer = csv.writer(self.csv_file)
+            self.csv_writer.writerow(
+                [
+                    "sequence",
+                    "monotonic_ns",
+                    "elapsed_ms",
+                    "publish_gap_ms",
+                    "ros_timestamp_us",
+                    "offboard_subscription_count",
+                    "setpoint_subscription_count",
+                    "arming_state",
+                    "nav_state",
+                    "failsafe",
+                ]
+            )
+            print(f"HEARTBEAT_CSV={path}", flush=True)
         qos = QoSProfile(
             history=QoSHistoryPolicy.KEEP_LAST,
             depth=10,
@@ -92,6 +120,13 @@ class GroundProbe(Node):
     def publish(self):
         if not self.allow_armed and (self.status.arming_state != DISARMED or self.control.flag_armed):
             raise RuntimeError("vehicle became armed; probe stopped")
+        monotonic_ns = time.monotonic_ns()
+        gap_ms = math.nan
+        if self.previous_publish_ns is not None:
+            gap_ms = (monotonic_ns - self.previous_publish_ns) / 1_000_000.0
+            self.publish_gaps_ms.append(gap_ms)
+        self.previous_publish_ns = monotonic_ns
+
         timestamp = self.get_clock().now().nanoseconds // 1000
         mode = OffboardControlMode()
         mode.timestamp = timestamp
@@ -111,6 +146,40 @@ class GroundProbe(Node):
         setpoint.yawspeed = math.nan
         self.offboard_pub.publish(mode)
         self.setpoint_pub.publish(setpoint)
+        self.publish_count += 1
+        if self.csv_writer is not None:
+            self.csv_writer.writerow(
+                [
+                    self.publish_count,
+                    monotonic_ns,
+                    f"{(monotonic_ns - self.started_ns) / 1_000_000.0:.3f}",
+                    "" if math.isnan(gap_ms) else f"{gap_ms:.3f}",
+                    timestamp,
+                    self.offboard_pub.get_subscription_count(),
+                    self.setpoint_pub.get_subscription_count(),
+                    self.status.arming_state,
+                    self.status.nav_state,
+                    int(self.status.failsafe),
+                ]
+            )
+
+    def report_publish_timing(self):
+        if self.csv_file is not None:
+            self.csv_file.flush()
+            self.csv_file.close()
+        if not self.publish_gaps_ms:
+            print(f"HEARTBEAT_TIMING publishes={self.publish_count} gaps=0", flush=True)
+            return
+        gaps = self.publish_gaps_ms
+        print(
+            "HEARTBEAT_TIMING "
+            f"publishes={self.publish_count} "
+            f"max_gap_ms={max(gaps):.3f} "
+            f"over_150ms={sum(gap > 150.0 for gap in gaps)} "
+            f"over_250ms={sum(gap > 250.0 for gap in gaps)} "
+            f"over_500ms={sum(gap > 500.0 for gap in gaps)}",
+            flush=True,
+        )
 
 
 def main():
@@ -121,14 +190,19 @@ def main():
         action="store_true",
         help="continue heartbeat while observing a manual no-prop arming test",
     )
+    parser.add_argument(
+        "--csv",
+        help="write every heartbeat publish time and DDS match count to this CSV",
+    )
     args = parser.parse_args()
     rclpy.init()
-    node = GroundProbe(allow_armed=args.allow_armed)
+    node = GroundProbe(allow_armed=args.allow_armed, csv_path=args.csv)
     deadline = time.monotonic() + 15.0
     while time.monotonic() < deadline and not node.ready():
         rclpy.spin_once(node, timeout_sec=0.1)
     if not node.ready():
         print("REFUSED: disarmed/global-position prerequisites not satisfied", flush=True)
+        node.report_publish_timing()
         os._exit(2)
     node.capture_hold()
     end = time.monotonic() + args.duration
@@ -141,6 +215,7 @@ def main():
                 next_send += 0.1
     except (KeyboardInterrupt, RuntimeError) as error:
         print(f"GROUND_PROBE_STOP: {error}", flush=True)
+        node.report_publish_timing()
         os._exit(3 if isinstance(error, RuntimeError) else 0)
     if node.status is not None and node.status.arming_state != DISARMED:
         print("REFUSED_TO_EXIT_WHILE_ARMED", flush=True)
@@ -148,6 +223,7 @@ def main():
             rclpy.spin_once(node, timeout_sec=0.02)
             node.publish()
     print("GROUND_PROBE_COMPLETE", flush=True)
+    node.report_publish_timing()
     os._exit(0)
 
 

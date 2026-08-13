@@ -4,6 +4,15 @@
 
 ## 目前狀態
 
+> **2026-08-13 第一性原理候選已建立、尚未刷入**：以目前 `0438dbc6fd` 為基底的
+> v1.14.3 rate-limit＋heartbeat receipt diagnostics 韌體已完成 clean build。新版本
+> `50c989f85b` 將 PX4→NX serialized output 上限降至 3740 B/s，並在 PX4 成功反序列化
+> 每個 `OffboardControlMode` 時直接計算 receipt gap；NX probe 同步輸出 monotonic CSV。
+> 這能用同一場測試區分 Linux publish gap、Agent/UART 後段 gap與 PX4 client 排程。
+> 韌體尚未刷入，因此目前只能說「底層解法已具備可驗證實作」，不能說實機問題已解決。
+> 詳見
+> [`evidence/20260813_first_principles_offboard_transport/SUMMARY.md`](evidence/20260813_first_principles_offboard_transport/SUMMARY.md)。
+
 > **2026-08-12 最新停止點**：實機目前使用 PX4 v1.14.3 custom
 > `0438dbc6fd`，TELEM2 ↔ NX UART0 固定 115200。115200 已證明能把 NX 的完整 XRCE
 > marker 解碼進 PX4 uORB；室外 GPS／EKF 與 disarmed Offboard 切入切回通過，ROS 2
@@ -101,16 +110,16 @@ Offboard 控制流程也必須分別排除，不得概括為雙向控制已通�
 
 ## 閱讀順序
 
-1. `evidence/20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md`
-2. `evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md`
-3. `evidence/20260812_outdoor_gps_offboard_ground/SUMMARY.md`
-4. `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
-5. `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
-6. `P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
-7. `P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
-8. `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
-9. `P450_PROGRESS_2026-07-24_NEXT.md`
-10. `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`
+1. `evidence/20260813_first_principles_offboard_transport/SUMMARY.md`
+2. `evidence/20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md`
+3. `evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md`
+4. `evidence/20260812_outdoor_gps_offboard_ground/SUMMARY.md`
+5. `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
+6. `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
+7. `P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
+8. `P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
+9. `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
+10. `P450_PROGRESS_2026-07-24_NEXT.md`
 11. `JETSON_HANDOFF_MASTER.md`
 12. `JETSON_HANDOFF_COMMANDS.md`
 

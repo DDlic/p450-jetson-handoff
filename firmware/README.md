@@ -1,10 +1,69 @@
 # P450 Pixhawk 6C 測試韌體
 
-> **2026-08-10 決策覆寫**：P450 的最終 PX4 基線固定為 v1.14.3。下方 v1.15.4
-> 韌體全部只保留作歷史診斷與 backport 參考，不得因列在前面就視為下一個應刷版本。
-> 目前實機是 v1.14.3 ping 回補版：10 分鐘 PX4→NX continuity PASS，但 2 Hz
-> NX→PX4 freshness FAIL（live marker 落後 58.383400 秒）。下方 v1.14.3
-> receive-drain＋ping 候選版尚未取得刷寫授權；任何刷寫都需機主重新明確同意。
+> **2026-08-13 最新候選**：目前實機仍是 v1.14.3 custom `0438dbc6fd`；新建立的
+> `50c989f85b` rate-limit＋heartbeat receipt diagnostics 版已完成 clean build 與封裝
+> 驗證，但尚未刷入。它是下一個單一變因 A/B 候選，不是已驗證飛行韌體。未通過
+> disarmed 雙端 gap 測試與無槳 armed hold 前，禁止裝槳或飛行。
+
+## PX4 v1.14.3 115200 rate-limit＋heartbeat receipt 診斷版
+
+檔案：
+
+```text
+p450-pixhawk6c-v1.14.3-xrce-ratelimit115200-50c989f85b.px4
+```
+
+建置與封裝驗證：
+
+- 目標板：Pixhawk 6C／`PX4FMUv6C`
+- PX4 target：`px4_fmu-v6c_default`
+- 基底：目前已刷的 minimal 115200 source `0438dbc6fd`
+- source branch：`p450-v1.14.3-xrce-rate-limit-diagnostics`
+- source commit：`50c989f85bffb6bd080540a2dba88da424f3f065`
+- source patch：`../patches/0001-uxrce_dds_client-rate-limit-outputs-and-measure-offb.patch`
+- compiler：GNU Arm Embedded 9-2020-q2-update／GCC 9.3.1
+- clean build：`1114/1114` 成功
+- firmware `git_identity`：`v1.14.3-5-g50c989f85b`
+- firmware `git_hash`：`50c989f85bffb6bd080540a2dba88da424f3f065`
+- `board_id`：56，`board_revision`：0
+- description：`Firmware for the PX4FMUv6C board`
+- container size：1,805,698 bytes
+- image size：1,934,628／1,966,080 bytes（FLASH 98.40%）
+- container SHA-256：`99bbf652581e0a317c8d9ecf59fcd072d19536fed938b7d86dca2077b55c7664`
+- image SHA-256：`e9df68a39f7a971dbc266c3116712ef13d6287399c7fe30ab57c10e8a9450e8f`
+
+本版保留 115200、session ping、bounded receive drain 與 UART framing diagnostics，
+只增加兩個可證偽變因：
+
+1. PX4→NX publications 使用 `uORB::SubscriptionInterval` 限速；
+2. PX4 在成功反序列化 `OffboardControlMode` 時直接記錄 receipt gap。
+
+輸出上限與 serialized payload budget：
+
+| Topic | 上限 | 每筆 | 每秒上限 |
+|---|---:|---:|---:|
+| `vehicle_local_position` | 10 Hz | 184 B | 1840 B/s |
+| `vehicle_global_position` | 5 Hz | 62 B | 310 B/s |
+| `vehicle_gps_position` | 5 Hz | 141 B | 705 B/s |
+| `vehicle_status` | 5 Hz | 71 B | 355 B/s |
+| `vehicle_control_mode` | 5 Hz | 21 B | 105 B/s |
+| `failsafe_flags` | 5 Hz | 85 B | 425 B/s |
+| 合計 |  |  | **3740 B/s** |
+
+115200 8N1 每方向的理論 wire capacity 是 11,520 B/s。3740 B/s 是 32.5%；即使加入
+XRCE/HDLC header、CRC、byte stuffing 與 burst，也應有充足餘裕。舊版的
+`position_setpoint_triplet` 與 `timesync_status` output 已移除；所有 `/fmu/in/*`
+subscription 均保留。
+
+PX4 console 的 `uxrce_dds_client status` 會新增：
+
+```text
+Offboard RX: count N, max gap X us, >150/250/500 ms A/B/C
+Offboard RX last age: Y us
+```
+
+詳細第一性原理、刷後測試與真假設判定見
+`../evidence/20260813_first_principles_offboard_transport/SUMMARY.md`。
 
 ## PX4 v1.14.3 UART RX 診斷版
 

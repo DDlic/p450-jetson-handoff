@@ -1,9 +1,10 @@
 # P450 Pixhawk 6C 測試韌體
 
-> **2026-08-13 最新候選**：`50c989f85b` rate-limit 版已刷入並完成 Best-Effort A 組；
+> **2026-08-13 最新實測**：`50c989f85b` rate-limit 版已刷入並完成 Best-Effort A 組；
 > NX 發 601 筆、PX4 收 586 筆，最大 receipt gap 307.002 ms，因此 receipt gate FAIL。
-> 新建立的 `e6f3d83ff5` 只把 Offboard heartbeat 改為 Reliable，已完成 clean build，
-> 尚未刷入。它不是已驗證飛行韌體；通過 disarmed Reliable A/B 前禁止裝槳或飛行。
+> `e6f3d83ff5` 只把 Offboard heartbeat 改為 Reliable；刷入後相同 B 組為 NX 601 筆、
+> PX4 601 筆、最大 gap 207.733 ms、`>250/500 ms=0/0`，disarmed transport gate PASS。
+> 它仍不是已驗證飛行韌體；無槳 Offboard 與長時間測試完成前禁止裝槳或飛行。
 
 ## PX4 v1.14.3 Reliable Offboard heartbeat A/B 版
 
@@ -37,9 +38,17 @@ QoS 與 Reliable XRCE input stream；其他 12 個 input subscriptions 仍是 Be
 Offboard RX stream: reliable
 ```
 
-刷入後必須用 NX probe 的 `--reliability reliable` 做同樣 10 Hz／60 秒 disarmed A/B。
-若 receipt count 仍少於 NX publish count或出現 >250 ms gap，Reliable 假設即 FAIL，
-下一步改做 FTDI／USB transport 與實體 UART 電氣 A/B。
+2026-08-13 已用 NX probe 的 `--reliability reliable` 完成 10 Hz／60 秒 disarmed B 組：
+
+```text
+NX:  publishes 601, max gap 118.426 ms, >150/250/500 ms 0/0/0
+PX4: count 601, max gap 207733 us, >150/250/500 ms 5/0/0
+PX4: Payload tx 2860 B/s, FIONREAD errors 0, framing state 0
+```
+
+601 筆全程 subscription=1、disarmed、非 Offboard、failsafe=0；Agent PID 未變且沒有
+disconnect／reset。Reliable 單一變因 transport gate PASS，但還要做長時間 disarmed
+測試與無槳 Offboard gate，才能評估是否進入 armed 測試。
 
 ## PX4 v1.14.3 115200 rate-limit＋heartbeat receipt 診斷版
 

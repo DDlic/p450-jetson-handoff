@@ -310,9 +310,34 @@ B 組 PASS 必須同時滿足：NX subscription count 1、NX 601 筆左右、PX4
 與 NX 差值不超過起停邊界 1 筆、PX4 `>250/500 ms=0/0`、session 不重建。若 Reliable
 仍遺失或出現大 gap，才轉做 FTDI／USB transport 與實體電氣 A/B。
 
+2026-08-13 實測結果：
+
+```text
+NX:  publishes 601, max gap 118.426 ms, >150/250/500 ms 0/0/0
+PX4: count 601, max gap 207733 us, >150/250/500 ms 5/0/0
+PX4: Complete payload bytes received 9616 = 601 * 16
+PX4: Payload tx 2860 B/s, FIONREAD errors 0, framing state 0
+PX4: Offboard RX stream: reliable
+```
+
+CSV 的 601 列全部為 `reliability=reliable`、subscription count 1、arming state 1、
+nav state／intention 4、failsafe 0。Agent 使用同一 PID `47593`，測試期間沒有 session
+重建、disconnect、reset 或 framing error。CSV：
+
+```text
+live_20260813_heartbeat_reliable_10hz.csv
+SHA-256 913fd6e709c09b3582e187e1df20d5f103bcddcd66c1001f67c7446f5495993a
+```
+
+Gate D：**PASS**。Reliable 相較 Best-Effort 將 receipt loss 從 15/601 降為 0/601，
+將 >250 ms gap 從 4 次降為 0 次。5 次 >150 ms 表示仍存在可被 Reliable stream
+吸收的短暫延遲／重傳；目前 207.733 ms 最大值通過 250 ms 工程 gate，但不應把
+60 秒結果外推為飛行可靠性保證。
+
 ## 8. 真正的底層解法界線
 
-Best-Effort A 組已證明限流是必要但不充分條件。下一個可證偽解法是：
+Best-Effort A 組證明限流是必要但不充分條件；Reliable B 組則以相同 10 Hz、115200、
+output load 與飛控狀態通過，支持以下底層解法：
 
 ```text
 可靠可解碼的 baud
@@ -323,9 +348,10 @@ Best-Effort A 組已證明限流是必要但不充分條件。下一個可證偽
 + 在 COM_OF_LOSS_T 前保留數倍 timing margin
 ```
 
-不能用增大 `COM_OF_LOSS_T` 掩蓋遺失，因為那只延後 commander 發現失聯。若 Reliable
-B 組仍失敗，才表示問題低於 XRCE reliability 可恢復的範圍，最短路徑是替換 transport
-並做 UART 電氣／driver 量測。
+不能用增大 `COM_OF_LOSS_T` 掩蓋遺失，因為那只延後 commander 發現失聯。本次 60 秒
+結果證明 Reliable 在目前地面條件可恢復 Best-Effort 遺失；後續仍須以長時間 disarmed
+與無槳 Offboard 測試確認尾端風險。若再出現 >250 ms 或 count mismatch，才轉做 transport
+替換與 UART 電氣／driver 量測。
 
 ## 9. Reliable Offboard B 組候選韌體
 
@@ -352,4 +378,5 @@ clean build `1114/1114` 成功，ARM GCC 9.3.1，FMUv6C image
 `da2c86fc51b89c3b8851e2a002d6debb2befc21ee586011abceee3754ac8d948`；image SHA-256：
 `c5cc0920257117ba19e2b54978f0cb21518bc0bf8e420bf9970ca80231b71adb`。
 
-此版本只完成 source/build/artifact 驗證，尚未刷入、尚未通過 B 組，因此仍禁止裝槳與飛行。
+此版本已刷入並通過 60 秒 disarmed Reliable B 組。尚未完成長時間與無槳 Offboard／armed
+測試，因此仍禁止裝槳與飛行。

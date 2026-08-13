@@ -4,12 +4,14 @@
 
 ## 目前狀態
 
-> **2026-08-13 第一性原理 A 組已完成、Reliable B 組待刷**：`50c989f85b` 已證明
+> **2026-08-13 第一性原理 Reliable B 組已通過**：`50c989f85b` 已證明
 > PX4→NX output 可降至 2874 B/s，但 10 Hz／60 秒 Best-Effort heartbeat 仍是 NX 發
 > 601 筆、PX4 收 586 筆，PX4 最大 gap 307.002 ms；NX 自身最大 gap 119.813 ms。
 > 因此單純頻寬飽和與 Linux publish scheduling 均不足以解釋遺失，責任範圍已縮到
 > ROS 2 publisher 之後、PX4 deserialize 之前。`e6f3d83ff5` 只把 Offboard heartbeat
-> 改成 Reliable，已完成 clean build，下一步做相同條件 B 組；目前仍不能宣稱已解決。
+> 改成 Reliable；相同 B 組得到 NX 601 筆、PX4 601 筆、最大 receipt gap 207.733 ms，
+> `>250/500 ms=0/0`，證明 Reliable 消除了本場遺失並通過 250 ms transport gate。
+> 這是 disarmed transport 解法通過，不等同已完成無槳 Offboard／armed 長時間驗證。
 > 詳見
 > [`evidence/20260813_first_principles_offboard_transport/SUMMARY.md`](evidence/20260813_first_principles_offboard_transport/SUMMARY.md)。
 

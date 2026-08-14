@@ -4,13 +4,14 @@
 
 ## 目前狀態
 
-> **2026-08-14 NX kernel panic，暫停長測與飛行**：Agent 50 ms A/B 的 6001 筆 NX CSV
-> 與 QGC counters 已取得；但前置 21 筆短測未先清除 PX4 counters，使正式 10 分鐘的
-> PX4 gap 無法獨立分離，本輪判為 INCONCLUSIVE。之後 NX 在已回復原 200 ms Agent 的
-> 狀態下發生 `5.10.216-tegra` kernel panic；pstore 指向
-> `key_garbage_collector → key_put()` data abort，不是 OOM、磁碟滿或 Agent process crash。
-> RST 後證據完整、原 Agent 與 UART/ROS endpoint 已自動恢復，但 kernel panic 成為新的
-> 飛行阻塞條件。詳見 [`Agent 50 ms A/B`](evidence/20260813_first_principles_offboard_transport/AGENT_50MS_AB_RESULT.md)
+> **2026-08-14 Agent 50 ms 乾淨短測 FAIL**：前一輪 600 秒結果因混入 21 筆前測而只能
+> 判為 INCONCLUSIVE；重新建立 hb50 XRCE session 後直接執行乾淨 120 秒場，NX 發布
+> 1201 筆、最大 gap 119.042 ms、`>150/250/500 ms=0/0/0`，PX4 收到 1201 筆、最大
+> receipt gap 298.884 ms、`>150/250/500 ms=65/4/0`。Reliable 仍保證零最終遺失，
+> 但 Agent recovery 200→50 ms 沒有達成 250 ms deadline；不必再跑 600 秒，原 200 ms
+> Agent 已恢復。另一次 `key_garbage_collector → key_put()` kernel panic 先列為單次事件
+> 監控，不阻塞無槳地面主線；若再次出現相同 trace 才深入，裝槳／飛行前仍需穩定性 soak。
+> 詳見 [`Agent 50 ms A/B`](evidence/20260813_first_principles_offboard_transport/AGENT_50MS_AB_RESULT.md)
 > 與 [`kernel panic 證據`](evidence/20260814_nx_kernel_panic_key_gc/README.md)。
 
 > **2026-08-13 Reliable 長測：零遺失但 deadline FAIL**：`50c989f85b` 已證明

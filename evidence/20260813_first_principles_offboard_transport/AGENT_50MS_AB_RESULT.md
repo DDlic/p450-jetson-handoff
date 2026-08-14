@@ -125,19 +125,77 @@ complete-payload 累積值，再次證明 complete-payload counter 與 Offboard 
 - 正式 600 秒場是否達成 `PX4 >250 ms = 0`；
 - 50 ms 是否比 200 ms 明確降低正式場 max gap。
 
-因此正式 A/B 判為 **INCONCLUSIVE / protocol contamination**，不得標示 PASS，也不應把
-17 次 >250 ms 全部武斷歸給正式場。乾淨重測時必須先完成安全短測，再重建 hb50 XRCE
-session 以清零 Offboard counters，確認唯一 endpoint 後直接開始正式 600 秒場，中間不得
-再發布測試 heartbeat。
+因此第一次正式 A/B 判為 **INCONCLUSIVE / protocol contamination**，不得標示 PASS，
+也不應把 17 次 >250 ms 全部武斷歸給正式場。乾淨重測時必須先完成安全短測，再重建
+hb50 XRCE session 以清零 Offboard counters，確認唯一 endpoint 後直接開始正式場，中間
+不得再發布測試 heartbeat。
+
+## 乾淨 120 秒重測
+
+600 秒並非初步判斷所需的最短時間：200 ms Agent 的舊 600 秒場有 16 次 >250 ms，平均
+每 37.5 秒一次；若事件率不變，120 秒抓到至少一次的機率約 96%。60 秒則曾得到假性的
+`>250 ms=0`，已知不足。因此本輪採 120 秒作最短判別；任何一次 >250 ms 即 FAIL，0 次
+也只能算 preliminary PASS。
+
+流程：
+
+1. 在原 200 ms Agent 上跑 2 秒安全前測，確認 disarmed、非 Offboard；
+2. 停止原 Agent，啟動 hb50 transient service，使 PX4 Offboard counters 清零；
+3. 唯讀確認 hb50 PID/library、UART 與 0 publisher／1 Reliable subscriber；
+4. 切換後不再跑 hb50 前測，直接執行正式 120 秒。
+
+乾淨重測的 hb50 PID 為 7464、`NRestarts=0`；測後已停止 hb50 並恢復原 200 ms Agent。
+
+NX CSV：
+
+```text
+live_20260814_heartbeat_reliable_10hz_120s_agent_hb50_clean.csv
+SHA-256 0d6abec5f6965452c36ed74bd9e0b59e3ff363d6b515af49a7da9a29e397e9bc
+```
+
+NX：
+
+```text
+publishes:                  1201
+gaps:                       1200
+mean publish gap:           99.987829 ms
+max publish gap:            119.042 ms
+>150/250/500 ms:            0/0/0
+sequence errors:            0
+unsafe or unmatched rows:   0
+```
+
+PX4 QGC：
+
+```text
+Running, connected
+Payload tx: 2869 B/s
+Serial RX pending max: 166 B
+Serial RX FIONREAD errors: 0
+Serial framing: state 0, buffered 0 B, message 36/36 B
+Offboard RX: count 1201, max gap 298884 us, >150/250/500 ms 65/4/0
+Offboard RX stream: reliable
+```
+
+`count=1201` 精確等於本場 NX 1201 筆，沒有前測、人工邊界或最終遺失。NX 本身完全沒有
+>150 ms，但 PX4 有 65 次 >150 ms、4 次 >250 ms，最大 298.884 ms。因此乾淨 120 秒
+250 ms gate **FAIL**；停止測試，不需要延長到 600 秒。
+
+這否證「601.548 ms 主要由 Agent 預設 200 ms heartbeat 的 1–3 個 recovery cycle 造成，
+降到 50 ms 即可解決」這個單因假設。短場最大值低於舊 600 秒場不能當成改善證據，因為
+觀察窗口長度不同；而 >250 ms 已非零，已足以否決目前 deadline gate。下一步不再繼續
+調低 Agent heartbeat，而是量測 XRCE sequence／ACKNACK／retransmission，或做 transport
+與 UART driver／電氣隔離。
 
 ## 測後 kernel panic
 
 正式場與 QGC counter 擷取完成後，原 200 ms Agent 已回復；約 11:10:13 CST，NX 在
 `key_garbage_collector → key_put()` 發生 kernel panic，操作者按 RST 重開。這不是正式場內
-的 Agent restart，但它是獨立的系統穩定性阻塞條件。詳見：
+的 Agent restart，而是獨立觀察到的系統穩定性風險。詳見：
 
 ```text
 evidence/20260814_nx_kernel_panic_key_gc/
 ```
 
-在 kernel panic 原因處理前，暫停新的 10 分鐘重測、裝槳與飛行。
+這次 panic 先視為單次事件保留證據，不繼續死查，也不阻塞無槳地面主線；若再次發生相同
+trace 才升級處理。裝槳／飛行前仍需完成 NX 穩定性 soak。

@@ -374,8 +374,23 @@ Offboard RX: count 6022, max gap 25953892 us, >150/250/500 ms 475/18/1
 250 ms gate 作 PASS/FAIL。此輪判為 **INCONCLUSIVE / protocol contamination**，不是
 hb50 PASS。完整算式見 [`AGENT_50MS_AB_RESULT.md`](AGENT_50MS_AB_RESULT.md)。
 
+之後依正確順序重做乾淨 120 秒場：先用原 Agent 完成安全前測，再切換 hb50 使 Offboard
+counters 清零；切換後不再發布前測，直接開始正式場。結果：
+
+```text
+NX:  1201 publishes, max 119.042 ms, >150/250/500 ms 0/0/0
+PX4: 1201 receipts, max 298.884 ms, >150/250/500 ms 65/4/0
+```
+
+1201/1201 證明零最終遺失且沒有 counter 邊界污染，但 4 次 >250 ms 使 120 秒 deadline
+gate **FAIL**。因此 50 ms Agent heartbeat 不是底層解法，不必再延長到 600 秒；也不能再用
+`601.548 ≈ 200*3 ms` 當成主要因果模型。下一步轉向 sequence／ACKNACK／retransmission
+instrumentation，以及 transport／UART driver／電氣隔離。完整資料與 CSV SHA 見
+[`AGENT_50MS_AB_RESULT.md`](AGENT_50MS_AB_RESULT.md)。
+
 測試與 counter 擷取完成後，NX 另發生 `key_garbage_collector → key_put()` kernel panic；
-此事件不在正式測試窗口內，但在處理前停止新的長測與飛行。證據見
+此事件不在正式測試窗口內。依機主決定，單次事件先保存與監控，不阻塞無槳地面主線；
+若重複相同 trace 才深入，裝槳／飛行前仍需穩定性 soak。證據見
 [`../20260814_nx_kernel_panic_key_gc/README.md`](../20260814_nx_kernel_panic_key_gc/README.md)。
 
 ## 8. 真正的底層解法界線
@@ -392,10 +407,10 @@ Best-Effort A 組證明限流是必要但不充分條件；Reliable 版本證明
 + 在 COM_OF_LOSS_T 前保留數倍 timing margin
 ```
 
-不能用增大 `COM_OF_LOSS_T` 掩蓋遺失，因為那只延後 commander 發現失聯。下一個最小
-A/B 是只將 Agent heartbeat period 從 200 ms 降至 50 ms，其他條件不變，再跑 10 分鐘。
-這是縮短 recovery deadline 的 mitigation，不是 UART 根因證明。若仍 >250 ms，轉做
-ACKNACK／retransmission instrumentation、transport 替換與 UART 電氣／driver 量測。
+不能用增大 `COM_OF_LOSS_T` 掩蓋遺失，因為那只延後 commander 發現失聯。Agent heartbeat
+period 200→50 ms 的乾淨 120 秒 A/B 已因 4 次 >250 ms 而 FAIL；不再繼續縮短 heartbeat
+或延長此場。下一步轉做 ACKNACK／retransmission instrumentation、transport 替換與 UART
+電氣／driver 量測。
 
 ## 9. Reliable Offboard B 組候選韌體
 

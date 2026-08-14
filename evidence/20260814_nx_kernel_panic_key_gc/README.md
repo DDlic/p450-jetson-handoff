@@ -8,7 +8,8 @@ kernel data abort，最後 `Kernel panic - not syncing: Oops: Fatal exception`�
 RST 才恢復。
 
 panic 發生於 heartbeat 正式測試與 PX4 counter 擷取完成之後，且在原 200 ms Agent 已回復
-之後。因此它不會改寫已落盤的 6001 筆 CSV 或 QGC 擷取值，但它本身是新的獨立飛行阻塞條件。
+之後。因此它不會改寫已落盤的 6001 筆 CSV 或 QGC 擷取值。依機主決定，單次事件先監控，
+不阻塞無槳地面主線；裝槳／飛行前再以穩定性 soak 作 gate。
 
 ## 證據
 
@@ -45,13 +46,14 @@ Wi-Fi。
 
 ## 下一步
 
-1. 暫停裝槳、飛行及新的長時間 Offboard 測試。
-2. 保留 pstore；若再次發生，先擷取新 pstore 並比對 fault address、PC 與 call trace。
-3. 取得 NVIDIA L4T R35.6.0 完整 kernel source，對照 `security/keys/key.c`、`gc.c`、
-   `keyring.c` 與 NVIDIA 後續 BSP 修正。
-4. 查明修正版 kernel 前，不以重跑 ROS 測試掩蓋核心 panic。
-5. 若要隔離 out-of-tree module，再規劃「停用 88x2bu／改用有線網路」的長時間 soak；
-   此動作會影響 NX 網路，需另開維護窗口。
+1. 單次事件先保存與監控，不因一次 panic 無限追查，也不阻塞無槳地面主線。
+2. 若再次發生，先擷取新 pstore 並比對 fault address、PC 與 call trace；相同 trace 重複後
+   才提升為 kernel root-cause 工作。
+3. 若需深入，再取得 NVIDIA L4T R35.6.0 完整 kernel source，對照
+   `security/keys/key.c`、`gc.c`、`keyring.c` 與 NVIDIA 後續 BSP 修正。
+4. 裝槳／飛行前仍需做 NX 穩定性 soak，不能只因目前重開正常便忽略 panic。
+5. 若相同 panic 重複且需要隔離 out-of-tree module，再規劃「停用 88x2bu／改用有線網路」
+   的 soak；此動作會影響 NX 網路，需另開維護窗口。
 
 參考：
 

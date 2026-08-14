@@ -1,0 +1,747 @@
+From 8e13c81ef4f667afeee8e52e2153036039763661 Mon Sep 17 00:00:00 2001
+From: P450 NX Codex <p450-nx-codex@local>
+Date: Fri, 14 Aug 2026 16:18:29 +0800
+Subject: [PATCH] trace: add P450 XRCE Agent shared-memory timing ring
+
+---
+ CMakeLists.txt                                |   9 +
+ .../client/session/stream/OutputStream.hpp    |   5 +
+ include/uxr/agent/diagnostics/P450Trace.hpp   |  97 +++++
+ include/uxr/agent/message/OutputMessage.hpp   |  21 +-
+ src/cpp/diagnostics/P450Trace.cpp             | 342 ++++++++++++++++++
+ src/cpp/processor/Processor.cpp               |  21 ++
+ src/cpp/transport/Server.cpp                  |   8 +-
+ src/cpp/transport/serial/SerialAgentLinux.cpp |   3 +
+ utils/p450_trace_selftest.cpp                 |  29 ++
+ 9 files changed, 533 insertions(+), 2 deletions(-)
+ create mode 100644 include/uxr/agent/diagnostics/P450Trace.hpp
+ create mode 100644 src/cpp/diagnostics/P450Trace.cpp
+ create mode 100644 utils/p450_trace_selftest.cpp
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d03a78b..be9a693 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -188,6 +188,7 @@ endif()
+ set(SRCS
+     src/cpp/Agent.cpp
+     src/cpp/AgentInstance.cpp
++    src/cpp/diagnostics/P450Trace.cpp
+     src/cpp/Root.cpp
+     src/cpp/processor/Processor.cpp
+     src/cpp/client/ProxyClient.cpp
+@@ -338,6 +339,14 @@ if(UAGENT_BUILD_EXECUTABLE)
+         CXX_STANDARD_REQUIRED
+             YES
+         )
++
++    if(UNIX)
++        add_executable(P450AgentTraceSelftest utils/p450_trace_selftest.cpp)
++        target_link_libraries(P450AgentTraceSelftest PRIVATE ${PROJECT_NAME})
++        set_target_properties(P450AgentTraceSelftest PROPERTIES
++            CXX_STANDARD 11
++            CXX_STANDARD_REQUIRED YES)
++    endif()
+ endif()
+ 
+ # Examples
+diff --git a/include/uxr/agent/client/session/stream/OutputStream.hpp b/include/uxr/agent/client/session/stream/OutputStream.hpp
+index ddf8be6..b9cec4a 100644
+--- a/include/uxr/agent/client/session/stream/OutputStream.hpp
++++ b/include/uxr/agent/client/session/stream/OutputStream.hpp
+@@ -20,6 +20,7 @@
+ #include <uxr/agent/utils/SeqNum.hpp>
+ #include <uxr/agent/client/session/SessionInfo.hpp>
+ #include <uxr/agent/logger/Logger.hpp>
++#include <uxr/agent/diagnostics/P450Trace.hpp>
+ 
+ #include <memory>
+ #include <queue>
+@@ -318,6 +319,7 @@ inline bool ReliableOutputStream::push_submessage(
+             OutputMessagePtr output_message(new OutputMessage(message_header, header_size + submessage_size));
+             if (output_message->append_submessage(submessage_id, submessage))
+             {
++                p450_trace::sequence_assigned(stream_id, last_unacked_, output_message->get_len());
+                 /* Push message. */
+                 messages_.insert(std::make_pair(last_unacked_, std::move(output_message)));
+                 rv = true;
+@@ -361,6 +363,7 @@ inline bool ReliableOutputStream::push_submessage(
+                 OutputMessagePtr output_message(new OutputMessage(message_header, current_message_size));
+                 if (output_message->append_fragment(fragment_subheader,  buf.get() + serialized_size, fragment_size))
+                 {
++                    p450_trace::sequence_assigned(stream_id, last_unacked_, output_message->get_len());
+                     /* Push message. */
+                     messages_.insert(std::make_pair(last_unacked_, std::move(output_message)));
+                     serialized_size += fragment_size;
+@@ -385,6 +388,8 @@ inline bool ReliableOutputStream::get_next_message(OutputMessagePtr& output_mess
+     {
+         last_sent_ += 1;
+         output_message = messages_.at(last_sent_);
++        p450_trace::queue_new(output_message->get_stream_id(), output_message->get_sequence_nr(),
++                output_message->get_len());
+         rv = true;
+     }
+     return rv;
+diff --git a/include/uxr/agent/diagnostics/P450Trace.hpp b/include/uxr/agent/diagnostics/P450Trace.hpp
+new file mode 100644
+index 0000000..640c5ad
+--- /dev/null
++++ b/include/uxr/agent/diagnostics/P450Trace.hpp
+@@ -0,0 +1,97 @@
++// P450 software-only XRCE Agent timing trace.
++// This file is intentionally isolated from the normal Agent build tree.
++
++#ifndef UXR_AGENT_DIAGNOSTICS_P450_TRACE_HPP_
++#define UXR_AGENT_DIAGNOSTICS_P450_TRACE_HPP_
++
++#include <cstddef>
++#include <cstdint>
++#include <sys/types.h>
++
++namespace eprosima {
++namespace uxr {
++namespace p450_trace {
++
++enum class Event : uint16_t
++{
++    DDS_CALLBACK_BEGIN = 1,
++    DDS_CALLBACK_END = 2,
++    SEQ_ASSIGNED = 3,
++    QUEUE_NEW = 4,
++    SEND_BEGIN = 5,
++    UART_WRITE_BEGIN = 6,
++    UART_WRITE_END = 7,
++    SEND_END = 8,
++    ACKNACK_RX = 9,
++    RETX_QUEUE = 10,
++    ACK_UPDATE = 11,
++    HEARTBEAT_QUEUE = 12
++};
++
++void callback_begin(
++        uint8_t session_id,
++        uint8_t stream_id,
++        uint16_t object_id,
++        uint32_t client_key,
++        size_t len);
++
++void callback_end(bool result);
++
++void sequence_assigned(
++        uint8_t stream_id,
++        uint16_t seq_num,
++        size_t len);
++
++void queue_new(
++        uint8_t stream_id,
++        uint16_t seq_num,
++        size_t len);
++
++void acknack_received(
++        uint8_t session_id,
++        uint8_t stream_id,
++        uint16_t first_unacked,
++        uint16_t nack_bitmap,
++        uint32_t client_key);
++
++void retransmit_queued(
++        uint8_t session_id,
++        uint8_t stream_id,
++        uint16_t seq_num,
++        uint16_t first_unacked,
++        uint16_t nack_bitmap,
++        uint32_t client_key,
++        size_t len);
++
++void ack_updated(
++        uint8_t session_id,
++        uint8_t stream_id,
++        uint16_t first_unacked,
++        uint16_t nack_bitmap,
++        uint32_t client_key);
++
++void heartbeat_queued(
++        uint8_t session_id,
++        uint8_t stream_id,
++        uint16_t first_unacked,
++        uint16_t last_unacked,
++        uint32_t client_key);
++
++void send_begin(
++        uint8_t session_id,
++        uint8_t stream_id,
++        uint16_t seq_num,
++        uint32_t client_key,
++        size_t len);
++
++void send_end(bool result);
++
++void uart_write_begin(size_t len);
++
++void uart_write_end(ssize_t result);
++
++} // namespace p450_trace
++} // namespace uxr
++} // namespace eprosima
++
++#endif // UXR_AGENT_DIAGNOSTICS_P450_TRACE_HPP_
+diff --git a/include/uxr/agent/message/OutputMessage.hpp b/include/uxr/agent/message/OutputMessage.hpp
+index 7093f1a..3f1ee04 100644
+--- a/include/uxr/agent/message/OutputMessage.hpp
++++ b/include/uxr/agent/message/OutputMessage.hpp
+@@ -34,7 +34,14 @@ public:
+         : buf_(new uint8_t[len]{0}),
+           len_(len),
+           fastbuffer_(reinterpret_cast<char*>(buf_), len_),
+-          serializer_(fastbuffer_)
++          serializer_(fastbuffer_),
++          session_id_(header.session_id()),
++          stream_id_(header.stream_id()),
++          sequence_nr_(header.sequence_nr()),
++          client_key_raw_(uint32_t(header.client_key()[0]) << 24 |
++                  uint32_t(header.client_key()[1]) << 16 |
++                  uint32_t(header.client_key()[2]) << 8 |
++                  uint32_t(header.client_key()[3]))
+     {
+         serialize(header);
+     }
+@@ -53,6 +60,14 @@ public:
+ 
+     size_t get_len() const { return serializer_.getSerializedDataLength(); }
+ 
++    uint8_t get_session_id() const { return session_id_; }
++
++    uint8_t get_stream_id() const { return stream_id_; }
++
++    uint16_t get_sequence_nr() const { return sequence_nr_; }
++
++    uint32_t get_client_key_raw() const { return client_key_raw_; }
++
+     template<class T>
+     bool append_submessage(
+             dds::xrce::SubmessageId submessage_id,
+@@ -86,6 +101,10 @@ private:
+     size_t len_;
+     fastcdr::FastBuffer fastbuffer_;
+     fastcdr::Cdr serializer_;
++    uint8_t session_id_;
++    uint8_t stream_id_;
++    uint16_t sequence_nr_;
++    uint32_t client_key_raw_;
+ };
+ 
+ template<class T>
+diff --git a/src/cpp/diagnostics/P450Trace.cpp b/src/cpp/diagnostics/P450Trace.cpp
+new file mode 100644
+index 0000000..bae9097
+--- /dev/null
++++ b/src/cpp/diagnostics/P450Trace.cpp
+@@ -0,0 +1,342 @@
++#include <uxr/agent/diagnostics/P450Trace.hpp>
++
++#include <atomic>
++#include <cerrno>
++#include <chrono>
++#include <cstdlib>
++#include <cstring>
++#include <fcntl.h>
++#include <mutex>
++#include <sys/mman.h>
++#include <sys/stat.h>
++#include <sys/syscall.h>
++#include <time.h>
++#include <unistd.h>
++
++namespace eprosima {
++namespace uxr {
++namespace p450_trace {
++
++namespace {
++
++constexpr uint64_t TRACE_MAGIC = UINT64_C(0x4543525830353450); // "P450XRCE" little-endian.
++constexpr uint32_t TRACE_VERSION = 1;
++constexpr uint32_t TRACE_CAPACITY = 32768;
++constexpr uint16_t NO_SEQUENCE = UINT16_MAX;
++
++struct alignas(8) TraceHeader
++{
++    uint64_t magic;
++    uint32_t version;
++    uint32_t header_size;
++    uint32_t record_size;
++    uint32_t capacity;
++    uint64_t start_ns;
++    uint64_t write_index;
++    uint32_t pid;
++    uint32_t stream_filter;
++    uint64_t reserved[2];
++};
++
++struct alignas(8) TraceRecord
++{
++    uint64_t commit;
++    uint64_t t_ns;
++    uint64_t aux;
++    uint32_t callback_id;
++    uint32_t client_key;
++    uint32_t tid;
++    uint32_t len;
++    int32_t result;
++    uint16_t event;
++    uint16_t seq_num;
++    uint16_t first_unacked;
++    uint16_t nack_bitmap;
++    uint16_t object_id;
++    uint8_t session_id;
++    uint8_t stream_id;
++    uint32_t reserved[2];
++};
++
++static_assert(sizeof(TraceHeader) == 64, "P450 trace header layout changed");
++static_assert(sizeof(TraceRecord) == 64, "P450 trace record layout changed");
++
++struct TraceMap
++{
++    TraceHeader header;
++    TraceRecord records[TRACE_CAPACITY];
++};
++
++struct ThreadContext
++{
++    uint32_t callback_id = 0;
++    uint32_t client_key = 0;
++    uint16_t object_id = 0;
++    uint16_t send_seq = NO_SEQUENCE;
++    uint8_t session_id = 0;
++    uint8_t stream_id = 0;
++    bool callback_active = false;
++    bool send_active = false;
++};
++
++TraceMap* trace_map = nullptr;
++std::once_flag init_once;
++std::atomic<uint32_t> callback_counter{0};
++thread_local ThreadContext thread_context;
++
++uint64_t monotonic_raw_ns()
++{
++    struct timespec ts = {};
++    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
++    return uint64_t(ts.tv_sec) * UINT64_C(1000000000) + uint64_t(ts.tv_nsec);
++}
++
++uint32_t current_tid()
++{
++    return static_cast<uint32_t>(syscall(SYS_gettid));
++}
++
++void initialize()
++{
++    const char* path = std::getenv("P450_XRCE_TRACE_FILE");
++    if (nullptr == path || '\0' == path[0])
++    {
++        return;
++    }
++
++    uint32_t stream_filter = 128;
++    const char* stream_value = std::getenv("P450_XRCE_TRACE_STREAM");
++    if (nullptr != stream_value && '\0' != stream_value[0])
++    {
++        char* end = nullptr;
++        const unsigned long parsed = std::strtoul(stream_value, &end, 0);
++        if (end != stream_value && '\0' == *end && parsed <= UINT8_MAX)
++        {
++            stream_filter = static_cast<uint32_t>(parsed);
++        }
++    }
++
++    const int fd = ::open(path, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP);
++    if (fd < 0)
++    {
++        return;
++    }
++
++    const size_t map_size = sizeof(TraceMap);
++    if (0 != ftruncate(fd, static_cast<off_t>(map_size)))
++    {
++        ::close(fd);
++        return;
++    }
++
++    void* mapped = mmap(nullptr, map_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
++    ::close(fd);
++    if (MAP_FAILED == mapped)
++    {
++        return;
++    }
++
++    trace_map = static_cast<TraceMap*>(mapped);
++    std::memset(trace_map, 0, map_size);
++    trace_map->header.version = TRACE_VERSION;
++    trace_map->header.header_size = sizeof(TraceHeader);
++    trace_map->header.record_size = sizeof(TraceRecord);
++    trace_map->header.capacity = TRACE_CAPACITY;
++    trace_map->header.start_ns = monotonic_raw_ns();
++    trace_map->header.pid = static_cast<uint32_t>(getpid());
++    trace_map->header.stream_filter = stream_filter;
++    __atomic_store_n(&trace_map->header.magic, TRACE_MAGIC, __ATOMIC_RELEASE);
++}
++
++bool accepts(uint8_t stream_id)
++{
++    std::call_once(init_once, initialize);
++    return nullptr != trace_map && trace_map->header.stream_filter == stream_id;
++}
++
++void record(
++        Event event,
++        uint8_t session_id,
++        uint8_t stream_id,
++        uint16_t seq_num,
++        uint16_t first_unacked,
++        uint16_t nack_bitmap,
++        uint16_t object_id,
++        uint32_t client_key,
++        int32_t result,
++        uint32_t len,
++        uint32_t callback_id,
++        uint64_t aux = 0)
++{
++    if (!accepts(stream_id))
++    {
++        return;
++    }
++
++    const uint64_t index = __atomic_fetch_add(&trace_map->header.write_index, UINT64_C(1), __ATOMIC_RELAXED);
++    TraceRecord& slot = trace_map->records[index % TRACE_CAPACITY];
++    __atomic_store_n(&slot.commit, UINT64_C(0), __ATOMIC_RELAXED);
++    slot.t_ns = monotonic_raw_ns();
++    slot.aux = aux;
++    slot.callback_id = callback_id;
++    slot.client_key = client_key;
++    slot.tid = current_tid();
++    slot.len = len;
++    slot.result = result;
++    slot.event = static_cast<uint16_t>(event);
++    slot.seq_num = seq_num;
++    slot.first_unacked = first_unacked;
++    slot.nack_bitmap = nack_bitmap;
++    slot.object_id = object_id;
++    slot.session_id = session_id;
++    slot.stream_id = stream_id;
++    slot.reserved[0] = 0;
++    slot.reserved[1] = 0;
++    __atomic_store_n(&slot.commit, index + UINT64_C(1), __ATOMIC_RELEASE);
++}
++
++} // namespace
++
++void callback_begin(
++        uint8_t session_id,
++        uint8_t stream_id,
++        uint16_t object_id,
++        uint32_t client_key,
++        size_t len)
++{
++    thread_context.callback_id = callback_counter.fetch_add(1, std::memory_order_relaxed) + 1;
++    thread_context.client_key = client_key;
++    thread_context.object_id = object_id;
++    thread_context.session_id = session_id;
++    thread_context.stream_id = stream_id;
++    thread_context.callback_active = true;
++    record(Event::DDS_CALLBACK_BEGIN, session_id, stream_id, NO_SEQUENCE, 0, 0, object_id,
++            client_key, 0, static_cast<uint32_t>(len), thread_context.callback_id);
++}
++
++void callback_end(bool result)
++{
++    if (thread_context.callback_active)
++    {
++        record(Event::DDS_CALLBACK_END, thread_context.session_id, thread_context.stream_id, NO_SEQUENCE,
++                0, 0, thread_context.object_id, thread_context.client_key, result ? 1 : 0, 0,
++                thread_context.callback_id);
++    }
++    thread_context.callback_active = false;
++}
++
++void sequence_assigned(uint8_t stream_id, uint16_t seq_num, size_t len)
++{
++    const uint32_t callback_id = thread_context.callback_active ? thread_context.callback_id : 0;
++    const uint16_t object_id = thread_context.callback_active ? thread_context.object_id : 0;
++    const uint32_t client_key = thread_context.callback_active ? thread_context.client_key : 0;
++    const uint8_t session_id = thread_context.callback_active ? thread_context.session_id : 0;
++    record(Event::SEQ_ASSIGNED, session_id, stream_id, seq_num, 0, 0,
++            object_id, client_key, 1, static_cast<uint32_t>(len), callback_id);
++}
++
++void queue_new(uint8_t stream_id, uint16_t seq_num, size_t len)
++{
++    const uint32_t callback_id = thread_context.callback_active ? thread_context.callback_id : 0;
++    const uint16_t object_id = thread_context.callback_active ? thread_context.object_id : 0;
++    const uint32_t client_key = thread_context.callback_active ? thread_context.client_key : 0;
++    const uint8_t session_id = thread_context.callback_active ? thread_context.session_id : 0;
++    record(Event::QUEUE_NEW, session_id, stream_id, seq_num, 0, 0,
++            object_id, client_key, 1, static_cast<uint32_t>(len), callback_id);
++}
++
++void acknack_received(
++        uint8_t session_id,
++        uint8_t stream_id,
++        uint16_t first_unacked,
++        uint16_t nack_bitmap,
++        uint32_t client_key)
++{
++    record(Event::ACKNACK_RX, session_id, stream_id, NO_SEQUENCE, first_unacked, nack_bitmap,
++            0, client_key, 1, 0, 0);
++}
++
++void retransmit_queued(
++        uint8_t session_id,
++        uint8_t stream_id,
++        uint16_t seq_num,
++        uint16_t first_unacked,
++        uint16_t nack_bitmap,
++        uint32_t client_key,
++        size_t len)
++{
++    record(Event::RETX_QUEUE, session_id, stream_id, seq_num, first_unacked, nack_bitmap,
++            0, client_key, 1, static_cast<uint32_t>(len), 0);
++}
++
++void ack_updated(
++        uint8_t session_id,
++        uint8_t stream_id,
++        uint16_t first_unacked,
++        uint16_t nack_bitmap,
++        uint32_t client_key)
++{
++    record(Event::ACK_UPDATE, session_id, stream_id, NO_SEQUENCE, first_unacked, nack_bitmap,
++            0, client_key, 1, 0, 0);
++}
++
++void heartbeat_queued(
++        uint8_t session_id,
++        uint8_t stream_id,
++        uint16_t first_unacked,
++        uint16_t last_unacked,
++        uint32_t client_key)
++{
++    record(Event::HEARTBEAT_QUEUE, session_id, stream_id, last_unacked, first_unacked, 0,
++            0, client_key, 1, 0, 0);
++}
++
++void send_begin(
++        uint8_t session_id,
++        uint8_t stream_id,
++        uint16_t seq_num,
++        uint32_t client_key,
++        size_t len)
++{
++    thread_context.session_id = session_id;
++    thread_context.stream_id = stream_id;
++    thread_context.send_seq = seq_num;
++    thread_context.client_key = client_key;
++    thread_context.send_active = true;
++    record(Event::SEND_BEGIN, session_id, stream_id, seq_num, 0, 0, 0, client_key,
++            0, static_cast<uint32_t>(len), 0);
++}
++
++void send_end(bool result)
++{
++    if (thread_context.send_active)
++    {
++        record(Event::SEND_END, thread_context.session_id, thread_context.stream_id,
++                thread_context.send_seq, 0, 0, 0, thread_context.client_key, result ? 1 : 0, 0, 0);
++    }
++    thread_context.send_active = false;
++}
++
++void uart_write_begin(size_t len)
++{
++    if (thread_context.send_active)
++    {
++        record(Event::UART_WRITE_BEGIN, thread_context.session_id, thread_context.stream_id,
++                thread_context.send_seq, 0, 0, 0, thread_context.client_key, 0,
++                static_cast<uint32_t>(len), 0);
++    }
++}
++
++void uart_write_end(ssize_t result)
++{
++    if (thread_context.send_active)
++    {
++        record(Event::UART_WRITE_END, thread_context.session_id, thread_context.stream_id,
++                thread_context.send_seq, 0, 0, 0, thread_context.client_key,
++                static_cast<int32_t>(result), 0, 0);
++    }
++}
++
++} // namespace p450_trace
++} // namespace uxr
++} // namespace eprosima
+diff --git a/src/cpp/processor/Processor.cpp b/src/cpp/processor/Processor.cpp
+index 8133d7f..2402567 100644
+--- a/src/cpp/processor/Processor.cpp
++++ b/src/cpp/processor/Processor.cpp
+@@ -20,6 +20,7 @@
+ #include <uxr/agent/Root.hpp>
+ #include <uxr/agent/transport/Server.hpp>
+ #include <uxr/agent/utils/Time.hpp>
++#include <uxr/agent/diagnostics/P450Trace.hpp>
+ 
+ #include <uxr/agent/transport/endpoint/IPv4EndPoint.hpp>
+ #include <uxr/agent/transport/endpoint/IPv6EndPoint.hpp>
+@@ -618,6 +619,11 @@ bool Processor<EndPoint>::process_acknack_submessage(
+         uint16_t first_message = acknack_payload.first_unacked_seq_num();
+         std::array<uint8_t, 2> nack_bitmap = acknack_payload.nack_bitmap();
+         uint8_t stream_id = acknack_payload.stream_id();
++        const uint16_t nack_bitmap_raw = uint16_t(nack_bitmap.at(1)) |
++                uint16_t(uint16_t(nack_bitmap.at(0)) << 8);
++        const uint32_t client_key = conversion::clientkey_to_raw(client.get_client_key());
++        p450_trace::acknack_received(client.get_session_id(), stream_id, first_message,
++                nack_bitmap_raw, client_key);
+         for (uint16_t i = 0; i < 8; ++i)
+         {
+             OutputPacket<EndPoint> output_packet;
+@@ -627,6 +633,9 @@ bool Processor<EndPoint>::process_acknack_submessage(
+             {
+                 if (client.session().get_output_message(stream_id, first_message + i, output_packet.message))
+                 {
++                    p450_trace::retransmit_queued(client.get_session_id(), stream_id,
++                            first_message + i, first_message, nack_bitmap_raw, client_key,
++                            output_packet.message->get_len());
+                     server_.push_output_packet(std::move(output_packet));
+                 }
+             }
+@@ -634,12 +643,17 @@ bool Processor<EndPoint>::process_acknack_submessage(
+             {
+                 if (client.session().get_output_message(stream_id, first_message + i + 8, output_packet.message))
+                 {
++                    p450_trace::retransmit_queued(client.get_session_id(), stream_id,
++                            first_message + i + 8, first_message, nack_bitmap_raw, client_key,
++                            output_packet.message->get_len());
+                     server_.push_output_packet(std::move(output_packet));
+                 }
+             }
+         }
+ 
+         client.session().update_from_acknack(stream_id, first_message);
++        p450_trace::ack_updated(client.get_session_id(), stream_id, first_message,
++                nack_bitmap_raw, client_key);
+     }
+     else
+     {
+@@ -822,6 +836,10 @@ bool Processor<EndPoint>::read_data_callback(
+ {
+     bool rv = false;
+ 
++    p450_trace::callback_begin(cb_args.client->get_session_id(), cb_args.stream_id,
++            conversion::objectid_to_raw(cb_args.object_id),
++            conversion::clientkey_to_raw(cb_args.client_key), buffer.size());
++
+     dds::xrce::DATA_Payload_Data data_payload;
+     data_payload.request_id(cb_args.request_id);
+     data_payload.object_id(cb_args.object_id);
+@@ -841,6 +859,7 @@ bool Processor<EndPoint>::read_data_callback(
+     {
+         std::this_thread::sleep_for(timeout);
+     }
++    p450_trace::callback_end(rv);
+     return rv;
+ }
+ 
+@@ -992,6 +1011,8 @@ void Processor<EndPoint>::check_heartbeats()
+             {
+                 if (client->session().fill_heartbeat(stream, heartbeat))
+                 {
++                    p450_trace::heartbeat_queued(client->get_session_id(), stream,
++                            heartbeat.first_unacked_seq_nr(), heartbeat.last_unacked_seq_nr(), raw_key);
+                     output_packet.message = OutputMessagePtr(new OutputMessage(header, message_size));
+                     output_packet.message->append_submessage(dds::xrce::HEARTBEAT, heartbeat);
+ 
+diff --git a/src/cpp/transport/Server.cpp b/src/cpp/transport/Server.cpp
+index f9b2a31..5c47a10 100644
+--- a/src/cpp/transport/Server.cpp
++++ b/src/cpp/transport/Server.cpp
+@@ -17,6 +17,7 @@
+ #include <uxr/agent/processor/Processor.hpp>
+ #include <uxr/agent/Root.hpp>
+ #include <uxr/agent/logger/Logger.hpp>
++#include <uxr/agent/diagnostics/P450Trace.hpp>
+ 
+ #include <uxr/agent/transport/endpoint/IPv4EndPoint.hpp>
+ #include <uxr/agent/transport/endpoint/IPv6EndPoint.hpp>
+@@ -252,7 +253,12 @@ void Server<EndPoint>::sender_loop()
+         if (output_scheduler_.pop(output_packet))
+         {
+             TransportRc transport_rc = TransportRc::ok;
+-            if (!send_message(output_packet, transport_rc))
++            p450_trace::send_begin(output_packet.message->get_session_id(),
++                    output_packet.message->get_stream_id(), output_packet.message->get_sequence_nr(),
++                    output_packet.message->get_client_key_raw(), output_packet.message->get_len());
++            const bool send_ok = send_message(output_packet, transport_rc);
++            p450_trace::send_end(send_ok);
++            if (!send_ok)
+             {
+                 if (TransportRc::server_error == transport_rc && running_cond_)
+                 {
+diff --git a/src/cpp/transport/serial/SerialAgentLinux.cpp b/src/cpp/transport/serial/SerialAgentLinux.cpp
+index a223e40..eff8a5e 100644
+--- a/src/cpp/transport/serial/SerialAgentLinux.cpp
++++ b/src/cpp/transport/serial/SerialAgentLinux.cpp
+@@ -15,6 +15,7 @@
+ #include <uxr/agent/transport/serial/SerialAgentLinux.hpp>
+ #include <uxr/agent/utils/Conversion.hpp>
+ #include <uxr/agent/logger/Logger.hpp>
++#include <uxr/agent/diagnostics/P450Trace.hpp>
+ 
+ #include <unistd.h>
+ 
+@@ -40,7 +41,9 @@ ssize_t SerialAgent::write_data(
+         TransportRc& transport_rc)
+ {
+     size_t rv = 0;
++    p450_trace::uart_write_begin(len);
+     ssize_t bytes_written = ::write(poll_fd_.fd, buf, len);
++    p450_trace::uart_write_end(bytes_written);
+     if (0 < bytes_written)
+     {
+         rv = size_t(bytes_written);
+diff --git a/utils/p450_trace_selftest.cpp b/utils/p450_trace_selftest.cpp
+new file mode 100644
+index 0000000..66c495d
+--- /dev/null
++++ b/utils/p450_trace_selftest.cpp
+@@ -0,0 +1,29 @@
++#include <uxr/agent/diagnostics/P450Trace.hpp>
++
++int main()
++{
++    using namespace eprosima::uxr::p450_trace;
++
++    callback_begin(0x81, 128, 1000, 0x01020304, 24);
++    sequence_assigned(128, 57, 36);
++    queue_new(128, 57, 36);
++    callback_end(true);
++
++    send_begin(0x81, 128, 57, 0x01020304, 36);
++    uart_write_begin(42);
++    uart_write_end(42);
++    uart_write_begin(1);
++    uart_write_end(1);
++    send_end(true);
++
++    acknack_received(0x81, 128, 58, 0x0007, 0x01020304);
++    heartbeat_queued(0x81, 128, 58, 61, 0x01020304);
++    retransmit_queued(0x81, 128, 58, 58, 0x0007, 0x01020304, 36);
++    ack_updated(0x81, 128, 58, 0x0007, 0x01020304);
++
++    send_begin(0x81, 128, 58, 0x01020304, 36);
++    uart_write_begin(42);
++    uart_write_end(42);
++    send_end(true);
++    return 0;
++}
+-- 
+2.25.1
+

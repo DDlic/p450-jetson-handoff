@@ -15,6 +15,8 @@ QGC_RETURN_YYYYMMDD_HHMM_TESTNAME.txt，原始 console 輸出不可節錄或改�
 不要修改 QGC_LAPTOP_CODEX_HANDOFF_20260814.md、雙端交接文件.txt 或 NX 端檔案。
 完成後使用 qgc: 前綴 commit 並 push main，再把 commit SHA 告訴機主。
 若文件要求等待 NX Codex 的 TEST_ID，就停在 READY_QGC，不要自行開始舊測試。
+雙端狀態、TEST_ID 與交棒一律透過 GitHub Issue #1「P450 Codex Coordination」留言，
+不再要求機主人工轉貼兩端訊息。
 ```
 
 筆電 Codex 回覆「已讀」不算完成初始化；至少要回報目前 `HEAD`、已讀文件清單、
@@ -226,14 +228,35 @@ seq 58: handled 57->58, ready=1,
 6. 記錄 firmware `ver all`、測試開始／結束時間、是否有 PX4 reboot、USB/QGC reconnect。
 7. 不自行改參數、不切模式、不解鎖、不刷韌體。
 
-### 機主是唯一跨端協調者
+### GitHub Issue 是唯一跨端協作通道
 
-- NX Codex 與筆電 Codex 不假設彼此能直接傳訊；Git commit SHA 與 `TEST_ID` 由機主轉達。
+- 固定 Issue：<https://github.com/DDlic/p450-jetson-handoff/issues/1>。
+- `TEST_ID`、開始／停止條件、狀態 ACK、阻塞原因與 evidence commit SHA 都在該 Issue 留言。
+- 正式程式碼、文件、CSV 與完整 raw evidence 仍提交 Git；Issue 不貼超長 raw trace。
+- 機主可監督或覆寫任務，但正常流程不再依賴機主人工轉貼兩端訊息。
 - 任一端需要另一端動作時，先寫清楚「要執行的命令、開始條件、停止條件、預期輸出」，
   不只寫「請測試」。
 - 筆電端不得把尚未由 NX Codex 宣告的測試當成已同步；NX 端也不得把沒有 QGC pre-test
   證據的資料標成雙端測試。
 - 使用同一個 `TEST_ID` 才能把 NX CSV、Agent trace 與 QGC/PX4 trace 視為同一輪。
+
+Issue 留言固定格式：
+
+```text
+MSG_ID:
+FROM: NX Codex | QGC Codex
+TO: QGC Codex | NX Codex
+TEST_ID:
+STATE:
+ACTION:
+START_CONDITION:
+STOP_CONDITION:
+EXPECTED_OUTPUT:
+REPLY_REQUIRED: YES | NO
+```
+
+需要回覆的訊息必須用新的 `MSG_ID` 留言 ACK，不能只靠 reaction。禁止在 Issue 放密碼、
+token、登入資訊、parameter backup 或其他敏感資料。
 
 ## 7. 每輪協作流程
 
@@ -350,6 +373,8 @@ Repo：`https://github.com/DDlic/p450-jetson-handoff.git`，branch `main`。
 - 禁止 force-push、reset、覆寫其他 evidence。
 - 禁止提交密碼、token、GitHub session、QGC parameter backup 或其他憑證。
 - raw evidence 與分析分開：QGC return 檔只放事實與原始輸出，原因判讀由 NX 端另寫。
+- push 完成後，QGC Codex 必須在 Issue #1 以 `QGC_EVIDENCE_PUSHED` 回覆 commit SHA；
+  NX Codex 拉取並驗證後再回覆 `ANALYZED`。
 
 QGC 回傳檔格式：
 

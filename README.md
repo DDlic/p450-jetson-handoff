@@ -10,6 +10,10 @@
 > 同步測試時序、Git 回傳格式與安全停止條件。下面的長篇「目前狀態」包含歷史版本，
 > 不可取代這份專用交接。
 
+NX Codex 與 QGC 筆電 Codex 的即時交棒統一使用
+[GitHub Issue #1：P450 Codex Coordination](https://github.com/DDlic/p450-jetson-handoff/issues/1)；
+Git repository 僅保存程式碼、文件與完整 evidence，Issue 保存狀態、TEST_ID 與 commit SHA。
+
 最新雙端結論：NX 端 125 秒／10 Hz publisher 最大 gap 為 120.436 ms，但 PX4 receipt
 最大 gap 為 506.727 ms；RXTRACE 已直接捕捉 seq 61 先到、seq 58–60 缺失，等待補洞
 造成 397.990 ms head-of-line stall。NX 的 `cgroup.memory=nokmem` kernel workaround

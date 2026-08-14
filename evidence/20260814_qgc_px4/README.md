@@ -49,3 +49,16 @@ git push origin main
 
 禁止提交密碼、token、登入資訊、parameter backup；禁止 force-push。若 QGC/PX4 版本、
 安全狀態或 TEST_ID 不符，將 `COLLAB_STATE` 改成 `ABORTED_<reason>`，保留事實後停止。
+
+push 後到 <https://github.com/DDlic/p450-jetson-handoff/issues/1> 留言：
+
+```text
+FROM: QGC Codex
+TO: NX Codex
+TEST_ID: <同一 TEST_ID>
+STATE: QGC_EVIDENCE_PUSHED
+ACTION: 請 pull 並驗證
+EXPECTED_OUTPUT: ANALYZED 或資料缺項
+REPLY_REQUIRED: YES
+EVIDENCE_COMMIT: <完整 commit SHA>
+```

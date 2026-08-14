@@ -112,3 +112,69 @@ Do not resume flight-related testing until these checks pass:
 
 If the same panic recurs with `nokmem`, the next software-only A/B is to avoid loading `88x2bu` and use another network path. The long-term options are an exact NVIDIA-kernel backport or a validated newer BSP/kernel; a blind point-release upgrade is not considered proof because the R35.6.5 source still contains the relevant old list-LRU implementation.
 
+## Post-reboot A/B result (in progress)
+
+The controlled reboot at 2026-08-14 15:24 CST loaded the intended workaround:
+
+```text
+CMDLINE_NOKMEM=PASS
+cgroup.memory=nokmem
+```
+
+The existing custom hardware configuration survived the boot:
+
+- `/media/p450/P450_DATA` mounted from `/dev/mmcblk1p1`.
+- `wlan0` associated normally.
+- `/dev/ttyTHS1` existed and was exclusively owned by the active
+  `p450-micro-xrce-agent.service`.
+- Agent `NRestarts=0`.
+- The complete `/fmu/in/*` and `/fmu/out/*` ROS graph was discovered with
+  `ROS_LOCALHOST_ONLY=0`.
+
+The exact ROS CLI/`timeout` process-exit sequence that preceded the captured panic was
+repeated after reboot. The host remained alive, the kernel log contained no new panic/oops,
+and kernel-memory cgroup counters stayed at zero before and after the sequence:
+
+```text
+memory.kmem.usage_in_bytes=0
+memory.kmem.max_usage_in_bytes=0
+memory.kmem.failcnt=0
+```
+
+A disarmed-only reliable OffboardControlMode probe then ran at 10 Hz for 125 seconds.
+It published no setpoint and no vehicle command. Result:
+
+```text
+publishes=1251
+mean_gap_ms=99.985198
+min_gap_ms=82.593
+p50_ms=103.699
+p95_ms=115.929
+p99_ms=118.034
+p999_ms=119.186
+max_gap_ms=120.436
+over_150ms=0
+over_250ms=0
+over_500ms=0
+```
+
+All 1251 rows reported:
+
+```text
+subscription_count=1
+arming_state=1 (disarmed)
+nav_state=4
+nav_state_user_intention=4
+failsafe=0
+```
+
+Raw CSV:
+
+```text
+post_nokmem_heartbeat_10hz_reliable_125s.csv
+SHA-256 89c4a1e80ac8f441584e71d98afddfa494cf180a78b57bb805ade5fcb002e1e8
+```
+
+The result remains preliminary until the host stays healthy past the previous
+669.85-second panic point and the PX4-side `uxrce_dds_client status`/`trace` output is
+captured. A clean NX publisher CSV alone cannot prove the PX4 reliable receive sequence.

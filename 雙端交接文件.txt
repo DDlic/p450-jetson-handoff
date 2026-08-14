@@ -1,15 +1,15 @@
-nsh> uxrce_dds_client status
+uxrce_dds_client status
 INFO  [uxrce_dds_client] Running, connected
 INFO  [uxrce_dds_client] Using transport: serial
-INFO  [uxrce_dds_client] Payload tx: 3018 B/s
+INFO  [uxrce_dds_client] Payload tx: 2869 B/s
 INFO  [uxrce_dds_client] Payload rx: 0 B/s
-INFO  [uxrce_dds_client] Serial RX pending samples: 20419
-INFO  [uxrce_dds_client] Serial RX pending bytes observed: 335356
+INFO  [uxrce_dds_client] Serial RX pending samples: 24236
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 393859
 INFO  [uxrce_dds_client] Serial RX pending max: 166 B
 INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
-INFO  [uxrce_dds_client] Complete payload bytes received: 96688
+INFO  [uxrce_dds_client] Complete payload bytes received: 116240
 INFO  [uxrce_dds_client] Serial framing: state 0, buffered 0 B, message 36/36 B
-INFO  [uxrce_dds_client] Offboard RX: count 6022, max gap 25953892 us, >150/250/500 ms 475/18/1
+INFO  [uxrce_dds_client] Offboard RX: count 1201, max gap 298884 us, >150/250/500 ms 65/4/0
 INFO  [uxrce_dds_client] Offboard RX stream: reliable
-INFO  [uxrce_dds_client] Offboard RX last age: 184319197 us
+INFO  [uxrce_dds_client] Offboard RX last age: 101796927 us
 nsh> 

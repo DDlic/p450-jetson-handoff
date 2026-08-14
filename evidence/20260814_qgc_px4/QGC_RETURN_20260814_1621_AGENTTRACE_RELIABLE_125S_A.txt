@@ -1,0 +1,56 @@
+TEST_ID: 20260814_1621_AGENTTRACE_RELIABLE_125S_A
+COLLAB_STATE: READY_QGC
+LOCAL_TIME_ASIA_TAIPEI: UNRECORDED_BY_OPERATOR
+REPO_HEAD_BEFORE_TEST: 7a591a5
+FIRMWARE_VER_ALL: PX4 v1.14.3 0, git c7a39478405122a04ef9f10b69f873561751a126, branch p450-xrce-rx-trace
+VEHICLE_PROPS_REMOVED: CONFIRMED_BY_OPERATOR
+VEHICLE_ARMED: false
+VEHICLE_MODE_OR_INTENTION: NOT_OFFBOARD
+PX4_REBOOT_DURING_TEST: NOT_REPORTED
+QGC_USB_OR_LINK_RECONNECT: NOT_REPORTED
+
+PRE_TEST_RAW_OUTPUT:
+ver all
+HW arch: PX4_FMU_V6C
+HW type: V6C000000
+HW version: 0x000
+HW revision: 0x000
+PX4 git-hash: c7a39478405122a04ef9f10b69f873561751a126
+PX4 version: 1.14.3 0 (17695488)
+PX4 git-branch: p450-xrce-rx-trace
+OS: NuttX
+OS version: Release 11.0.0 (184549631)
+OS git-hash: de41e7feaeffaec3ce65327e9569e8fdb553ca3d
+Build datetime: Aug 14 2026 14:31:09
+Build uri: localhost
+Build variant: default
+Toolchain: GNU GCC, 9.3.1 20200408 (release)
+PX4GUID: 000600000000323534333131510500280019
+MCU: STM32H7[4|5]xxx, rev. V
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 2897 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 3473
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 67917
+INFO  [uxrce_dds_client] Serial RX pending max: 255 B
+INFO  [uxrce_dds_client] Serial FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 20016
+INFO  [uxrce_dds_client] Serial framing: state 0, buffered 0 B, message 36/36 B
+INFO  [uxrce_dds_client] Offboard RX: count 1251, max gap 506727 us, >150/250/500 ms 83/23/1
+INFO  [uxrce_dds_client] Offboard RX stream: reliable
+INFO  [uxrce_dds_client] Reliable RX trace: count 24/96, frozen 1, trigger gap 397990 us
+INFO  [uxrce_dds_client] Offboard RX last age: 4101764298 us
+nsh> uxrce_dds_client trace reset
+INFO  [uxrce_dds_client] reliable input trace reset
+nsh> uxrce_dds_client trace
+INFO  [uxrce_dds_client] RXTRACE summary,count=0,frozen=0,trigger_gap_us=0
+INFO  [uxrce_dds_client] RXTRACE columns,i,event,t_us,stream,seq,handled_before,handled_after,announced_before,announced_after
+nsh> 
+
+POST_TEST_RAW_OUTPUT:
+NOT YET — probe has not started; waiting for NX RUNNING_NX and the later post-test capture instruction.
+
+OPERATOR_NOTES:
+Operator confirmed props removed, disarmed, and non-Offboard. Phase A only; no probe, reboot, reset, parameter change, firmware change, mode change, control command, or arming performed by QGC Codex.

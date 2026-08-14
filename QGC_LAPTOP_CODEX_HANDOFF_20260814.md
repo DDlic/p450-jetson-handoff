@@ -1,5 +1,25 @@
 # P450 QGC 筆電 Codex 專用協作交接（2026-08-14）
 
+## 立即交給筆電 Codex 的啟動文字
+
+機主可把下面整段直接貼給使用 QGC 的筆電 Codex：
+
+```text
+你是 P450 專案的 QGC／Pixhawk 端 Codex。先在 p450-jetson-handoff repository
+執行 git pull --ff-only，完整閱讀 QGC_LAPTOP_CODEX_HANDOFF_20260814.md，並按其中
+「QGC 筆電 Codex 負責」的範圍工作。不要只讀 README 或歷史結論。
+
+目前先做環境與文件確認，不改參數、不刷韌體、不切模式、不解鎖、不發布控制命令。
+你的回傳只新增到 evidence/20260814_qgc_px4/，檔名使用
+QGC_RETURN_YYYYMMDD_HHMM_TESTNAME.txt，原始 console 輸出不可節錄或改寫。
+不要修改 QGC_LAPTOP_CODEX_HANDOFF_20260814.md、雙端交接文件.txt 或 NX 端檔案。
+完成後使用 qgc: 前綴 commit 並 push main，再把 commit SHA 告訴機主。
+若文件要求等待 NX Codex 的 TEST_ID，就停在 READY_QGC，不要自行開始舊測試。
+```
+
+筆電 Codex 回覆「已讀」不算完成初始化；至少要回報目前 `HEAD`、已讀文件清單、
+QGC/PX4 console 是否可用，以及 `READY_QGC` 或明確阻塞原因。
+
 ## 0. 讀者與任務
 
 這份文件提供給連接 QGroundControl/Pixhawk 6C 的筆電 Codex。它不依賴原始聊天紀錄；讀完後應能直接與 NX Codex 分工。
@@ -7,6 +27,20 @@
 當前共同目標不是立刻飛行，而是先定位 ROS 2 OffboardControlMode 經 Micro XRCE-DDS reliable serial 傳輸時，PX4 偶發 250–500 ms receipt gap 的底層來源。
 
 目前禁止：裝槳飛行、發布 setpoint、發布 VehicleCommand、切入 Offboard、解鎖、改 PX4 參數、刷其他韌體、改接線或做阻抗／logic-analyzer 測試。若機主另有明確指示，再依新的安全條件處理。
+
+### 文件優先級
+
+發生內容衝突時依下列順序判定：
+
+1. 機主在當前對話中的最新明確指示。
+2. 本文件。
+3. 最新日期的 `evidence/` 測試結果。
+4. `README.md` 與其他歷史 handoff。
+
+特別注意：`evidence/20260814_reliable_rx_trace_build/BUILD_AND_TEST_HANDOFF.md`
+保留了一段刷入前的歷史命令，其中 `ROS_LOCALHOST_ONLY=1` 已被實機證明不適合目前
+systemd Agent discovery。NX 現況一律以本文件的 `ROS_LOCALHOST_ONLY=0` 為準；QGC
+筆電端不應代替 NX 執行 ROS probe。
 
 ## 1. 當前硬體與軟體真實狀態
 
@@ -192,7 +226,31 @@ seq 58: handled 57->58, ready=1,
 6. 記錄 firmware `ver all`、測試開始／結束時間、是否有 PX4 reboot、USB/QGC reconnect。
 7. 不自行改參數、不切模式、不解鎖、不刷韌體。
 
+### 機主是唯一跨端協調者
+
+- NX Codex 與筆電 Codex 不假設彼此能直接傳訊；Git commit SHA 與 `TEST_ID` 由機主轉達。
+- 任一端需要另一端動作時，先寫清楚「要執行的命令、開始條件、停止條件、預期輸出」，
+  不只寫「請測試」。
+- 筆電端不得把尚未由 NX Codex 宣告的測試當成已同步；NX 端也不得把沒有 QGC pre-test
+  證據的資料標成雙端測試。
+- 使用同一個 `TEST_ID` 才能把 NX CSV、Agent trace 與 QGC/PX4 trace 視為同一輪。
+
 ## 7. 每輪協作流程
+
+### Phase 0：建立唯一測試識別
+
+由 NX Codex先建立：
+
+```text
+TEST_ID=YYYYMMDD_HHMM_<short-name>
+EXPECTED_FIRMWARE=v1.14.3-8-gc7a3947840
+PROBE_DURATION_S=<由 NX Codex 指定>
+PROBE_RATE_HZ=10
+PROBE_RELIABILITY=reliable
+```
+
+QGC 筆電 Codex 必須原樣使用此 `TEST_ID`。沒有 TEST_ID、韌體不符或 props/arming 狀態
+不明時，只回報阻塞，不執行測試。
 
 ### Phase A：測試前，QGC 端
 
@@ -249,6 +307,17 @@ uxrce_dds_client trace
 - NACK 已產生但 retransmit 晚；
 - sequence 按序但上層 callback 晚。
 
+### Git 非同步交棒狀態
+
+每輪只使用下列狀態，避免「完成」語意不清：
+
+- `READY_QGC`：QGC 已完成 pre-test，trace 為空，等待 NX 開始。
+- `RUNNING_NX`：NX 正在執行該 TEST_ID，QGC 不 reset、不 reboot。
+- `NX_DONE_WAIT_QGC`：NX probe 已停，QGC 立即抓 post-test status/trace。
+- `QGC_EVIDENCE_PUSHED`：QGC 原始證據已 commit/push，附 SHA。
+- `ANALYZED`：NX 已拉取並完成雙端配對判讀。
+- `ABORTED_<reason>`：安全條件、連線、重啟或版本不符，中止且不可把資料併入正式結果。
+
 ## 8. 停止條件與飛行 gate
 
 任一條成立即停止該輪：
@@ -279,6 +348,8 @@ Repo：`https://github.com/DDlic/p450-jetson-handoff.git`，branch `main`。
 - QGC commit message 使用 `qgc:` 前綴；NX 使用 `nx:` 或 `evidence:`。
 - 寫入前 `git pull --ff-only`；push 前再 fetch，避免覆蓋他端提交。
 - 禁止 force-push、reset、覆寫其他 evidence。
+- 禁止提交密碼、token、GitHub session、QGC parameter backup 或其他憑證。
+- raw evidence 與分析分開：QGC return 檔只放事實與原始輸出，原因判讀由 NX 端另寫。
 
 QGC 回傳檔格式：
 
@@ -312,3 +383,6 @@ OPERATOR_NOTES:
 ## 11. 當前下一步
 
 不再重跑相同的 PX4-only 125 秒測試，也不改 heartbeat period。RXTRACE 已證明 Client sequence hole；下一步由 NX Codex建立 Agent 端 sequence/send/ACKNACK/retransmit trace。QGC 筆電 Codex先完成環境確認、讀取上述文件、建立自己的 `evidence/20260814_qgc_px4/` 回傳檔模板，等待 NX Codex通知同步測試開始。
+
+目前筆電端的正確停止點是 `READY_QGC`。尚未收到 NX Codex 發出的新 `TEST_ID` 前，
+不要重跑 125 秒 probe，也不要 reset 現有 trace 後自行測試。

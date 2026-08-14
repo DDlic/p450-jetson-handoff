@@ -2,6 +2,20 @@
 
 本 repository 保存 P450 Jetson Xavier NX 的系統重建、刷寫與後續 ROS/PX4 整合交接文件。
 
+## 2026-08-14 當前協作入口
+
+> 使用 QGroundControl／Pixhawk 的筆電 Codex 請先完整閱讀
+> [`QGC_LAPTOP_CODEX_HANDOFF_20260814.md`](QGC_LAPTOP_CODEX_HANDOFF_20260814.md)。
+> 該文件包含目前實機真實狀態、已證實的 reliable sequence hole、雙 Codex 分工、
+> 同步測試時序、Git 回傳格式與安全停止條件。下面的長篇「目前狀態」包含歷史版本，
+> 不可取代這份專用交接。
+
+最新雙端結論：NX 端 125 秒／10 Hz publisher 最大 gap 為 120.436 ms，但 PX4 receipt
+最大 gap 為 506.727 ms；RXTRACE 已直接捕捉 seq 61 先到、seq 58–60 缺失，等待補洞
+造成 397.990 ms head-of-line stall。NX 的 `cgroup.memory=nokmem` kernel workaround
+第一輪 A/B 通過，但它沒有修復 XRCE gap。目前 transport gate 仍為 FAIL，禁止有槳
+Offboard 飛行；下一個高資訊量工作是 Agent 端 sequence/send/ACKNACK/retransmit trace。
+
 ## 目前狀態
 
 > **2026-08-14 Agent 50 ms 乾淨短測 FAIL**：前一輪 600 秒結果因混入 21 筆前測而只能

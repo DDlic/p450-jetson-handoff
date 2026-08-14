@@ -95,3 +95,46 @@ parser SHA-256 4f2265d0e1d68e3c4d2cdc845c458ad5b1e47a29f0a38a27df8acfb273497cec
 6. 任一停止條件成立，立即終止隔離 Agent並恢復正式 service。
 
 實機結果需另存新 evidence；不得覆寫此 build/selftest 文件。
+
+## 第一次切換窗口：安全中止
+
+`20260814_1621_AGENTTRACE_RELIABLE_125S_A` 收到 QGC Phase A 後，NX 曾切換至隔離
+Agent PID 10699。ROS graph 恢復且 2 MiB ring 成功建立；但在機主要求的三分鐘窗口內
+沒有收到 QGC 切換後的 `READY_QGC_FINAL`，因此沒有執行 heartbeat probe，並依 gate
+標記為 `ABORTED_QGC_FINAL_TIMEOUT`。
+
+正式 service 已恢復：
+
+```text
+MainPID=10941
+NRestarts=0
+/dev/ttyTHS1 owner=10941 MicroXRCEAgent
+kernel panic/Oops=0
+```
+
+切換時的 XRCE entity setup 仍產生一份有效 integration trace：
+
+```text
+write_index=537
+valid=537
+unstable=0
+SEQ_ASSIGNED=55
+SEND_BEGIN/SEND_END=70/70
+UART_WRITE_BEGIN/UART_WRITE_END=70/70
+ACKNACK_RX=63
+RETX_QUEUE=15
+HEARTBEAT_QUEUE=6
+DDS_CALLBACK_BEGIN=0
+```
+
+它證明自訂 Agent、真實 serial send、ACKNACK 與 retransmit 插樁可在實機運作；因為
+`DDS_CALLBACK_BEGIN=0` 且正式 probe 未開始，不能拿它判定 Offboard gap，也不能與 QGC
+post-test trace 配成正式測試。
+
+```text
+aborted_qgc_timeout_agent_trace.bin
+SHA-256 8178d721fabfc455cf0007bf31ca44d57f9c6bb4ee1372b9ce3c799de0811e0b
+
+aborted_qgc_timeout_agent_trace.csv
+SHA-256 4693e8bd67acb74fc8d3d003df20b9cc25da6a125f4f35b09e939506fea9ba06
+```

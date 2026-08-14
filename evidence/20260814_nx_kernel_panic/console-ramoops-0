@@ -1,0 +1,66 @@
+[   16.383315] CPU4: shutdown
+[   16.431486] CPU5: shutdown
+[  669.850017] Unable to handle kernel paging request at virtual address 0000000200000010
+[  669.850289] Mem abort info:
+[  669.850389]   ESR = 0x96000004
+[  669.850479]   EC = 0x25: DABT (current EL), IL = 32 bits
+[  669.850614]   SET = 0, FnV = 0
+[  669.850701]   EA = 0, S1PTW = 0
+[  669.850785] Data abort info:
+[  669.850862]   ISV = 0, ISS = 0x00000004
+[  669.850982]   CM = 0, WnR = 0
+[  669.851064] user pgtable: 4k pages, 48-bit VAs, pgdp=000000011686c000
+[  669.851303] [0000000200000010] pgd=0000000000000000, p4d=0000000000000000
+[  669.851511] Internal error: Oops: 0000000096000004 [#1] PREEMPT SMP
+[  669.851658] Modules linked in: fuse lzo_rle lzo_compress zram ramoops reed_solomon realtek input_leds bnep 88x2bu(OE) snd_soc_tegra210_ope snd_soc_tegra186_asrc snd_soc_tegra186_dspk snd_soc_tegra186_arad snd_soc_tegra210_mvc snd_soc_tegra210_iqc snd_soc_tegra210_afc cfg80211 snd_soc_tegra210_dmic snd_soc_tegra210_adx snd_soc_tegra210_amx snd_soc_tegra210_mixer snd_soc_tegra210_i2s snd_soc_tegra210_admaif snd_soc_tegra_pcm snd_soc_tegra210_sfc btusb btrtl btbcm btintel aes_ce_blk crypto_simd cryptd aes_ce_cipher ghash_ce sha2_ce sha256_arm64 sha1_ce loop snd_soc_spdif_tx snd_soc_tegra_machine_driver leds_gpio max77620_thermal snd_soc_tegra210_adsp tegra210_adma tegra_bpmp_thermal snd_soc_tegra210_ahub snd_soc_tegra_utils snd_soc_simple_card_utils userspace_alert nvadsp nv_imx219 snd_hda_codec_hdmi snd_hda_tegra snd_hda_codec snd_hda_core spi_tegra114 binfmt_misc ina3221 pwm_fan nvgpu nvmap ip_tables x_tables [last unloaded: mtd]
+[  669.895495] CPU: 0 PID: 1 Comm: systemd Tainted: G           OE     5.10.216-tegra #1
+[  669.903603] Hardware name: NVIDIA NVIDIA Jetson Xavier NX Developer Kit/Jetson, BIOS 6.0-37391689 08/28/2024
+[  669.913346] pstate: 40400009 (nZcv daif +PAN -UAO -TCO BTYPE=--)
+[  669.919365] pc : mem_cgroup_from_obj+0xa8/0xd0
+[  669.924097] lr : mem_cgroup_from_obj+0x1c/0xd0
+[  669.928281] sp : ffff80001003b8d0
+[  669.931953] x29: ffff80001003b8d0 x28: ffff15ab30dfb298 
+[  669.937463] x27: ffff15ab30dfb2d0 x26: ffff15ab30c6aa18 
+[  669.942975] x25: ffff15ab30dfb240 x24: ffff15ab30df9e20 
+[  669.948488] x23: ffff15ab30c6a9c0 x22: ffff15ab30dfbc90 
+[  669.954002] x21: ffff15ab00e55908 x20: ffff15ab00e55900 
+[  669.959513] x19: 00000000000002c0 x18: 0000000000000000 
+[  669.964940] x17: 0000000000000000 x16: 0000000000000000 
+[  669.970450] x15: 0000000000000004 x14: 0000000000000000 
+[  669.975966] x13: 0000000000000000 x12: ffff15ab30d181a8 
+[  669.981132] x11: ffff15ab30d18000 x10: ffffda9dd2bc2c30 
+[  669.986902] x9 : ffffda9dd2bc2c28 x8 : ffff15ab0016d880 
+[  669.992414] x7 : ffff000000000000 x6 : 0000000055555556 
+[  669.997926] x5 : 0000000000000001 x4 : ffff15ab000d4a00 
+[  670.003094] x3 : 0000000000000007 x2 : 00000000000000ea 
+[  670.008690] x1 : 0000000000000003 x0 : 0000000200000000 
+[  670.013768] Call trace:
+[  670.016488]  mem_cgroup_from_obj+0xa8/0xd0
+[  670.020270]  list_lru_del+0x50/0xe0
+[  670.024182]  d_lru_del+0xa4/0x140
+[  670.027159]  select_collect+0xb0/0xc0
+[  670.030916]  d_walk+0xd4/0x2c0
+[  670.034087]  shrink_dcache_parent+0x64/0x140
+[  670.038105]  d_invalidate+0x70/0xf0
+[  670.041858]  proc_invalidate_siblings_dcache+0x178/0x1c0
+[  670.046942]  proc_flush_pid+0x28/0x40
+[  670.050870]  release_task+0x374/0x4f0
+[  670.054387]  wait_consider_task+0x90c/0xa40
+[  670.058133]  do_wait+0xe8/0x270
+[  670.061561]  kernel_waitid+0xe4/0x1d0
+[  670.065042]  __do_sys_waitid+0x1a4/0x940
+[  670.068803]  __arm64_sys_waitid+0x34/0x40
+[  670.073013]  el0_svc_common.constprop.0+0x80/0x1d0
+[  670.077817]  do_el0_svc+0x38/0xc0
+[  670.081059]  el0_svc+0x1c/0x30
+[  670.084031]  el0_sync_handler+0xa8/0xb0
+[  670.087623]  el0_sync+0x16c/0x180
+[  670.091123] Code: 0b020021 1ac32421 f8617800 b4000040 (f9400800) 
+[  670.097080] ---[ end trace 9ba6e715d8626845 ]---
+[  670.115474] Kernel panic - not syncing: Oops: Fatal exception
+[  670.115659] SMP: stopping secondary CPUs
+[  670.115804] Kernel Offset: 0x5a9dc0e70000 from 0xffff800010000000
+[  670.117205] PHYS_OFFSET: 0xffffea5600000000
+[  670.121661] CPU features: 0x48240002,03802a30
+[  670.125863] Memory Limit: none
+[  670.139861] ---[ end Kernel panic - not syncing: Oops: Fatal exception ]---

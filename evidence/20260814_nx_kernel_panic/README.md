@@ -1,0 +1,114 @@
+# NX kernel panic during ROS 2 CLI diagnostics (2026-08-14)
+
+## Outcome
+
+The two apparent freezes/reboots were not PX4 resets and were not normal Linux reboots. The second event was captured by Jetson ramoops as a Linux kernel panic in the memory-cgroup/list-LRU path while PID 1 (`systemd`) was reaping an exited process.
+
+ROS 2 CLI activity is a reproducible trigger candidate because the panic happened while short-lived `ros2`/`timeout` processes were being started and reaped. It is not yet evidence that ROS 2 or the PX4 firmware corrupted the kernel.
+
+## Captured failure
+
+- Platform: Jetson Xavier NX, L4T R35.6.0
+- Kernel: `5.10.216-tegra #1 SMP PREEMPT Wed Aug 28 01:46:00 PDT 2024`
+- Panic uptime: `669.850017` seconds
+- Fault address: `0000000200000010`
+- Faulting task: `PID 1`, `Comm: systemd`
+- Kernel taint: `G OE`
+- Out-of-tree module present: `88x2bu(OE)`, version `v5.13.1-30-g37e60b26a.20220819_COEX20220812-18317b7b`
+
+The decisive call trace is:
+
+```text
+mem_cgroup_from_obj
+list_lru_del
+d_lru_del
+select_collect
+d_walk
+shrink_dcache_parent
+d_invalidate
+proc_invalidate_siblings_dcache
+proc_flush_pid
+release_task
+wait_consider_task
+do_wait
+kernel_waitid
+__do_sys_waitid
+```
+
+It ended with:
+
+```text
+Kernel panic - not syncing: Oops: Fatal exception
+```
+
+There was no OOM, thermal throttle, undervoltage, NVRM Xid, or normal shutdown sequence in the captured pre-panic log. The root filesystem performed recovery on the next boot, which is consistent with an unclean reset.
+
+Raw evidence and SHA-256 at capture time:
+
+```text
+ae29ac5ab38f9eec155ab5592e376b679e4d68e3b9653c6f9762bbd791284077  console-ramoops-0
+a9166e50f5f70d0444b461fa042f91b6b9f690fbe9dcfb4cc7ec2aa82e899042  dmesg-ramoops-0
+9386a92c4df8136977bd64a54aff41ba61cd60116fc0ed7d49f59df847811ff6  dmesg-ramoops-1
+```
+
+The two `dmesg-ramoops` files are records from the same captured panic, not proof that both observed reboots had an identical stack.
+
+## Why `cgroup.memory=nokmem` is the first A/B workaround
+
+NVIDIA's R35.6.5 `mm/memcontrol.c` states that `mem_cgroup_from_obj()` requires the caller to ensure the memcg lifetime. The R35.6.5 `mm/list_lru.c` still calls it from `list_lru_from_kmem()` in the same family of path seen in the panic.
+
+The same NVIDIA source implements the boot option `cgroup.memory=nokmem`: `memcg_online_kmem()` returns without enabling kernel-object memory accounting. This is narrower than disabling the entire memory controller and should not affect ROS 2, DDS, PX4 UART transport, or normal userspace memory allocation.
+
+References:
+
+- NVIDIA Jetson Linux R35.6.5 source: <https://gitlab.com/nvidia/nv-tegra/linux-5.10/-/tree/jetson_35.6.5>
+- NVIDIA Jetson Linux R35.6.5 release page: <https://developer.nvidia.com/embedded/jetson-linux-r3565>
+- Linux kernel parameter documentation: <https://www.kernel.org/doc/html/v6.9/admin-guide/kernel-parameters.html>
+- Related upstream list-LRU memcg lifetime discussion: <https://lore.kernel.org/linux-mm/20240718083607.2791764-1-songmuchun@bytedance.com/>
+
+This is a workaround and an A/B test, not yet a proven permanent fix. The out-of-tree `88x2bu` Wi-Fi driver remains a secondary memory-corruption suspect because it taints the kernel, but the captured call trace is not inside that driver.
+
+## Installed boot configuration
+
+The default extlinux entry was changed to a new label:
+
+```text
+DEFAULT p450-sdmmc3-uartb460800-nokmem
+```
+
+Its existing custom kernel, SDMMC3/Wi-Fi/UARTB DTB, initrd, and command line are preserved; only this parameter was appended:
+
+```text
+cgroup.memory=nokmem
+```
+
+The previous default entry remains selectable as `p450-sdmmc3-uartb460800`.
+
+On-device backup:
+
+```text
+/boot/extlinux/extlinux.conf.pre-nokmem-20260814
+```
+
+Backup SHA-256:
+
+```text
+1f735d5290b88f0abd022f42a2e5e2d1d55e78a91070b4b5a34bbee636d55e09
+```
+
+Persistent journaling was enabled by creating `/var/log/journal`, so a future crash can be inspected with `journalctl -b -1` in addition to ramoops.
+
+## Post-reboot validation
+
+Do not resume flight-related testing until these checks pass:
+
+1. Confirm `/proc/cmdline` contains `cgroup.memory=nokmem`.
+2. Confirm the custom DTB behavior remains intact: SD card, Wi-Fi, and UART `/dev/ttyTHS1`.
+3. Confirm `p450-micro-xrce-agent.service` owns `/dev/ttyTHS1` and remains active.
+4. Use `ROS_LOCALHOST_ONLY=0`; `ROS_LOCALHOST_ONLY=1` hides the Agent-created DDS participant and falsely shows only `/rosout` and `/parameter_events`.
+5. Repeat the exact read-only ROS topic discovery/subscription sequence that preceded the panic.
+6. Keep the system up past the prior 670-second panic point and inspect current kernel logs/pstore.
+7. Only after the kernel A/B passes, run the 125-second 10 Hz reliable OffboardControlMode heartbeat probe. It must remain disarmed and non-Offboard and must not publish setpoints or vehicle commands.
+
+If the same panic recurs with `nokmem`, the next software-only A/B is to avoid loading `88x2bu` and use another network path. The long-term options are an exact NVIDIA-kernel backport or a validated newer BSP/kernel; a blind point-release upgrade is not considered proof because the R35.6.5 source still contains the relevant old list-LRU implementation.
+

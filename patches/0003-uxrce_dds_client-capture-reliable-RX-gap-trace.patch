@@ -1,0 +1,530 @@
+From d1841ee6d04f36a6c226a64dd7219a2e686deba9 Mon Sep 17 00:00:00 2001
+From: DDlic <DDlic@users.noreply.github.com>
+Date: Fri, 14 Aug 2026 14:33:16 +0800
+Subject: [PATCH P450 3/4] uxrce_dds_client: capture reliable RX gap trace
+
+---
+ src/modules/uxrce_dds_client/CMakeLists.txt   |   4 +
+ .../apply_micro_xrce_patch.cmake              |  36 ++++
+ src/modules/uxrce_dds_client/dds_topics.h.em  |  17 ++
+ .../0001-p450-reliable-input-trace.patch      | 189 ++++++++++++++++++
+ .../uxrce_dds_client/uxrce_dds_client.cpp     | 123 ++++++++++++
+ .../uxrce_dds_client/uxrce_dds_client.h       |  30 +++
+ 6 files changed, 399 insertions(+)
+ create mode 100644 src/modules/uxrce_dds_client/apply_micro_xrce_patch.cmake
+ create mode 100644 src/modules/uxrce_dds_client/patches/0001-p450-reliable-input-trace.patch
+
+diff --git a/src/modules/uxrce_dds_client/CMakeLists.txt b/src/modules/uxrce_dds_client/CMakeLists.txt
+index 2150f9456f..bbec658c7c 100644
+--- a/src/modules/uxrce_dds_client/CMakeLists.txt
++++ b/src/modules/uxrce_dds_client/CMakeLists.txt
+@@ -68,6 +68,10 @@ else()
+ 		PREFIX      ${microxrceddsclient_build_dir}
+ 		SOURCE_DIR  ${microxrceddsclient_src_dir}
+ 		INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}
++		PATCH_COMMAND ${CMAKE_COMMAND}
++			-DSOURCE_DIR=${microxrceddsclient_src_dir}
++			-DPATCH_FILE=${CMAKE_CURRENT_SOURCE_DIR}/patches/0001-p450-reliable-input-trace.patch
++			-P ${CMAKE_CURRENT_SOURCE_DIR}/apply_micro_xrce_patch.cmake
+ 		CMAKE_CACHE_ARGS
+ 			-DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+ 			-DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+diff --git a/src/modules/uxrce_dds_client/apply_micro_xrce_patch.cmake b/src/modules/uxrce_dds_client/apply_micro_xrce_patch.cmake
+new file mode 100644
+index 0000000000..be0abb323d
+--- /dev/null
++++ b/src/modules/uxrce_dds_client/apply_micro_xrce_patch.cmake
+@@ -0,0 +1,36 @@
++if(NOT DEFINED SOURCE_DIR OR NOT DEFINED PATCH_FILE)
++	message(FATAL_ERROR "SOURCE_DIR and PATCH_FILE are required")
++endif()
++
++execute_process(
++	COMMAND git apply --check "${PATCH_FILE}"
++	WORKING_DIRECTORY "${SOURCE_DIR}"
++	RESULT_VARIABLE patch_can_apply
++	OUTPUT_QUIET
++	ERROR_QUIET
++)
++
++if(patch_can_apply EQUAL 0)
++	execute_process(
++		COMMAND git apply --whitespace=nowarn "${PATCH_FILE}"
++		WORKING_DIRECTORY "${SOURCE_DIR}"
++		RESULT_VARIABLE patch_result
++	)
++
++	if(NOT patch_result EQUAL 0)
++		message(FATAL_ERROR "failed to apply Micro-XRCE-DDS Client trace patch")
++	endif()
++
++else()
++	execute_process(
++		COMMAND git apply --reverse --check "${PATCH_FILE}"
++		WORKING_DIRECTORY "${SOURCE_DIR}"
++		RESULT_VARIABLE patch_is_applied
++		OUTPUT_QUIET
++		ERROR_QUIET
++	)
++
++	if(NOT patch_is_applied EQUAL 0)
++		message(FATAL_ERROR "Micro-XRCE-DDS Client trace patch neither applies nor is already applied")
++	endif()
++endif()
+diff --git a/src/modules/uxrce_dds_client/dds_topics.h.em b/src/modules/uxrce_dds_client/dds_topics.h.em
+index b53309c662..65ed0469ba 100644
+--- a/src/modules/uxrce_dds_client/dds_topics.h.em
++++ b/src/modules/uxrce_dds_client/dds_topics.h.em
+@@ -99,6 +99,10 @@ struct RcvTopicsPubs {
+ 	uint32_t offboard_control_mode_gaps_over_250ms{};
+ 	uint32_t offboard_control_mode_gaps_over_500ms{};
+ 	hrt_abstime offboard_control_mode_last_receipt{};
++	uint64_t offboard_control_mode_last_timestamp{};
++	uint32_t offboard_control_mode_trace_gap_us{};
++	hrt_abstime offboard_control_mode_trace_receipt{};
++	uint64_t offboard_control_mode_trace_timestamp{};
+ 
+ 	bool init(uxrSession *session, uxrStreamId reliable_out_stream_id, uxrStreamId reliable_in_stream_id, uxrStreamId best_effort_in_stream_id, uxrObjectId participant_id, const char *client_namespace);
+ };
+@@ -127,9 +131,18 @@ static void on_topic_update(uxrSession *session, uxrObjectId object_id, uint16_t
+ 					pubs->offboard_control_mode_gaps_over_150ms += gap_us > 150000;
+ 					pubs->offboard_control_mode_gaps_over_250ms += gap_us > 250000;
+ 					pubs->offboard_control_mode_gaps_over_500ms += gap_us > 500000;
++
++					// Preserve the first post-gap sample until the protocol callback has
++					// captured the corresponding reliable receive-window state.
++					if ((gap_us > 250000) && (pubs->offboard_control_mode_trace_gap_us == 0)) {
++						pubs->offboard_control_mode_trace_gap_us = gap_us;
++						pubs->offboard_control_mode_trace_receipt = now;
++						pubs->offboard_control_mode_trace_timestamp = data.timestamp;
++					}
+ 				}
+ 
+ 				pubs->offboard_control_mode_last_receipt = now;
++				pubs->offboard_control_mode_last_timestamp = data.timestamp;
+ 				pubs->offboard_control_mode_received++;
+ @[        end if]@
+ 				//print_message(ORB_ID(@(sub['simple_base_type'])), data);
+@@ -154,6 +167,10 @@ bool RcvTopicsPubs::init(uxrSession *session, uxrStreamId reliable_out_stream_id
+ 	offboard_control_mode_gaps_over_250ms = 0;
+ 	offboard_control_mode_gaps_over_500ms = 0;
+ 	offboard_control_mode_last_receipt = 0;
++	offboard_control_mode_last_timestamp = 0;
++	offboard_control_mode_trace_gap_us = 0;
++	offboard_control_mode_trace_receipt = 0;
++	offboard_control_mode_trace_timestamp = 0;
+ @[    for idx, sub in enumerate(subscriptions)]@
+ 	{
+ 			uint16_t queue_depth = uORB::DefaultQueueSize<@(sub['simple_base_type'])_s>::value * 2; // use a bit larger queue size than internal
+diff --git a/src/modules/uxrce_dds_client/patches/0001-p450-reliable-input-trace.patch b/src/modules/uxrce_dds_client/patches/0001-p450-reliable-input-trace.patch
+new file mode 100644
+index 0000000000..1778e2a1ab
+--- /dev/null
++++ b/src/modules/uxrce_dds_client/patches/0001-p450-reliable-input-trace.patch
+@@ -0,0 +1,189 @@
++diff --git a/include/uxr/client/core/session/session.h b/include/uxr/client/core/session/session.h
++index e93fee6..b31fd7f 100644
++--- a/include/uxr/client/core/session/session.h
+++++ b/include/uxr/client/core/session/session.h
++@@ -133,6 +133,38 @@ typedef void (* uxrOnReplyFunc) (
++         uint16_t length,
++         void* args);
++ 
+++/**
+++ * @brief Snapshot produced when a reliable input message or HEARTBEAT is handled.
+++ *
+++ * This optional diagnostic reports the receive-window state and the ACKNACK that
+++ * the Client is about to send. It does not print or allocate in the receive path.
+++ */
+++typedef enum uxrReliableInputTraceEvent
+++{
+++    UXR_RELIABLE_INPUT_TRACE_MESSAGE = 1,
+++    UXR_RELIABLE_INPUT_TRACE_HEARTBEAT = 2
+++} uxrReliableInputTraceEvent;
+++
+++typedef struct uxrReliableInputTrace
+++{
+++    uxrReliableInputTraceEvent event;
+++    uint8_t stream_id;
+++    uint16_t seq_num;
+++    uint16_t last_handled_before;
+++    uint16_t last_handled_after;
+++    uint16_t last_announced_before;
+++    uint16_t last_announced_after;
+++    uint16_t first_unacked_seq_num;
+++    uint16_t nack_bitmap;
+++    bool message_stored;
+++    bool ready_to_read;
+++} uxrReliableInputTrace;
+++
+++typedef void (* uxrOnReliableInputTraceFunc) (
+++        struct uxrSession* session,
+++        const uxrReliableInputTrace* trace,
+++        void* args);
+++
++ /**
++  * @brief Function signature used for flush_callback callbacks.
++  * @param session   Session structure related to the buffer to be flushed.
++@@ -197,6 +229,9 @@ typedef struct uxrSession
++     uxrOnReplyFunc on_reply;
++     void* on_reply_args;
++ 
+++    uxrOnReliableInputTraceFunc on_reliable_input_trace;
+++    void* on_reliable_input_trace_args;
+++
++     bool on_data_flag;
++     pong_status_t on_pong_flag;
++     uxrContinuousArgs continuous_args;
++@@ -290,6 +325,17 @@ UXRDLLAPI void uxr_set_reply_callback(
++         uxrOnReplyFunc on_reply_func,
++         void* args);
++ 
+++/**
+++ * @brief Sets an optional callback for reliable input protocol diagnostics.
+++ * @param session A uxrSession structure previously initialized.
+++ * @param callback Callback invoked after receive-window processing and before ACKNACK transmission.
+++ * @param args User pointer passed to the callback.
+++ */
+++UXRDLLAPI void uxr_set_reliable_input_trace_callback(
+++        uxrSession* session,
+++        uxrOnReliableInputTraceFunc callback,
+++        void* args);
+++
++ #ifdef PERFORMANCE_TESTING
++ /**
++  * @nosubgrouping
++diff --git a/src/c/core/session/session.c b/src/c/core/session/session.c
++index d0a37ef..4d9c484 100644
++--- a/src/c/core/session/session.c
+++++ b/src/c/core/session/session.c
++@@ -163,6 +163,9 @@ void uxr_init_session(
++     session->on_topic = NULL;
++     session->on_topic_args = NULL;
++ 
+++    session->on_reliable_input_trace = NULL;
+++    session->on_reliable_input_trace_args = NULL;
+++
++     session->on_time = NULL;
++     session->on_time_args = NULL;
++     session->time_offset = 0;
++@@ -217,6 +220,15 @@ void uxr_set_reply_callback(
++     session->on_reply_args = args;
++ }
++ 
+++void uxr_set_reliable_input_trace_callback(
+++        uxrSession* session,
+++        uxrOnReliableInputTraceFunc callback,
+++        void* args)
+++{
+++    session->on_reliable_input_trace = callback;
+++    session->on_reliable_input_trace_args = args;
+++}
+++
++ #ifdef PERFORMANCE_TESTING
++ void uxr_set_performance_callback(
++         uxrSession* session,
++@@ -880,20 +892,45 @@ void read_stream(
++         case UXR_RELIABLE_STREAM:
++         {
++             uxrInputReliableStream* stream = uxr_get_input_reliable_stream(&session->streams, stream_id.index);
++-            bool input_buffer_used;
++-            if (stream &&
++-                    uxr_receive_reliable_message(stream, seq_num, ub->iterator, ucdr_buffer_remaining(
++-                        ub), &input_buffer_used))
+++            bool input_buffer_used = false;
+++            bool ready_to_read = false;
+++
+++            if (stream)
++             {
++-                if (!input_buffer_used)
+++                uxrReliableInputTrace trace = {0};
+++                trace.event = UXR_RELIABLE_INPUT_TRACE_MESSAGE;
+++                trace.stream_id = stream_id.raw;
+++                trace.seq_num = seq_num;
+++                trace.last_handled_before = stream->last_handled;
+++                trace.last_announced_before = stream->last_announced;
+++
+++                ready_to_read = uxr_receive_reliable_message(stream, seq_num, ub->iterator,
+++                        ucdr_buffer_remaining(ub), &input_buffer_used);
+++
+++                if (ready_to_read)
++                 {
++-                    read_submessage_list(session, ub, stream_id);
+++                    if (!input_buffer_used)
+++                    {
+++                        read_submessage_list(session, ub, stream_id);
+++                    }
+++
+++                    ucdrBuffer next_mb;
+++                    while (uxr_next_input_reliable_buffer_available(stream, &next_mb, SUBHEADER_SIZE))
+++                    {
+++                        read_submessage_list(session, &next_mb, stream_id);
+++                    }
++                 }
++ 
++-                ucdrBuffer next_mb;
++-                while (uxr_next_input_reliable_buffer_available(stream, &next_mb, SUBHEADER_SIZE))
+++                trace.last_handled_after = stream->last_handled;
+++                trace.last_announced_after = stream->last_announced;
+++                trace.message_stored = input_buffer_used;
+++                trace.ready_to_read = ready_to_read;
+++                trace.nack_bitmap = uxr_compute_acknack(stream, &trace.first_unacked_seq_num);
+++
+++                if (session->on_reliable_input_trace)
++                 {
++-                    read_submessage_list(session, &next_mb, stream_id);
+++                    session->on_reliable_input_trace(session, &trace,
+++                            session->on_reliable_input_trace_args);
++                 }
++             }
++             write_submessage_acknack(session, stream_id);
++@@ -1032,7 +1069,25 @@ void read_submessage_heartbeat(
++     uxrInputReliableStream* stream = uxr_get_input_reliable_stream(&session->streams, id.index);
++     if (stream)
++     {
+++        uxrReliableInputTrace trace = {0};
+++        trace.event = UXR_RELIABLE_INPUT_TRACE_HEARTBEAT;
+++        trace.stream_id = id.raw;
+++        trace.seq_num = heartbeat.last_unacked_seq_nr;
+++        trace.last_handled_before = stream->last_handled;
+++        trace.last_announced_before = stream->last_announced;
+++
++         uxr_process_heartbeat(stream, heartbeat.first_unacked_seq_nr, heartbeat.last_unacked_seq_nr);
+++
+++        trace.last_handled_after = stream->last_handled;
+++        trace.last_announced_after = stream->last_announced;
+++        trace.nack_bitmap = uxr_compute_acknack(stream, &trace.first_unacked_seq_num);
+++
+++        if (session->on_reliable_input_trace)
+++        {
+++            session->on_reliable_input_trace(session, &trace,
+++                    session->on_reliable_input_trace_args);
+++        }
+++
++         write_submessage_acknack(session, id);
++     }
++ }
++@@ -1269,4 +1324,4 @@ bool run_session_until_sync(
++     } while (remaining_time > 0 && !session->synchronized);
++ 
++     return session->synchronized;
++-}
++\ No newline at end of file
+++}
+diff --git a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+index 9096376d10..c9f7e7b8e6 100644
+--- a/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
++++ b/src/modules/uxrce_dds_client/uxrce_dds_client.cpp
+@@ -297,6 +297,8 @@ void UxrceddsClient::run()
+ 			return;
+ 		}
+ 
++		uxr_set_reliable_input_trace_callback(&session, on_reliable_input_trace, this);
++
+ 		_connected = true;
+ 
+ 		// Set time-callback.
+@@ -317,6 +319,8 @@ void UxrceddsClient::run()
+ 			}
+ 		}
+ 
++		reset_reliable_input_trace();
++
+ 		hrt_abstime last_sync_session = 0;
+ 		hrt_abstime last_status_update = hrt_absolute_time();
+ 		hrt_abstime last_ping = hrt_absolute_time();
+@@ -567,9 +571,124 @@ int UxrceddsClient::setBaudrate(int fd, unsigned baud)
+ 
+ int UxrceddsClient::custom_command(int argc, char *argv[])
+ {
++	if ((argc >= 1) && !strcmp(argv[0], "trace")) {
++		UxrceddsClient *instance = get_instance();
++
++		if (instance == nullptr) {
++			PX4_ERR("not running");
++			return -1;
++		}
++
++		if ((argc >= 2) && !strcmp(argv[1], "reset")) {
++			instance->reset_reliable_input_trace();
++			PX4_INFO("reliable input trace reset");
++
++		} else {
++			instance->dump_reliable_input_trace();
++		}
++
++		return 0;
++	}
++
+ 	return print_usage("unknown command");
+ }
+ 
++void UxrceddsClient::on_reliable_input_trace(uxrSession *session, const uxrReliableInputTrace *trace, void *args)
++{
++	(void)session;
++
++	if ((trace != nullptr) && (args != nullptr)) {
++		static_cast<UxrceddsClient *>(args)->record_reliable_input_trace(*trace);
++	}
++}
++
++void UxrceddsClient::record_reliable_input_trace(const uxrReliableInputTrace &trace)
++{
++	if (_reliable_trace_frozen) {
++		return;
++	}
++
++	ReliableTraceEntry &entry = _reliable_trace[_reliable_trace_head];
++	entry = {};
++	entry.receipt = hrt_absolute_time();
++	entry.seq_num = trace.seq_num;
++	entry.last_handled_before = trace.last_handled_before;
++	entry.last_handled_after = trace.last_handled_after;
++	entry.last_announced_before = trace.last_announced_before;
++	entry.last_announced_after = trace.last_announced_after;
++	entry.first_unacked_seq_num = trace.first_unacked_seq_num;
++	entry.nack_bitmap = trace.nack_bitmap;
++	entry.event = static_cast<uint8_t>(trace.event);
++	entry.stream_id = trace.stream_id;
++	entry.message_stored = trace.message_stored;
++	entry.ready_to_read = trace.ready_to_read;
++
++	if (_pubs != nullptr) {
++		entry.offboard_count = _pubs->offboard_control_mode_received;
++		entry.offboard_receipt = _pubs->offboard_control_mode_last_receipt;
++		entry.offboard_timestamp = _pubs->offboard_control_mode_last_timestamp;
++
++		if (_pubs->offboard_control_mode_trace_gap_us != 0) {
++			entry.offboard_gap_us = _pubs->offboard_control_mode_trace_gap_us;
++			entry.offboard_receipt = _pubs->offboard_control_mode_trace_receipt;
++			entry.offboard_timestamp = _pubs->offboard_control_mode_trace_timestamp;
++			_reliable_trace_trigger_gap_us = entry.offboard_gap_us;
++			_pubs->offboard_control_mode_trace_gap_us = 0;
++			_pubs->offboard_control_mode_trace_receipt = 0;
++			_pubs->offboard_control_mode_trace_timestamp = 0;
++		}
++	}
++
++	_reliable_trace_head = (_reliable_trace_head + 1) % RELIABLE_TRACE_CAPACITY;
++
++	if (_reliable_trace_count < RELIABLE_TRACE_CAPACITY) {
++		_reliable_trace_count++;
++	}
++
++	if (_reliable_trace_trigger_gap_us != 0) {
++		_reliable_trace_frozen = true;
++	}
++}
++
++void UxrceddsClient::reset_reliable_input_trace()
++{
++	_reliable_trace_head = 0;
++	_reliable_trace_count = 0;
++	_reliable_trace_frozen = false;
++	_reliable_trace_trigger_gap_us = 0;
++
++	if (_pubs != nullptr) {
++		_pubs->offboard_control_mode_trace_gap_us = 0;
++		_pubs->offboard_control_mode_trace_receipt = 0;
++		_pubs->offboard_control_mode_trace_timestamp = 0;
++	}
++}
++
++void UxrceddsClient::dump_reliable_input_trace() const
++{
++	PX4_INFO("RXTRACE summary,count=%u,frozen=%u,trigger_gap_us=%u",
++		 (unsigned)_reliable_trace_count, (unsigned)_reliable_trace_frozen,
++		 (unsigned)_reliable_trace_trigger_gap_us);
++	PX4_INFO("RXTRACE columns,i,event,t_us,stream,seq,handled_before,handled_after,announced_before,announced_after,stored,ready,first_unacked,nack_bitmap,offboard_count,offboard_gap_us,offboard_receipt_us,offboard_timestamp");
++
++	const uint16_t first = (_reliable_trace_head + RELIABLE_TRACE_CAPACITY - _reliable_trace_count)
++			       % RELIABLE_TRACE_CAPACITY;
++
++	for (uint16_t i = 0; i < _reliable_trace_count; ++i) {
++		const ReliableTraceEntry &entry = _reliable_trace[(first + i) % RELIABLE_TRACE_CAPACITY];
++		PX4_INFO("RXTRACE,%u,%u,%llu,%u,%u,%u,%u,%u,%u,%u,%u,%u,0x%04x,%u,%u,%llu,%llu",
++			 (unsigned)i, (unsigned)entry.event, (unsigned long long)entry.receipt,
++			 (unsigned)entry.stream_id, (unsigned)entry.seq_num,
++			 (unsigned)entry.last_handled_before, (unsigned)entry.last_handled_after,
++			 (unsigned)entry.last_announced_before, (unsigned)entry.last_announced_after,
++			 (unsigned)entry.message_stored, (unsigned)entry.ready_to_read,
++			 (unsigned)entry.first_unacked_seq_num, (unsigned)entry.nack_bitmap,
++			 (unsigned)entry.offboard_count, (unsigned)entry.offboard_gap_us,
++			 (unsigned long long)entry.offboard_receipt,
++			 (unsigned long long)entry.offboard_timestamp);
++	}
++}
++
+ int UxrceddsClient::task_spawn(int argc, char *argv[])
+ {
+ 	_task_id = px4_task_spawn_cmd("uxrce_dds_client",
+@@ -630,6 +749,9 @@ int UxrceddsClient::print_status()
+ 				 (unsigned)_pubs->offboard_control_mode_gaps_over_250ms,
+ 				 (unsigned)_pubs->offboard_control_mode_gaps_over_500ms);
+ 			PX4_INFO("Offboard RX stream: reliable");
++			PX4_INFO("Reliable RX trace: count %u/%u, frozen %u, trigger gap %u us",
++				 (unsigned)_reliable_trace_count, (unsigned)RELIABLE_TRACE_CAPACITY,
++				 (unsigned)_reliable_trace_frozen, (unsigned)_reliable_trace_trigger_gap_us);
+ 
+ 			if (_pubs->offboard_control_mode_last_receipt != 0) {
+ 				PX4_INFO("Offboard RX last age: %llu us",
+@@ -794,6 +916,7 @@ $ uxrce_dds_client start -t udp -h 127.0.0.1 -p 15555
+ 	PRINT_MODULE_USAGE_PARAM_FLAG('l', "Restrict to localhost (use in combination with ROS_LOCALHOST_ONLY=1)", true);
+ 	PRINT_MODULE_USAGE_PARAM_FLAG('c', "Use custom participant config (profile_name=\"px4_participant\")", true);
+ 	PRINT_MODULE_USAGE_PARAM_STRING('n', nullptr, nullptr, "Client DDS namespace", true);
++	PRINT_MODULE_USAGE_COMMAND_DESCR("trace", "Dump reliable input trace; use 'trace reset' before a test");
+ 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
+ 
+ 	return 0;
+diff --git a/src/modules/uxrce_dds_client/uxrce_dds_client.h b/src/modules/uxrce_dds_client/uxrce_dds_client.h
+index 88230ca235..b75dacc4e1 100644
+--- a/src/modules/uxrce_dds_client/uxrce_dds_client.h
++++ b/src/modules/uxrce_dds_client/uxrce_dds_client.h
+@@ -72,7 +72,32 @@ public:
+ 	int print_status() override;
+ 
+ private:
++	static constexpr uint16_t RELIABLE_TRACE_CAPACITY = 96;
++
++	struct ReliableTraceEntry {
++		hrt_abstime receipt{};
++		hrt_abstime offboard_receipt{};
++		uint64_t offboard_timestamp{};
++		uint32_t offboard_count{};
++		uint32_t offboard_gap_us{};
++		uint16_t seq_num{};
++		uint16_t last_handled_before{};
++		uint16_t last_handled_after{};
++		uint16_t last_announced_before{};
++		uint16_t last_announced_after{};
++		uint16_t first_unacked_seq_num{};
++		uint16_t nack_bitmap{};
++		uint8_t event{};
++		uint8_t stream_id{};
++		bool message_stored{};
++		bool ready_to_read{};
++	};
++
+ 	int setBaudrate(int fd, unsigned baud);
++	static void on_reliable_input_trace(uxrSession *session, const uxrReliableInputTrace *trace, void *args);
++	void record_reliable_input_trace(const uxrReliableInputTrace &trace);
++	void reset_reliable_input_trace();
++	void dump_reliable_input_trace() const;
+ 
+ 	const bool _localhost_only;
+ 	const bool _custom_participant;
+@@ -104,6 +129,11 @@ private:
+ 	uint32_t _serial_rx_pending_max{};
+ 	uint32_t _serial_rx_fionread_errors{};
+ 	bool _connected{false};
++	ReliableTraceEntry _reliable_trace[RELIABLE_TRACE_CAPACITY] {};
++	uint16_t _reliable_trace_head{};
++	uint16_t _reliable_trace_count{};
++	bool _reliable_trace_frozen{};
++	uint32_t _reliable_trace_trigger_gap_us{};
+ 
+ 	Timesync _timesync{timesync_status_s::SOURCE_PROTOCOL_DDS};
+ 
+-- 
+2.25.1
+

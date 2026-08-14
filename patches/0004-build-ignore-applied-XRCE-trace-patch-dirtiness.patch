@@ -1,0 +1,21 @@
+From c7a39478405122a04ef9f10b69f873561751a126 Mon Sep 17 00:00:00 2001
+From: DDlic <DDlic@users.noreply.github.com>
+Date: Fri, 14 Aug 2026 14:34:36 +0800
+Subject: [PATCH P450 4/4] build: ignore applied XRCE trace patch dirtiness
+
+---
+ .gitmodules | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/.gitmodules b/.gitmodules
+index 6ecc529b16..892e8c965f 100644
+--- a/.gitmodules
++++ b/.gitmodules
+@@ -62,3 +62,4 @@
+ 	path = src/modules/uxrce_dds_client/Micro-XRCE-DDS-Client
+ 	url = https://github.com/PX4/Micro-XRCE-DDS-Client.git
+ 	branch = px4
++	ignore = dirty
+-- 
+2.25.1
+

@@ -1,5 +1,52 @@
 # P450 Pixhawk 6C 測試韌體
 
+> **2026-08-14 最新候選診斷版**：`c7a3947840` 在 `e6f3d83ff5` 上加入
+> XRCE reliable input 固定大小 RAM trace。它不修改飛行控制、參數、arming、failsafe、
+> Agent heartbeat 或 UART 設定；只在 Offboard receipt gap 超過 250 ms 時凍結協定現場。
+> 此版已完成 source、Micro XRCE 子模組、PX4/NuttX 全機編譯與封裝驗證，尚未刷入。
+
+## PX4 v1.14.3 Reliable RX sequence trace 診斷版
+
+檔案：
+
+```text
+p450-pixhawk6c-v1.14.3-xrce-rxtrace-c7a3947840.px4
+```
+
+建置與封裝驗證：
+
+- 目標板：Pixhawk 6C／`PX4FMUv6C`
+- 基底：Reliable Offboard `e6f3d83ff5`
+- source branch：`p450-xrce-rx-trace`
+- source commit：`c7a39478405122a04ef9f10b69f873561751a126`
+- 可重現 patches：`../patches/0003-uxrce_dds_client-capture-reliable-RX-gap-trace.patch`、
+  `../patches/0004-build-ignore-applied-XRCE-trace-patch-dirtiness.patch`
+- compiler：GNU Arm Embedded 9-2020-q2-update／GCC 9.3.1
+- firmware `git_identity`：`v1.14.3-8-gc7a3947840`
+- container size：1,813,134 bytes
+- image size：1,954,268／1,966,080 bytes（FLASH 99.40%）
+- AXI SRAM static usage：61,480／524,288 bytes（11.73%）
+- container SHA-256：`8a23631277a1a8a14707e2e999f2e0319597fa733c50bdbd788443f2b3724706`
+- image SHA-256：`d09a6d86c59eb2df1c7d5833c593b88029d91ac853bc510ef9c415c3e6046183`
+
+RAM ring 共 96 筆，只記錄可靠輸入 protocol state，不在接收 hot path 印字。每筆包含
+event、receipt time、stream／sequence、`last_handled` 與 `last_announced` 前後值、
+`message_stored`、`ready_to_read`、`first_unacked_seq_num`、NACK bitmap，以及觸發
+Offboard sample 的 message timestamp／PX4 receipt timestamp。第一個 >250 ms receipt
+gap 會凍結 ring，保留 gap 前後現場。
+
+刷入後 PX4 console 使用：
+
+```text
+uxrce_dds_client trace reset
+uxrce_dds_client status
+uxrce_dds_client trace
+```
+
+完整設計、免編譯基準、建置過程、刷後 125 秒測試與判讀方式見
+`../evidence/20260814_reliable_rx_trace_build/BUILD_AND_TEST_HANDOFF.md`。這是診斷韌體，
+刷後測試必須維持無槳、disarmed、非 Offboard；在找到 root cause 前不得用於飛行。
+
 > **2026-08-13 最新實測**：`50c989f85b` rate-limit 版已刷入並完成 Best-Effort A 組；
 > NX 發 601 筆、PX4 收 586 筆，最大 receipt gap 307.002 ms，因此 receipt gate FAIL。
 > `e6f3d83ff5` 只把 Offboard heartbeat 改為 Reliable；刷入後相同 B 組為 NX 601 筆、

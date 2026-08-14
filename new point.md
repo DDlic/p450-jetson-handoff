@@ -1,3 +1,10 @@
+> **2026-08-14 執行狀態更新**：機主已明確排除本文原先列出的 logic analyzer、改線、
+> 掛阻抗與 FTDI／CP210x transport A/B。純軟體 P0「PX4 Reliable sequence／ACKNACK
+> RAM ring trace」已實作並編譯為 `c7a3947840`；韌體、checksum、source patch 與刷後
+> 125 秒流程見 `firmware/README.md` 及
+> `evidence/20260814_reliable_rx_trace_build/BUILD_AND_TEST_HANDOFF.md`。下一步是刷入該
+> 診斷韌體，不再重複調 heartbeat、QoS 或 timeout。
+
 以目前最新 `40bb48b...` 的乾淨 hb50 結果為基準，我認為**下一步不應再改 heartbeat、QoS、COM_OF_LOSS_T，也不應立刻做 armed/Offboard**。現在要做的是一次能把 298–600 ms 延遲「切開」的實驗。
 
 ### 第一性原理先重新定義問題

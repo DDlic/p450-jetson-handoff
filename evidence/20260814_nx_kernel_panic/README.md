@@ -112,7 +112,7 @@ Do not resume flight-related testing until these checks pass:
 
 If the same panic recurs with `nokmem`, the next software-only A/B is to avoid loading `88x2bu` and use another network path. The long-term options are an exact NVIDIA-kernel backport or a validated newer BSP/kernel; a blind point-release upgrade is not considered proof because the R35.6.5 source still contains the relevant old list-LRU implementation.
 
-## Post-reboot A/B result (in progress)
+## Post-reboot A/B result
 
 The controlled reboot at 2026-08-14 15:24 CST loaded the intended workaround:
 
@@ -175,6 +175,36 @@ post_nokmem_heartbeat_10hz_reliable_125s.csv
 SHA-256 89c4a1e80ac8f441584e71d98afddfa494cf180a78b57bb805ade5fcb002e1e8
 ```
 
-The result remains preliminary until the host stays healthy past the previous
-669.85-second panic point and the PX4-side `uxrce_dds_client status`/`trace` output is
-captured. A clean NX publisher CSV alone cannot prove the PX4 reliable receive sequence.
+The host stayed healthy past the previous 669.85-second panic point. At 727 seconds:
+
+```text
+Agent active
+Agent NRestarts=0
+kernel Oops/panic=0
+memory available approximately 5.0 GiB
+```
+
+Therefore `cgroup.memory=nokmem` passes this first kernel-panic A/B. This is not proof of
+long-term kernel reliability, but it is sufficient to resume controlled software-only ROS/XRCE
+diagnostics while persistent journal and ramoops remain enabled.
+
+The PX4-side status/trace was also captured. It showed a separate transport failure despite the
+clean NX publisher CSV:
+
+```text
+Offboard RX count=1251
+max_gap_us=506727
+over_150/250/500_ms=83/23/1
+trace frozen=1
+trace trigger_gap_us=397990
+```
+
+The ring records later reliable sequences arriving while earlier sequences were absent. In the
+trigger event, seq 61 arrived while `last_handled=57`; `first_unacked=58` and NACK bitmap
+`0x0007`. Seq 58 later arrived and unblocked delivery, producing the 397.990 ms Offboard
+receipt gap. This proves a reliable sequence hole with head-of-line blocking at the PX4 Client.
+It does not yet distinguish Agent send delay from UART/framing loss before the Client.
+
+The dedicated two-Codex coordination and QGC capture procedure is documented in
+`../../QGC_LAPTOP_CODEX_HANDOFF_20260814.md`. The raw PX4 console output remains in
+`../../雙端交接文件.txt`.

@@ -4,6 +4,15 @@
 
 ## 目前狀態
 
+> **2026-08-14 NX kernel panic，暫停長測與飛行**：Agent 50 ms A/B 的 6001 筆 NX CSV
+> 與 QGC counters 已取得；但前置 21 筆短測未先清除 PX4 counters，使正式 10 分鐘的
+> PX4 gap 無法獨立分離，本輪判為 INCONCLUSIVE。之後 NX 在已回復原 200 ms Agent 的
+> 狀態下發生 `5.10.216-tegra` kernel panic；pstore 指向
+> `key_garbage_collector → key_put()` data abort，不是 OOM、磁碟滿或 Agent process crash。
+> RST 後證據完整、原 Agent 與 UART/ROS endpoint 已自動恢復，但 kernel panic 成為新的
+> 飛行阻塞條件。詳見 [`Agent 50 ms A/B`](evidence/20260813_first_principles_offboard_transport/AGENT_50MS_AB_RESULT.md)
+> 與 [`kernel panic 證據`](evidence/20260814_nx_kernel_panic_key_gc/README.md)。
+
 > **2026-08-13 Reliable 長測：零遺失但 deadline FAIL**：`50c989f85b` 已證明
 > PX4→NX output 可降至 2874 B/s，但 10 Hz／60 秒 Best-Effort heartbeat 仍是 NX 發
 > 601 筆、PX4 收 586 筆，PX4 最大 gap 307.002 ms；NX 自身最大 gap 119.813 ms。

@@ -353,6 +353,31 @@ loss，卻只剩 398.452 ms margin，不能進入飛行測試。
 UART 電氣根因證明。完整證據、counter 算式與下一步見
 [`TEN_MINUTE_RELIABLE_RESULT.md`](TEN_MINUTE_RELIABLE_RESULT.md)。
 
+### 7.8 Agent 50 ms A/B：正式場 counter 被前測污染
+
+2026-08-14 已把 Agent v2.4.2 的 heartbeat period 單獨改為 50 ms，depth 仍為 16；process
+maps 證明測試 PID 載入獨立 hb50 library，測試期間 Agent 沒有重啟。NX 正式 600 秒結果：
+
+```text
+6001 publishes, mean 99.998467 ms, max 121.037 ms, >150/250/500 ms 0/0/0
+```
+
+PX4 測後為：
+
+```text
+Offboard RX: count 6022, max gap 25953892 us, >150/250/500 ms 475/18/1
+```
+
+`6022 = 21 筆前測 + 6001 筆正式場`。NX timestamp 證明兩場人工邊界為 25.858848 秒，
+與 PX4 max 25.953892 秒相符；扣除邊界後，兩個有效窗口合計仍為 `474/17/0`。但前測沒有
+獨立 PX4 snapshot，無法把 17 次 >250 ms 分配到前測或正式場，故不能對正式 600 秒
+250 ms gate 作 PASS/FAIL。此輪判為 **INCONCLUSIVE / protocol contamination**，不是
+hb50 PASS。完整算式見 [`AGENT_50MS_AB_RESULT.md`](AGENT_50MS_AB_RESULT.md)。
+
+測試與 counter 擷取完成後，NX 另發生 `key_garbage_collector → key_put()` kernel panic；
+此事件不在正式測試窗口內，但在處理前停止新的長測與飛行。證據見
+[`../20260814_nx_kernel_panic_key_gc/README.md`](../20260814_nx_kernel_panic_key_gc/README.md)。
+
 ## 8. 真正的底層解法界線
 
 Best-Effort A 組證明限流是必要但不充分條件；Reliable 版本證明可消除最終遺失，但

@@ -1,0 +1,62 @@
+P450-NX kernel panic pstore excerpt
+Captured after operator RST reboot on 2026-08-14
+
+Running kernel before and after reboot:
+Linux P450-NX 5.10.216-tegra #1 SMP PREEMPT Wed Aug 28 01:46:00 PDT 2024 aarch64
+nvidia-l4t-kernel 5.10.216-tegra-35.6.0-20240828020325
+
+pstore files found:
+/sys/fs/pstore/console-ramoops-0 3998 bytes
+/sys/fs/pstore/dmesg-ramoops-1 89742 bytes
+/sys/fs/pstore/dmesg-ramoops-0 89415 bytes
+
+Fatal excerpt:
+[ 2031.563062] Unable to handle kernel paging request at virtual address 0000000200000000
+[ 2031.563331] Mem abort info:
+[ 2031.563427]   ESR = 0x96000004
+[ 2031.563530]   EC = 0x25: DABT (current EL), IL = 32 bits
+[ 2031.563956] Data abort info:
+[ 2031.564029]   ISV = 0, ISS = 0x00000004
+[ 2031.564151]   CM = 0, WnR = 0
+[ 2031.564386] [0000000200000000] pgd=0000000000000000, p4d=0000000000000000
+[ 2031.564558] Internal error: Oops: 0000000096000004 [#1] PREEMPT SMP
+[ 2031.608521] CPU: 2 PID: 188 Comm: kworker/2:4 Tainted: G           OE     5.10.216-tegra #1
+[ 2031.627149] Workqueue: events key_garbage_collector
+[ 2031.638170] pc : key_put+0x30/0xb0
+[ 2031.641579] lr : key_put+0x1c/0xb0
+[ 2031.675613] x19: 0000000200000000
+
+Call trace:
+ key_put+0x30/0xb0
+ keyring_free_object+0x24/0x30
+ assoc_array_destroy_subtree.part.0+0x8c/0x150
+ assoc_array_destroy+0x1c/0x30
+ keyring_destroy+0x9c/0xb0
+ key_gc_unused_keys.constprop.0+0x128/0x1f0
+ key_garbage_collector+0x1c0/0x450
+ process_one_work+0x1c4/0x4c0
+ worker_thread+0x54/0x450
+ kthread+0x148/0x170
+ ret_from_fork+0x10/0x18
+
+[ 2031.801416] Kernel panic - not syncing: Oops: Fatal exception
+[ 2031.801632] SMP: stopping secondary CPUs
+[ 2031.807300] CPU features: 0x48240002,03802a30
+[ 2031.811757] Memory Limit: none
+
+Relevant loaded-module line included 88x2bu(OE), cfg80211, zram, ramoops and NVIDIA/Tegra
+modules. The OE taint records an out-of-tree unsigned/external module; it does not by itself prove
+that 88x2bu caused the corruption.
+
+No OOM, storage I/O error, EXT4 error, thermal shutdown, soft lockup or hard lockup preceded the
+fatal trace in the captured pstore buffers. Repeated non-fatal `mmc1: Applying tuning correction`
+messages occurred earlier in the boot without a reported CRC or I/O error.
+
+Timing correlation:
+- Agent service start after boot: 2026-08-14 10:36:22 CST.
+- Panic kernel monotonic time: 2031.563 seconds.
+- Inferred panic wall time: approximately 2026-08-14 11:10:13 CST.
+- Operator pressed the chassis RST button and the next boot began at approximately 11:12 CST.
+
+This file is a selected plain-text preservation of pstore. It is not a full binary copy of all
+ramoops buffers.

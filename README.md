@@ -29,6 +29,9 @@ Offboard 飛行；下一個高資訊量工作是 Agent 端 sequence/send/ACKNACK
 > [`20260817 repeated key GC panic`](evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md)。
 > 同日 eMMC 已由 74% 清理到 64%、可用 4.8 GB；診斷 Agent builds 已搬到 SD 並保留
 > 原路徑 symlink，詳見 [`storage cleanup`](evidence/20260817_storage_cleanup/README.md)。
+> 後續採 SD-first 儲存政策：Codex home/update/session、Git clone、build、log、cache、download
+> 與 temporary output 都移到 `P450_DATA`；離線遷移與失效保護見
+> [`SD_STORAGE_POLICY_20260817.md`](SD_STORAGE_POLICY_20260817.md)。
 
 ## 目前狀態
 

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SD_MOUNT="/media/p450/P450_DATA"
+SD_BASE="${SD_MOUNT}/builds/NX-user-storage"
+CODEX_TARGET="${SD_BASE}/codex-home"
+
+if [[ "$(findmnt -rn -T "${SD_MOUNT}" -o TARGET 2>/dev/null || true)" != "${SD_MOUNT}" ]]; then
+    printf 'Codex not started: P450_DATA is not mounted at %s\n' "${SD_MOUNT}" >&2
+    exit 1
+fi
+
+if [[ ! -L "${HOME}/.codex" ]] || [[ "$(readlink -f "${HOME}/.codex")" != "${CODEX_TARGET}" ]]; then
+    printf 'Codex SD migration is not active. Run ~/Desktop/migrate_codex_to_sd_offline.sh after closing Codex.\n' >&2
+    exit 2
+fi
+
+# shellcheck source=/dev/null
+[[ -r "${HOME}/.config/p450-sd-storage.sh" ]] && source "${HOME}/.config/p450-sd-storage.sh"
+
+exec "${HOME}/.local/bin/codex" "$@"
+

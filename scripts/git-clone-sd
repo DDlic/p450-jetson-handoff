@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SD_MOUNT="/media/p450/P450_DATA"
+SD_SOURCE_ROOT="${SD_MOUNT}/src"
+
+if [[ $# -lt 1 ]]; then
+    printf 'Usage: git-clone-sd REPOSITORY [DIRECTORY_NAME] [GIT_CLONE_OPTIONS...]\n' >&2
+    exit 2
+fi
+
+repository="$1"
+directory_name="${2:-}"
+if [[ -n "${directory_name}" ]]; then
+    shift 2
+else
+    shift 1
+    directory_name="$(basename "${repository}")"
+    directory_name="${directory_name%.git}"
+fi
+
+[[ "$(findmnt -rn -T "${SD_MOUNT}" -o TARGET 2>/dev/null || true)" == "${SD_MOUNT}" ]] || {
+    printf 'P450_DATA is not mounted at %s\n' "${SD_MOUNT}" >&2
+    exit 1
+}
+
+[[ -n "${directory_name}" && "${directory_name}" != '.' && "${directory_name}" != '..' ]] || {
+    printf 'Invalid destination name: %s\n' "${directory_name}" >&2
+    exit 2
+}
+
+mkdir -p "${SD_SOURCE_ROOT}"
+destination="${SD_SOURCE_ROOT}/${directory_name}"
+[[ ! -e "${destination}" ]] || {
+    printf 'Destination already exists: %s\n' "${destination}" >&2
+    exit 1
+}
+
+exec git clone "$@" "${repository}" "${destination}"
+

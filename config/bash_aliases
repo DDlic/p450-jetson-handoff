@@ -1,0 +1,6 @@
+# P450 SD-first helpers.
+alias sdroot='cd /media/p450/P450_DATA'
+alias sdsrc='cd /media/p450/P450_DATA/src'
+alias sdspace='df -h / /media/p450/P450_DATA'
+alias sdclone='git-clone-sd'
+

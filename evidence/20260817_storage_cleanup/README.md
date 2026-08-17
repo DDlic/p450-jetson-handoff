@@ -66,3 +66,9 @@ NuttX submodules。檔案已 checksum 複製到：
 - `/home/p450/p450_ros2_ws`：目前 ROS runtime workspace。
 - `/home/p450/.codex` 的 current release 與 session 資料。
 
+## 後續 SD-first 遷移
+
+同日已追加 SD-first policy，將 Downloads、ROS build/log、Agent sources、CMake tool、Python
+user packages 搬到 `P450_DATA`，原路徑全部保留 symlink。`~/.codex` 與 `~/.cache` 因目前
+Codex/Firefox 仍在使用，改由桌面離線腳本在程式關閉後執行。詳細路徑、guard、rollback 與
+finalize 流程見 [`../../SD_STORAGE_POLICY_20260817.md`](../../SD_STORAGE_POLICY_20260817.md)。

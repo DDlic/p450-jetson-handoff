@@ -69,6 +69,8 @@ NuttX submodules。檔案已 checksum 複製到：
 ## 後續 SD-first 遷移
 
 同日已追加 SD-first policy，將 Downloads、ROS build/log、Agent sources、CMake tool、Python
-user packages 搬到 `P450_DATA`，原路徑全部保留 symlink。`~/.codex` 與 `~/.cache` 因目前
+user packages 與 handoff Git repository 搬到 `P450_DATA`，原路徑全部保留 symlink。
+線上遷移完成後 eMMC 為 62%、可用約 5.1 GB；SD 為 8%、可用約 103 GB。
+`~/.codex` 與 `~/.cache` 因目前
 Codex/Firefox 仍在使用，改由桌面離線腳本在程式關閉後執行。詳細路徑、guard、rollback 與
 finalize 流程見 [`../../SD_STORAGE_POLICY_20260817.md`](../../SD_STORAGE_POLICY_20260817.md)。

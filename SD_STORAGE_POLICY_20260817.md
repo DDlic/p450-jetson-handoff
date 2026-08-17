@@ -26,6 +26,7 @@ temporary files 優先放在 128 GB ext4 `P450_DATA`。
 | XDG/cache | `NX-user-storage/xdg-cache` | `~/.cache` symlink |
 | temporary output | `NX-user-storage/tmp` | `TMPDIR` |
 | new Git clones | `P450_DATA/src` | `git-clone-sd` / `sdclone` |
+| handoff repository | `P450_DATA/src/p450-jetson-handoff` | `~/p450-jetson-handoff` symlink |
 | ROS logs | `NX-user-storage/ros/ros-log` | `ROS_LOG_DIR`、`~/.ros/log` |
 | colcon logs | `NX-user-storage/ros/colcon-log` | `COLCON_LOG_PATH` |
 | ROS workspace build/log | `NX-user-storage/ros/p450_ros2_ws/{build,log}` | workspace symlinks |
@@ -47,6 +48,7 @@ temporary files 優先放在 128 GB ext4 `P450_DATA`。
 - `~/cmake-3.22.6-linux-aarch64`；
 - `~/.local/lib/python3.8/site-packages`；
 - `~/builds`（前一階段已完成）。
+- `~/p450-jetson-handoff`（main repository 本身）。
 
 已安裝：
 
@@ -58,6 +60,8 @@ temporary files 優先放在 128 GB ext4 `P450_DATA`。
 
 尚待機主關閉目前 Codex/Firefox 後執行：`~/.codex` 與 `~/.cache` 的最終切換。腳本未執行
 前，`~/bin/codex` 會明確拒絕啟動新 Codex session，避免更新與 session 繼續寫入 eMMC。
+
+上述線上可搬項目完成後，eMMC 為 62%、可用約 5.1 GB；SD 為 8%、可用約 103 GB。
 
 ## Codex 離線遷移
 

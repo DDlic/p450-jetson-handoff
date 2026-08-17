@@ -1,0 +1,53 @@
+TEST_ID: 20260817_1040_AGENTTRACE_RELIABLE_125S_B
+COLLAB_STATE: READY_QGC_SWITCH
+LOCAL_TIME_ASIA_TAIPEI: UNRECORDED_BY_OPERATOR
+REPO_HEAD_BEFORE_TEST: 3410424
+FIRMWARE_VER_ALL: PX4 v1.14.3 0, git c7a39478405122a04ef9f10b69f873561751a126, branch p450-xrce-rx-trace
+VEHICLE_PROPS_REMOVED: CONFIRMED_BY_ISSUE_START_CONDITION
+VEHICLE_ARMED: false
+VEHICLE_MODE_OR_INTENTION: NOT_OFFBOARD
+PX4_REBOOT_DURING_TEST: NOT_REPORTED
+QGC_USB_OR_LINK_RECONNECT: NOT_REPORTED
+
+PRE_TEST_RAW_OUTPUT:
+nsh: sysinit: fopen failed: No such file or directory
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> ver all
+HW arch: PX4_FMU_V6C
+HW type: V6C000000
+HW version: 0x000
+HW revision: 0x000
+PX4 git-hash: c7a39478405122a04ef9f10b69f873561751a126
+PX4 version: 1.14.3 0 (17695488)
+PX4 git-branch: p450-xrce-rx-trace
+OS: NuttX
+OS version: Release 11.0.0 (184549631)
+OS git-hash: de41e7feaeffaec3ce65327e9569e8fdb553ca3d
+Build datetime: Aug 14 2026 14:31:09
+Build uri: localhost
+Build variant: default
+Toolchain: GNU GCC, 9.3.1 20200408 (release)
+PX4GUID: 000600000000323534333131510500280019
+MCU: STM32H7[4|5]xxx, rev. V
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 2876 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 1
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 18
+INFO  [uxrce_dds_client] Serial RX pending max: 18 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 0
+INFO  [uxrce_dds_client] Serial framing: state 0, buffered 0 B, message 36/36 B
+INFO  [uxrce_dds_client] Offboard RX: count 0, max gap 0 us, >150/250/500 ms 0/0/0
+INFO  [uxrce_dds_client] Offboard RX stream: reliable
+INFO  [uxrce_dds_client] Reliable RX trace: count 19/96, frozen 0, trigger gap 0 us
+nsh> 
+
+POST_TEST_RAW_OUTPUT:
+NOT YET - no trace reset or probe was started; waiting for NX to switch the diagnostic Agent and issue the final status/reset/empty-trace instruction.
+
+OPERATOR_NOTES:
+The NSH session began with the raw message: "nsh: sysinit: fopen failed: No such file or directory". Firmware identity, connected state, and reliable stream matched the Issue start condition. Per NX instruction, trace was not reset in this Phase A capture; existing trace count 19/96 is not treated as a clean-trace result. No probe, reboot, parameter change, firmware change, mode change, control command, or arming was performed by QGC Codex.

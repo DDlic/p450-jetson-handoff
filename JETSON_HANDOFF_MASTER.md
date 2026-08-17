@@ -1,6 +1,14 @@
 # AMOV P450 Jetson Xavier NX 交接總覽
 
-最後更新：2026-08-10（Asia/Taipei）
+最後更新：2026-08-17（Asia/Taipei）
+
+> **2026-08-17 交付期 PoC 入口**：若機主因交付期限只要求一次
+> `起飛 1 m → 前進 5 m → Land` 的受控展示，下一個 NX CLI 必須先讀
+> [`P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md`](P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md)。
+> 文件已納入 `Takeoff detected/not landed` 的 v1.14.3 狀態機原因、601.548 ms heartbeat
+> receipt gap 的實際風險、固定 position waypoint、VehicleCommandAck、PX4 Land mode、
+> fail-safe 與逐級測試流程。這條 PoC 路徑不代表 transport freshness 或 NX kernel gate
+> PASS，也不授權 CLI 自行裝槳、改參數或解鎖。
 
 > **目前權威決策**：最終 PX4 版本固定為 v1.14.3；v1.15.4 只作診斷，不能成為
 > 最終韌體。任何有效的 XRCE 修改都必須回補至 v1.14.3 後重新驗收。現階段唯一

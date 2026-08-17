@@ -165,6 +165,11 @@ def main():
         choices=("best_effort", "reliable"),
         default="best_effort",
     )
+    parser.add_argument(
+        "--preflight-only",
+        action="store_true",
+        help="validate fresh disarmed/non-Offboard state and DDS match, then exit without publishing",
+    )
     parser.add_argument("--csv", required=True)
     args = parser.parse_args()
     if args.duration <= 0 or args.rate < 2.0 or args.rate > 20.0:
@@ -192,9 +197,20 @@ def main():
     print(
         "HEARTBEAT_PROBE_READY disarmed=true offboard=false "
         f"subscriptions={node.publisher.get_subscription_count()} "
+        f"arming_state={node.status.arming_state} "
+        f"nav_state={node.status.nav_state} "
+        f"nav_state_user_intention={node.status.nav_state_user_intention} "
+        f"failsafe={int(node.status.failsafe)} "
         f"rate_hz={args.rate:.3f} reliability={args.reliability}",
         flush=True,
     )
+    if args.preflight_only:
+        print("HEARTBEAT_PREFLIGHT_ONLY no_messages_published=true", flush=True)
+        node.report()
+        node.destroy_node()
+        rclpy.shutdown()
+        return 0
+
     period = 1.0 / args.rate
     next_send = time.monotonic()
     end = next_send + args.duration

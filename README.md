@@ -4,6 +4,12 @@
 
 ## 2026-08-17 當前協作入口
 
+Reliable 已在現有 60 秒／600 秒場消除最終遺失，但 250 ms freshness gate 仍失敗。
+後續解法、命令、判定矩陣、rollback 與逐級飛行 gate 統一依
+[`P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md`](P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md)。
+目前 NX kernel gate 為 FAIL，該 runbook 內 Agent stop/start 與 transport A/B 不得跳過
+Phase 1 直接執行。
+
 > 使用 QGroundControl／Pixhawk 的筆電 Codex 請先完整閱讀
 > [`QGC_LAPTOP_CODEX_HANDOFF_20260814.md`](QGC_LAPTOP_CODEX_HANDOFF_20260814.md)。
 > 該文件包含目前實機真實狀態、已證實的 reliable sequence hole、雙 Codex 分工、
@@ -156,18 +162,19 @@ Offboard 控制流程也必須分別排除，不得概括為雙向控制已通�
 
 ## 閱讀順序
 
-1. `evidence/20260813_first_principles_offboard_transport/SUMMARY.md`
-2. `evidence/20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md`
-3. `evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md`
-4. `evidence/20260812_outdoor_gps_offboard_ground/SUMMARY.md`
-5. `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
-6. `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
-7. `P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
-8. `P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
-9. `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
-10. `P450_PROGRESS_2026-07-24_NEXT.md`
-11. `JETSON_HANDOFF_MASTER.md`
-12. `JETSON_HANDOFF_COMMANDS.md`
+1. `P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md`
+2. `evidence/20260813_first_principles_offboard_transport/SUMMARY.md`
+3. `evidence/20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md`
+4. `evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md`
+5. `evidence/20260812_outdoor_gps_offboard_ground/SUMMARY.md`
+6. `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
+7. `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
+8. `P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
+9. `P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
+10. `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
+11. `P450_PROGRESS_2026-07-24_NEXT.md`
+12. `JETSON_HANDOFF_MASTER.md`
+13. `JETSON_HANDOFF_COMMANDS.md`
 
 ## 注意
 

@@ -1,0 +1,58 @@
+[   16.383185] CPU4: shutdown
+[   16.437146] CPU5: shutdown
+[ 3167.085194] Unable to handle kernel paging request at virtual address 0000000200000000
+[ 3167.085442] Mem abort info:
+[ 3167.085522]   ESR = 0x96000004
+[ 3167.085606]   EC = 0x25: DABT (current EL), IL = 32 bits
+[ 3167.085737]   SET = 0, FnV = 0
+[ 3167.085811]   EA = 0, S1PTW = 0
+[ 3167.085889] Data abort info:
+[ 3167.085958]   ISV = 0, ISS = 0x00000004
+[ 3167.086051]   CM = 0, WnR = 0
+[ 3167.086128] user pgtable: 4k pages, 48-bit VAs, pgdp=000000012f389000
+[ 3167.086271] [0000000200000000] pgd=0000000000000000, p4d=0000000000000000
+[ 3167.086559] Internal error: Oops: 0000000096000004 [#1] PREEMPT SMP
+[ 3167.086686] Modules linked in: fuse lzo_rle lzo_compress zram ramoops reed_solomon realtek bnep input_leds 88x2bu(OE) cfg80211 snd_soc_tegra186_dspk snd_soc_tegra186_asrc snd_soc_tegra210_mvc snd_soc_tegra210_iqc snd_soc_tegra210_ope snd_soc_tegra186_arad snd_soc_tegra210_afc snd_soc_tegra210_dmic snd_soc_tegra210_amx snd_soc_tegra210_adx btusb snd_soc_tegra210_admaif btrtl btbcm btintel snd_soc_tegra210_mixer snd_soc_tegra210_i2s snd_soc_tegra_pcm snd_soc_tegra210_sfc loop aes_ce_blk crypto_simd cryptd aes_ce_cipher ghash_ce sha2_ce sha256_arm64 sha1_ce snd_soc_tegra_machine_driver snd_soc_spdif_tx leds_gpio max77620_thermal snd_soc_tegra210_adsp snd_soc_tegra_utils snd_soc_simple_card_utils snd_soc_tegra210_ahub tegra_bpmp_thermal nvadsp userspace_alert snd_hda_codec_hdmi tegra210_adma nv_imx219 snd_hda_tegra snd_hda_codec snd_hda_core spi_tegra114 binfmt_misc ina3221 pwm_fan nvgpu nvmap ip_tables x_tables [last unloaded: mtd]
+[ 3167.130647] CPU: 1 PID: 5617 Comm: kworker/1:2 Tainted: G           OE     5.10.216-tegra #1
+[ 3167.139294] Hardware name: NVIDIA NVIDIA Jetson Xavier NX Developer Kit/Jetson, BIOS 6.0-37391689 08/28/2024
+[ 3167.149279] Workqueue: events key_garbage_collector
+[ 3167.154520] pstate: 60c00009 (nZCv daif +PAN +UAO -TCO BTYPE=--)
+[ 3167.160552] pc : key_put+0x30/0xb0
+[ 3167.163722] lr : key_put+0x1c/0xb0
+[ 3167.167109] sp : ffff80002b23bc00
+[ 3167.170780] x29: ffff80002b23bc00 x28: 0000000000000000 
+[ 3167.176292] x27: 000000006a827f2f x26: 0000000000000001 
+[ 3167.181801] x25: dead000000000100 x24: dead000000000122 
+[ 3167.187315] x23: ffff70852f8ea101 x22: ffff70852f8ea100 
+[ 3167.192828] x21: ffffd05388adcc40 x20: ffff70852f8ea118 
+[ 3167.197999] x19: 0000000200000000 x18: 0000000000000000 
+[ 3167.203508] x17: 0000000000000000 x16: ffffd05388a5a090 
+[ 3167.208844] x15: 0000000000000004 x14: 0000000000000000 
+[ 3167.214614] x13: 0000000000000000 x12: ffff708532416020 
+[ 3167.219782] x11: 0000000000000040 x10: ffffd05389592418 
+[ 3167.225207] x9 : ffffd05389592410 x8 : ffff708500400028 
+[ 3167.230721] x7 : 0000000000000000 x6 : 0000000000000000 
+[ 3167.236490] x5 : ffff708500400000 x4 : ffff708500400038 
+[ 3167.241916] x3 : 0000000000000005 x2 : ffffd05387a00e20 
+[ 3167.247253] x1 : ffffd05387d8e0c0 x0 : 00000000ffffffff 
+[ 3167.252591] Call trace:
+[ 3167.254798]  key_put+0x30/0xb0
+[ 3167.258194]  keyring_free_object+0x24/0x30
+[ 3167.262222]  assoc_array_destroy_subtree.part.0+0x8c/0x150
+[ 3167.267575]  assoc_array_destroy+0x1c/0x30
+[ 3167.271583]  keyring_destroy+0x9c/0xb0
+[ 3167.275366]  key_gc_unused_keys.constprop.0+0x128/0x1f0
+[ 3167.280422]  key_garbage_collector+0x1c0/0x450
+[ 3167.284626]  process_one_work+0x1c4/0x4c0
+[ 3167.288909]  worker_thread+0x54/0x450
+[ 3167.292149]  kthread+0x148/0x170
+[ 3167.295589]  ret_from_fork+0x10/0x18
+[ 3167.299324] Code: d503201f d503201f 52800020 4b0003e0 (b8600260) 
+[ 3167.305193] ---[ end trace 61d4294b7417665c ]---
+[ 3167.324663] Kernel panic - not syncing: Oops: Fatal exception
+[ 3167.324887] SMP: stopping secondary CPUs
+[ 3167.325037] Kernel Offset: 0x505377840000 from 0xffff800010000000
+[ 3167.325216] PHYS_OFFSET: 0xffff8f7c00000000
+[ 3167.329515] CPU features: 0x48240002,03802a30
+[ 3167.333970] Memory Limit: none
+[ 3167.347300] ---[ end Kernel panic - not syncing: Oops: Fatal exception ]---

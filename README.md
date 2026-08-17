@@ -2,7 +2,7 @@
 
 本 repository 保存 P450 Jetson Xavier NX 的系統重建、刷寫與後續 ROS/PX4 整合交接文件。
 
-## 2026-08-14 當前協作入口
+## 2026-08-17 當前協作入口
 
 > 使用 QGroundControl／Pixhawk 的筆電 Codex 請先完整閱讀
 > [`QGC_LAPTOP_CODEX_HANDOFF_20260814.md`](QGC_LAPTOP_CODEX_HANDOFF_20260814.md)。
@@ -20,6 +20,16 @@ Git repository 僅保存程式碼、文件與完整 evidence，Issue 保存狀�
 第一輪 A/B 通過，但它沒有修復 XRCE gap。目前 transport gate 仍為 FAIL，禁止有槳
 Offboard 飛行；下一個高資訊量工作是 Agent 端 sequence/send/ACKNACK/retransmit trace。
 
+> **2026-08-17 NX kernel gate 升級為 FAIL**：操作者執行停止 Agent 服務後，NX 發生
+> 第二次與 2026-08-14 完全同 family 的
+> `key_garbage_collector -> key_put()` kernel panic；fault address 再次是
+> `0x0000000200000000`。因此不再視為單次事件，暫停 Agent stop/start 與 Agent trace A/B，
+> 也不進行有槳飛行。原始 ramoops、兩次比對、NVIDIA 35.6.0/35.6.5 source 判讀與下一步
+> software-only A/B 見
+> [`20260817 repeated key GC panic`](evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md)。
+> 同日 eMMC 已由 74% 清理到 64%、可用 4.8 GB；診斷 Agent builds 已搬到 SD 並保留
+> 原路徑 symlink，詳見 [`storage cleanup`](evidence/20260817_storage_cleanup/README.md)。
+
 ## 目前狀態
 
 > **2026-08-14 Agent 50 ms 乾淨短測 FAIL**：前一輪 600 秒結果因混入 21 筆前測而只能
@@ -27,8 +37,9 @@ Offboard 飛行；下一個高資訊量工作是 Agent 端 sequence/send/ACKNACK
 > 1201 筆、最大 gap 119.042 ms、`>150/250/500 ms=0/0/0`，PX4 收到 1201 筆、最大
 > receipt gap 298.884 ms、`>150/250/500 ms=65/4/0`。Reliable 仍保證零最終遺失，
 > 但 Agent recovery 200→50 ms 沒有達成 250 ms deadline；不必再跑 600 秒，原 200 ms
-> Agent 已恢復。另一次 `key_garbage_collector → key_put()` kernel panic 先列為單次事件
-> 監控，不阻塞無槳地面主線；若再次出現相同 trace 才深入，裝槳／飛行前仍需穩定性 soak。
+> Agent 已恢復。當時的 `key_garbage_collector → key_put()` kernel panic 原先列為單次事件；
+> 2026-08-17 已再次出現完全相同 trace，因此此段「單次監控」判定已失效，現在以頁首
+> 2026-08-17 kernel gate 為準。
 > 詳見 [`Agent 50 ms A/B`](evidence/20260813_first_principles_offboard_transport/AGENT_50MS_AB_RESULT.md)
 > 與 [`kernel panic 證據`](evidence/20260814_nx_kernel_panic_key_gc/README.md)。
 

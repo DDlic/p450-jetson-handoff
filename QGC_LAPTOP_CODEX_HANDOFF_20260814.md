@@ -87,6 +87,13 @@ NX 已新增 boot 參數 `cgroup.memory=nokmem`，停用 kernel-object memory-cg
 
 這只能判定 kernel workaround 第一輪 PASS，不能拿來宣稱 XRCE gap 已修復。原始 panic 與分析位於 `evidence/20260814_nx_kernel_panic/`。
 
+2026-08-17 更新：NX 又發生第二次 `key_garbage_collector -> key_put()` panic，fault address
+與 2026-08-14 同為 `0x0000000200000000`。這是不同於 memcg/list-LRU 的 crash family，
+`cgroup.memory=nokmem` 無法隔離。Agent stop/start 與 Agent trace A/B 暫停，QGC 端不要要求
+NX 切換 Agent。完整證據見
+`evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md`。此外，筆電 Codex 無法直接操控
+QGC；任何 QGC 操作都必須由 NX 端直接把明確步驟告訴機主本人執行。
+
 ### 2.2 XRCE reliable receipt gap
 
 同一輪 125 秒測試中，NX publisher 與 PX4 receiver 結果明顯不同。

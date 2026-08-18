@@ -3,7 +3,7 @@
 最後更新：2026-08-05（Asia/Taipei）
 
 > **目前 XRCE 排障入口**：先閱讀
-> [`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
+> [`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](../reports/2026-08-05/P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
 > 該文件已依 stock PX4 v1.15.4 實測與 v1.18 上游修正更新版本矩陣、FTDI 隔離、
 > 候選韌體 A/B、Offboard heartbeat 與停止條件；本文件下方較早的歷史命令不得用來
 > 跳過最新安全順序。
@@ -352,4 +352,4 @@ cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd
 
 實測結果：10 分鐘 42,936 筆、最大 gap 56.263 ms、0 次超過 100 ms；120 秒
 詳細 Agent lifecycle 為建立 1 次、關閉 0 次。完整結果見
-`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。
+`docs/reports/2026-08-03/P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。

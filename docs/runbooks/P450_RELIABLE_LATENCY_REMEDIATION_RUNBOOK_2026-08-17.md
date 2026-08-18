@@ -83,11 +83,11 @@ period。這解釋了為什麼 Reliable 可以補回資料，也解釋了為什�
 
 專案原始證據：
 
-- [`TEN_MINUTE_RELIABLE_RESULT.md`](evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md)
-- [`AGENT_50MS_AB_RESULT.md`](evidence/20260813_first_principles_offboard_transport/AGENT_50MS_AB_RESULT.md)
-- [`QGC_LAPTOP_CODEX_HANDOFF_20260814.md`](QGC_LAPTOP_CODEX_HANDOFF_20260814.md)
-- [`Agent sequence trace build/selftest`](evidence/20260814_agent_sequence_trace/README.md)
-- [`Repeated key-GC kernel panic`](evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md)
+- [`TEN_MINUTE_RELIABLE_RESULT.md`](../../evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md)
+- [`AGENT_50MS_AB_RESULT.md`](../../evidence/20260813_first_principles_offboard_transport/AGENT_50MS_AB_RESULT.md)
+- [`QGC_LAPTOP_CODEX_HANDOFF_20260814.md`](../current/QGC_LAPTOP_CODEX_HANDOFF_20260814.md)
+- [`Agent sequence trace build/selftest`](../../evidence/20260814_agent_sequence_trace/README.md)
+- [`Repeated key-GC kernel panic`](../../evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md)
 
 `250 ms` 是本專案的飛行前 transport gate，不是 PX4 官方認證值。PX4 官方要求
 Offboard proof-of-life 持續高於 2 Hz，並以 `COM_OF_LOSS_T` 處理訊號遺失；P450 維持

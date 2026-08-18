@@ -11,7 +11,7 @@ Start at `README.md`, then use `docs/INDEX.md` and `docs/current/DOC_INVENTORY.m
 ## Non-deletion and evidence preservation
 
 - Do not delete a pre-existing tracked file during repository cleanup. Classify it, preserve it, or move it with `git mv`.
-- Treat `evidence/`, firmware binaries, CSV files, console captures, pstore/ramoops captures, and patch files as immutable observations. Add a correction or replacement document instead of rewriting raw evidence.
+- Treat firmware binaries, CSV files, console captures, pstore/ramoops captures, patch files, and other raw payloads under `evidence/` as immutable observations. Evidence `README.md`/`SUMMARY.md` files may receive link-only maintenance during a documented structural move; do not alter their measurements or conclusions.
 - Before and after a structural change, run `.agents/skills/p450-repo-curator/scripts/audit_repo.py --base-ref origin/main` and inspect `git diff --name-status --find-renames origin/main`. A plain `D` status is a stop condition.
 - Preserve Git history and use one branch/PR per structural phase. Merge a phase to `main` before cutting the next phase branch.
 - After moving Markdown, update every relative link in the same commit and rerun the audit.

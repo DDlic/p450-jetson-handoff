@@ -4,7 +4,10 @@
 
 ## 給接手 GPT 的指示
 
-本文件保留早期排查內容；目前權威狀態請先閱讀 `P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`、`JETSON_HANDOFF_MASTER.md`。不要重新猜硬體型號，也不要重複已完成的刷機。本文件原先規劃的 Humble 容器是歷史方案，目前先採 Ubuntu 20.04 宿主原生 ROS 2 Foxy。
+本文件保留早期排查內容；目前權威狀態請先閱讀
+`docs/reports/2026-07-22/P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`、
+`docs/history/JETSON_HANDOFF_MASTER.md`。不要重新猜硬體型號，也不要重複已完成的刷機。
+本文件原先規劃的 Humble 容器是歷史方案，目前先採 Ubuntu 20.04 宿主原生 ROS 2 Foxy。
 
 目前已完成 BSP rootfs 修復、QSPI 刷寫與 eMMC 完整刷寫，Jetson 已由 eMMC 成功進入 Ubuntu 圖形介面。後續工作是驗證 Ubuntu、網路、Pixhawk、ROS 2 與 PX4。
 

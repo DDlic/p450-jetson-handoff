@@ -4,7 +4,7 @@
 > 但不再定義最終版本。機主已指定最終 PX4 基線為 v1.14.3，且任何有效修改都必須
 > 回補至 v1.14.3 後重測。Phase A 與 ping-only 版的 2 Hz 驗證已於 2026-08-10
 > 完成：PX4→NX continuity PASS，NX→PX4 freshness FAIL。完整結果見
-> `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`；不得直接執行本文件中的
+> `docs/reports/2026-08-10/P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`；不得直接執行本文件中的
 > v1.15.4 候選韌體刷寫步驟。
 
 本文件供 Jetson Xavier NX 本機 CLI 接手目前的 PX4／ROS 2 Foxy／uXRCE-DDS
@@ -94,9 +94,9 @@ UXRCE_DDS_PRT / UXRCE_DDS_SYNCT: 此 v1.14.3 build 無此參數
 
 完整證據見：
 
-- [`P450_PX4_V1154_XRCE_TEST_2026-08-04.md`](P450_PX4_V1154_XRCE_TEST_2026-08-04.md)
-- [`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`](P450_POSTFLASH_XRCE_TEST_2026-08-03.md)
-- [`firmware/README.md`](firmware/README.md)
+- [`P450_PX4_V1154_XRCE_TEST_2026-08-04.md`](../2026-08-04/P450_PX4_V1154_XRCE_TEST_2026-08-04.md)
+- [`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`](../2026-08-03/P450_POSTFLASH_XRCE_TEST_2026-08-03.md)
+- [`firmware/README.md`](../../../firmware/README.md)
 
 ## 三、PX4 各版本對目前 NX 架構的差異
 
@@ -329,7 +329,7 @@ sudo fuser -v /dev/ttyTHS1
 1. 拆槳、固定機體、斷開推進主電池，以 QGC／Pixhawk USB 穩定供電。
 2. QGroundControl 直連 USB，不經 hub；備份完整參數。
 3. 核對 Pixhawk 6C／board ID 56。
-4. 從 [`firmware/SHA256SUMS`](firmware/SHA256SUMS) 驗證候選檔 SHA-256。
+4. 從 [`firmware/SHA256SUMS`](../../../firmware/SHA256SUMS) 驗證候選檔 SHA-256。
 5. 記錄目前 firmware version、airframe、calibration 與所有安全／failsafe 參數。
 
 刷入後依序測試，前一步 FAIL 就停止：

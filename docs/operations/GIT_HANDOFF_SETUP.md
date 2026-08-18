@@ -23,10 +23,10 @@ git pull --ff-only
 先閱讀：
 
 ```bash
-less P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md
-less JETSON_HANDOFF_MASTER.md
-less P450_PROGRESS_2026-07-20.md
-less JETSON_HANDOFF_COMMANDS.md
+less docs/reports/2026-07-22/P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md
+less docs/history/JETSON_HANDOFF_MASTER.md
+less docs/reports/2026-07-20/P450_PROGRESS_2026-07-20.md
+less docs/operations/JETSON_HANDOFF_COMMANDS.md
 ```
 
 ## 日常同步

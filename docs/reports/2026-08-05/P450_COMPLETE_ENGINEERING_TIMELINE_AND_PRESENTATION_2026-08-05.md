@@ -6,7 +6,7 @@
 > 過程。最終 PX4 基線已由機主指定為 v1.14.3；其他版本的有效修正必須回補至
 > v1.14.3。2026-08-10 實測已確認 ping 回補版 PX4→NX 10 分鐘 continuity PASS，
 > 但 NX→PX4 2 Hz 樣本新鮮度 FAIL。最新完整結果見
-> `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`。
+> `docs/reports/2026-08-10/P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`。
 
 ## 0. 文件目的、證據界線與敏感資料處理
 
@@ -58,8 +58,9 @@ QSPI-only 可以更新啟動韌體，但不能替代 eMMC 上完整且匹配的 
 - 系統由 `/dev/mmcblk0p1` eMMC 開機。
 - Ubuntu 20.04 可正常啟動。
 - 舊 SD 映像不再作為系統啟動來源。
-- 詳細刷寫時間線與命令保留在 `JETSON_HANDOFF_HISTORY.md`、
-  `P450_PROGRESS_2026-07-20.md` 與 `JETSON_HANDOFF_COMMANDS.md`。
+- 詳細刷寫時間線與命令保留在 `docs/history/JETSON_HANDOFF_HISTORY.md`、
+  `docs/reports/2026-07-20/P450_PROGRESS_2026-07-20.md` 與
+  `docs/operations/JETSON_HANDOFF_COMMANDS.md`。
 
 簡報答辯重點：先建立可信任的 OS/BSP 基線，避免後續把 UART、Wi-Fi 或 ROS 問題錯怪給
 一個不確定的開機環境。
@@ -428,17 +429,19 @@ preflight、Kill Switch 與 Offboard loss 也仍需各自驗證。
 
 ## 20. 原始證據索引
 
-- NX 刷寫與恢復：`JETSON_HANDOFF_HISTORY.md`
-- ROS、SD、UART、Wi-Fi 與 7 月測試：`P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`、
-  `P450_PROGRESS_2026-07-24_NEXT.md`
-- v1.14.3 刷入後完整數據：`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`
-- v1.15.4 stock／第一候選：`P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
+- NX 刷寫與恢復：`docs/history/JETSON_HANDOFF_HISTORY.md`
+- ROS、SD、UART、Wi-Fi 與 7 月測試：
+  `docs/reports/2026-07-22/P450_PROGRESS_2026-07-22_ROS2_OFFLINE.md`、
+  `docs/reports/2026-07-24/P450_PROGRESS_2026-07-24_NEXT.md`
+- v1.14.3 刷入後完整數據：`docs/reports/2026-08-03/P450_POSTFLASH_XRCE_TEST_2026-08-03.md`
+- v1.15.4 stock／第一候選：`docs/reports/2026-08-04/P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
 - v1.14.3 ping-only 最終雙向驗證：
-  `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
+  `docs/reports/2026-08-10/P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
 - 2026-08-10 原始證據：`evidence/20260810_163557_px4_v1143_ping_postflash/`
-- 根因分級與停止規則：`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
+- 根因分級與停止規則：
+  `docs/reports/2026-08-05/P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
 - 可重現韌體與 SHA：`firmware/README.md`、`firmware/SHA256SUMS`
-- 原始 console 範例：`px4_uxrce_dds_console_latest.txt`
+- 原始 console 範例：`docs/raw/captures/px4_uxrce_dds_console_latest.txt`
 
 ## 21. 文件可信度標記
 

@@ -125,7 +125,7 @@ Pixhawk TELEM2 ↔ NX UART0 ↔ /dev/ttyTHS1 ↔ MicroXRCEAgent
 ~/Desktop/migrate_codex_to_sd_offline.sh finalize
 ```
 
-它會要求人工輸入 `DELETE-EMMC-BACKUP` 才刪除備份；未確認前不要刪除。若遷移失敗，可使用同腳本的 `rollback`。完整政策見 [`SD_STORAGE_POLICY_20260817.md`](SD_STORAGE_POLICY_20260817.md)。
+它會要求人工輸入 `DELETE-EMMC-BACKUP` 才刪除備份；未確認前不要刪除。若遷移失敗，可使用同腳本的 `rollback`。完整政策見 [`SD_STORAGE_POLICY_20260817.md`](../../runbooks/SD_STORAGE_POLICY_20260817.md)。
 
 ## 4. ROS 2 與 Agent 建置歷程
 
@@ -236,10 +236,10 @@ NX publisher 自身在 hb50 clean test 的最大 gap 只有 119.042 ms，說明�
 
 目前最重要的 QGC evidence：
 
-- [`QGC_RETURN_20260817_1040_AGENTTRACE_RELIABLE_125S_B.txt`](evidence/20260814_qgc_px4/QGC_RETURN_20260817_1040_AGENTTRACE_RELIABLE_125S_B.txt)
-- [`QGC/PX4 README`](evidence/20260814_qgc_px4/README.md)
-- [`第一性原理總結`](evidence/20260813_first_principles_offboard_transport/SUMMARY.md)
-- [`10 分鐘 Reliable 結果`](evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md)
+- [`QGC_RETURN_20260817_1040_AGENTTRACE_RELIABLE_125S_B.txt`](../../../evidence/20260814_qgc_px4/QGC_RETURN_20260817_1040_AGENTTRACE_RELIABLE_125S_B.txt)
+- [`QGC/PX4 README`](../../../evidence/20260814_qgc_px4/README.md)
+- [`第一性原理總結`](../../../evidence/20260813_first_principles_offboard_transport/SUMMARY.md)
+- [`10 分鐘 Reliable 結果`](../../../evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md)
 
 ## 7. Kernel panic：目前必須優先處理的獨立風險
 
@@ -281,7 +281,7 @@ NX 隨後 freeze/reboot。不能說 stop 指令已被證明是直接原因，但
 - 不要在有槳狀態進行 Offboard 或自動飛行。
 - 先保留 pstore 與目前 service，避免新的操作覆蓋證據。
 
-完整原始證據見 [`20260817 repeated key GC panic`](evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md)。
+完整原始證據見 [`20260817 repeated key GC panic`](../../../evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md)。
 
 ## 8. 目前真正狀態（交接時以此為準）
 
@@ -324,15 +324,15 @@ NX 隨後 freeze/reboot。不能說 stop 指令已被證明是直接原因，但
 
 ## 10. 重要文件索引
 
-- [`README.md`](README.md)：目前協作入口、摘要與硬體基線。
-- [`QGC_LAPTOP_CODEX_HANDOFF_20260814.md`](QGC_LAPTOP_CODEX_HANDOFF_20260814.md)：筆電 QGC Codex 專用交接。
-- [`SD_STORAGE_POLICY_20260817.md`](SD_STORAGE_POLICY_20260817.md)：SD-first 儲存規範與 rollback。
-- [`evidence/20260813_first_principles_offboard_transport/SUMMARY.md`](evidence/20260813_first_principles_offboard_transport/SUMMARY.md)：Reliable、Best-Effort、hb50 與第一性原理分析。
-- [`evidence/20260814_qgc_px4/README.md`](evidence/20260814_qgc_px4/README.md)：QGC Phase A/B 與 RX trace 交接。
-- [`evidence/20260814_agent_sequence_trace/README.md`](evidence/20260814_agent_sequence_trace/README.md)：Agent sequence trace patch 與失敗／中止紀錄。
-- [`evidence/20260814_nx_kernel_panic/README.md`](evidence/20260814_nx_kernel_panic/README.md)：第一次 kernel panic 與 `cgroup.memory=nokmem`。
-- [`evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md`](evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md)：第二次相同 key-GC panic，當前 kernel gate FAIL。
-- [`evidence/20260817_storage_cleanup/README.md`](evidence/20260817_storage_cleanup/README.md)：空間清理與 SD 遷移背景。
+- [`README.md`](../../../README.md)：目前協作入口、摘要與硬體基線。
+- [`QGC_LAPTOP_CODEX_HANDOFF_20260814.md`](../../current/QGC_LAPTOP_CODEX_HANDOFF_20260814.md)：筆電 QGC Codex 專用交接。
+- [`SD_STORAGE_POLICY_20260817.md`](../../runbooks/SD_STORAGE_POLICY_20260817.md)：SD-first 儲存規範與 rollback。
+- [`evidence/20260813_first_principles_offboard_transport/SUMMARY.md`](../../../evidence/20260813_first_principles_offboard_transport/SUMMARY.md)：Reliable、Best-Effort、hb50 與第一性原理分析。
+- [`evidence/20260814_qgc_px4/README.md`](../../../evidence/20260814_qgc_px4/README.md)：QGC Phase A/B 與 RX trace 交接。
+- [`evidence/20260814_agent_sequence_trace/README.md`](../../../evidence/20260814_agent_sequence_trace/README.md)：Agent sequence trace patch 與失敗／中止紀錄。
+- [`evidence/20260814_nx_kernel_panic/README.md`](../../../evidence/20260814_nx_kernel_panic/README.md)：第一次 kernel panic 與 `cgroup.memory=nokmem`。
+- [`evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md`](../../../evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md)：第二次相同 key-GC panic，當前 kernel gate FAIL。
+- [`evidence/20260817_storage_cleanup/README.md`](../../../evidence/20260817_storage_cleanup/README.md)：空間清理與 SD 遷移背景。
 
 ## 11. 一句話交接結論
 

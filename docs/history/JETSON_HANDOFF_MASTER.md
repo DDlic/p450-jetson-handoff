@@ -4,7 +4,7 @@
 
 > **2026-08-17 交付期 PoC 入口**：若機主因交付期限只要求一次
 > `起飛 1 m → 前進 5 m → Land` 的受控展示，下一個 NX CLI 必須先讀
-> [`P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md`](P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md)。
+> [`P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md`](../runbooks/P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md)。
 > 文件已納入 `Takeoff detected/not landed` 的 v1.14.3 狀態機原因、601.548 ms heartbeat
 > receipt gap 的實際風險、固定 position waypoint、VehicleCommandAck、PX4 Land mode、
 > fail-safe 與逐級測試流程。這條 PoC 路徑不代表 transport freshness 或 NX kernel gate
@@ -33,9 +33,9 @@
   解鎖或飛行，也未刷下一版候選韌體。
 
 完整報告：
-[`P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`](P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md)。
+[`P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`](../reports/2026-08-10/P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md)。
 原始證據：
-[`evidence/20260810_163557_px4_v1143_ping_postflash/`](evidence/20260810_163557_px4_v1143_ping_postflash/)。
+[`evidence/20260810_163557_px4_v1143_ping_postflash/`](../../evidence/20260810_163557_px4_v1143_ping_postflash/)。
 
 Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 刷寫，並已由 eMMC 成功進入 Ubuntu 圖形介面。
 
@@ -70,7 +70,7 @@ v1.17.0 的 client loop 都仍只執行一次非阻塞 session；v1.18 developme
 buffer 改善。這與本機 20 Hz NX→PX4 輸入造成活 session 停止輸出的症狀高度吻合。
 現有 `d12a7dd` 候選版仍可作最小 A/B，但不等於新版完整修正。完整版本矩陣、FTDI
 隔離路徑、NX CLI 命令與停止條件見
-[`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
+[`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](../reports/2026-08-05/P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
 
 上述結果與 PX4 官方 `d12a7dd11d` 所述的 XRCE input 每輪只處理一次、造成接收顯著
 延遲相符。已建立 v1.15.4 最小接收排空候選韌體
@@ -79,7 +79,7 @@ buffer 改善。這與本機 20 Hz NX→PX4 輸入造成活 session 停止輸出
 機主已刷入此候選版；保留 `UXRCE_DDS_SYNCT=0` 的 60 秒純接收仍有 1005.408 ms
 最大 gap、22 次超過 500 ms、7 次超過 1 秒，第一關即 FAIL，因此沒有繼續 2 Hz／
 20 Hz 輸入。XRCE／Offboard 關卡仍為 FAIL。完整結果見
-`P450_PX4_V1154_XRCE_TEST_2026-08-04.md`。
+`docs/reports/2026-08-04/P450_PX4_V1154_XRCE_TEST_2026-08-04.md`。
 
 2026-08-05 已完成 Phase 4 第二代 v1.15.4 候選版：source `3f118ef593`，只回移植
 上游 `3169dc6` 中與 serial 共用的 1 ms poll、pending-input 零等待、`FIONREAD`
@@ -87,9 +87,9 @@ bounded drain、output buffer flush/retry 與 fd close ownership。clean build
 `1233/1233` 成功，image `1,961,772 / 1,966,080` bytes，`board_id=56`，SHA-256
 `cb54e73327c95f2ceb0dbd9d53c5020b9d8c76cf1c045600e6c66106576dd660`。目前尚未刷入或
 實機驗證；完整脈絡與簡報答辯資料見
-`P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`。
+`docs/reports/2026-08-05/P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`。
 
-同日後續無槳控制檢查確認三段 RC 模式為 STAB／ALTCTL／POSCTL；POSCTL 因室內沒有有效 local/global position 與 Home 而不通過 preflight。移除發射機電池超過 20 秒後，飛控仍回報 `manual_control_signal_lost=false`，與接收機失聯 Hold 輸出相符，RC loss 關卡為 FAIL。ROS→PX4 的 `VehicleCommand` 已能由 NX 將 STAB 切至 ALTCTL，但外部 ARM 未被接受，且 Offboard 零推力心跳會間歇被判為 lost。詳細 Agent v6 記錄證明 1491 組心跳／rate setpoint 全數由 DDS 收到並寫入 UART，沒有 Agent error、warning 或 session 重建；異常已縮小到飛控端 XRCE 收件／uORB 新鮮度判定。2026-08-04 已確認 `COM_OF_LOSS_T=1.0 s`，不是 timeout 過短；PX4 uORB 內最新 heartbeat 曾落後約 0.724 秒。所有解鎖／馬達測試均被 watchdog 安全中止，飛控最終為 STAB、未解鎖、馬達未轉；詳見 `P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。
+同日後續無槳控制檢查確認三段 RC 模式為 STAB／ALTCTL／POSCTL；POSCTL 因室內沒有有效 local/global position 與 Home 而不通過 preflight。移除發射機電池超過 20 秒後，飛控仍回報 `manual_control_signal_lost=false`，與接收機失聯 Hold 輸出相符，RC loss 關卡為 FAIL。ROS→PX4 的 `VehicleCommand` 已能由 NX 將 STAB 切至 ALTCTL，但外部 ARM 未被接受，且 Offboard 零推力心跳會間歇被判為 lost。詳細 Agent v6 記錄證明 1491 組心跳／rate setpoint 全數由 DDS 收到並寫入 UART，沒有 Agent error、warning 或 session 重建；異常已縮小到飛控端 XRCE 收件／uORB 新鮮度判定。2026-08-04 已確認 `COM_OF_LOSS_T=1.0 s`，不是 timeout 過短；PX4 uORB 內最新 heartbeat 曾落後約 0.724 秒。所有解鎖／馬達測試均被 watchdog 安全中止，飛控最終為 STAB、未解鎖、馬達未轉；詳見 `docs/reports/2026-08-03/P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。
 
 同日也針對 Jetson `3110000.serial` 的 460800 baud out-of-range kernel 錯誤建立 UARTB device-tree 修正。預設 DTB 現為 `/boot/dtb/p450-p3668-0001-p3509-0000-sdmmc3-wifi-uartb460800.dtb`，舊 DTB 保留為 fallback；重啟後 kernel 錯誤消失。但修正後 120 秒測試最大空窗仍為 3129 ms、28 次超過 1 秒，再次重啟後 60 秒最大空窗 3382 ms、15 次超過 1 秒。因此 DTB 修正有效排除主機設定錯誤，卻不是 XRCE session 重建的最終解法。
 
@@ -326,7 +326,7 @@ c637afbaf34e2bffe59fac5f0e0a622026e85729f267ce0ef99353a5e52d5f34
 /home/wilson/xavier_nx_emmc_clean.log
 ```
 
-週報摘要見 `P450_PROGRESS_2026-07-20.md`。
+週報摘要見 `docs/reports/2026-07-20/P450_PROGRESS_2026-07-20.md`。
 
 ## 安全規則
 

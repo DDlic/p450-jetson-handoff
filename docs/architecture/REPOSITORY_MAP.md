@@ -83,7 +83,7 @@ The rate-limited patch reduces PX4 output publications to six named topics: loca
 1. **Reliable fixed final loss in the measured fields.** This is supported by equal publish/receipt counts.
 2. **Reliable did not establish a 250 ms deadline guarantee.** Recovery can preserve every sample while introducing head-of-line delay; the recorded 601.548 ms tail proves these properties are distinct.
 3. **The recorded 601.548 ms gap alone does not prove the simple PoC must fail.** It remained under `COM_OF_LOSS_T=1.0 s`, but there is no armed/outdoor tail bound, and the kernel gate is independent.
-4. **A risk-accepted PoC path is not a release claim.** The delivery runbook explicitly limits its scope and requires operator control (`P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md:19-29`).
+4. **A risk-accepted PoC path is not a release claim.** The delivery runbook explicitly limits its scope and requires operator control (`docs/runbooks/P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md:19-29`).
 5. **`not landed` must be handled as a state transition/observation problem.** Automation should wait for PX4 Land and landed confirmation, then issue normal disarm; it must not use forced disarm as a workaround.
 
 ## Commands and verification inventory
@@ -127,7 +127,7 @@ raw CSV / console / pstore
   -> README/index summary
 ```
 
-The current root mixes all five layers, which makes an older master handoff appear equal to a newer runbook. `docs/current/DOC_INVENTORY.md` supplies the missing authority metadata; the structural phase will move reports/history without changing their content.
+The original root mixed all five layers, which made an older master handoff appear equal to a newer runbook. `docs/current/DOC_INVENTORY.md` now supplies authority metadata, while reports/history retain their content and Git lineage under classified paths.
 
 ### Firmware provenance
 

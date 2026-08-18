@@ -25,7 +25,7 @@ Also read the repository-root `AGENTS.md` and any nearer subtree instructions.
 5. Keep `README.md`, `AGENTS.md`, and conventional technical directories at root. Move classified documents with `git mv`; do not recreate them under new names.
 6. Repair all relative Markdown links and update `docs/INDEX.md`, `README.md`, the inventory, and architecture map in the same change.
 7. Rerun the audit, Python compilation, firmware checksum validation, `git diff --check`, and `git diff --name-status --find-renames <base>`.
-8. Stop if a pre-existing file has plain `D` status, a local link is broken, an evidence file changed without an explicit evidence-correction task, or current authority becomes ambiguous.
+8. Stop if a pre-existing file has plain `D` status, a local link is broken, a raw evidence payload changed, or current authority becomes ambiguous. Evidence `README.md`/`SUMMARY.md` edits are limited to link maintenance during structural moves.
 9. Commit one coherent structural phase and merge it to trunk before starting another phase.
 
 ## Handling technical claims

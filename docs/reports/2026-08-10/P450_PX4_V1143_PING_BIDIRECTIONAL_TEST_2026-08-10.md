@@ -17,7 +17,7 @@
 Offboard、解鎖、裝槳與飛行均不得進行。
 
 本輪原始證據位於
-[`evidence/20260810_163557_px4_v1143_ping_postflash/`](evidence/20260810_163557_px4_v1143_ping_postflash/)。
+[`evidence/20260810_163557_px4_v1143_ping_postflash/`](../../../evidence/20260810_163557_px4_v1143_ping_postflash/)。
 
 ## 2. 測試範圍與安全邊界
 
@@ -195,12 +195,12 @@ QGC `ver all` 明確識別。舊 SHA `d371a5e7…a0a8bdd` 已淘汰。
 
 ## 8. 原始證據索引
 
-- [`SUMMARY.md`](evidence/20260810_163557_px4_v1143_ping_postflash/SUMMARY.md)：本輪英文摘要。
-- [`nx_postflash_graph.txt`](evidence/20260810_163557_px4_v1143_ping_postflash/nx_postflash_graph.txt)：韌體後 graph 與 Agent 基線。
-- [`ros2_readonly_continuity_600s.txt`](evidence/20260810_163557_px4_v1143_ping_postflash/ros2_readonly_continuity_600s.txt)：正式 10 分鐘數值。
-- [`px4_qgc_postflash.txt`](evidence/20260810_163557_px4_v1143_ping_postflash/px4_qgc_postflash.txt)：QGC 韌體、參數與狀態。
-- [`ros2_noncontrol_2hz_60s.txt`](evidence/20260810_163557_px4_v1143_ping_postflash/ros2_noncontrol_2hz_60s.txt)：2 Hz 時的 output continuity。
-- [`ros2_noncontrol_local_echo_check.txt`](evidence/20260810_163557_px4_v1143_ping_postflash/ros2_noncontrol_local_echo_check.txt)：本地 marker echo。
-- [`agent_verbose_2hz_trace.txt`](evidence/20260810_163557_px4_v1143_ping_postflash/agent_verbose_2hz_trace.txt)：Agent DataReader／serial write 追蹤。
-- [`px4_qgc_live_2hz_result.txt`](evidence/20260810_163557_px4_v1143_ping_postflash/px4_qgc_live_2hz_result.txt)：live marker 與 58.383400 秒樣本年齡。
-- [`ros2_live_2hz_window.txt`](evidence/20260810_163557_px4_v1143_ping_postflash/ros2_live_2hz_window.txt)：live publisher 執行窗口與停止紀錄。
+- [`SUMMARY.md`](../../../evidence/20260810_163557_px4_v1143_ping_postflash/SUMMARY.md)：本輪英文摘要。
+- [`nx_postflash_graph.txt`](../../../evidence/20260810_163557_px4_v1143_ping_postflash/nx_postflash_graph.txt)：韌體後 graph 與 Agent 基線。
+- [`ros2_readonly_continuity_600s.txt`](../../../evidence/20260810_163557_px4_v1143_ping_postflash/ros2_readonly_continuity_600s.txt)：正式 10 分鐘數值。
+- [`px4_qgc_postflash.txt`](../../../evidence/20260810_163557_px4_v1143_ping_postflash/px4_qgc_postflash.txt)：QGC 韌體、參數與狀態。
+- [`ros2_noncontrol_2hz_60s.txt`](../../../evidence/20260810_163557_px4_v1143_ping_postflash/ros2_noncontrol_2hz_60s.txt)：2 Hz 時的 output continuity。
+- [`ros2_noncontrol_local_echo_check.txt`](../../../evidence/20260810_163557_px4_v1143_ping_postflash/ros2_noncontrol_local_echo_check.txt)：本地 marker echo。
+- [`agent_verbose_2hz_trace.txt`](../../../evidence/20260810_163557_px4_v1143_ping_postflash/agent_verbose_2hz_trace.txt)：Agent DataReader／serial write 追蹤。
+- [`px4_qgc_live_2hz_result.txt`](../../../evidence/20260810_163557_px4_v1143_ping_postflash/px4_qgc_live_2hz_result.txt)：live marker 與 58.383400 秒樣本年齡。
+- [`ros2_live_2hz_window.txt`](../../../evidence/20260810_163557_px4_v1143_ping_postflash/ros2_live_2hz_window.txt)：live publisher 執行窗口與停止紀錄。

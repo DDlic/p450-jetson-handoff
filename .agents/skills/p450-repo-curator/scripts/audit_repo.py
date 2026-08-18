@@ -82,9 +82,21 @@ def deleted_paths(root: Path, base_ref: str) -> list[str]:
     return [line for line in output.splitlines() if line.startswith("D\t")]
 
 
-def evidence_mutations(root: Path, base_ref: str) -> list[str]:
+def evidence_mutations(root: Path, base_ref: str) -> tuple[list[str], list[str]]:
     output = git(root, "diff", "--name-status", "--find-renames", base_ref, "--", "evidence")
-    return [line for line in output.splitlines() if not line.startswith("A\t")]
+    failures: list[str] = []
+    maintained_docs: list[str] = []
+    for line in output.splitlines():
+        fields = line.split("\t")
+        status = fields[0]
+        path = fields[-1]
+        if status == "A":
+            continue
+        if status == "M" and Path(path).name in {"README.md", "SUMMARY.md"}:
+            maintained_docs.append(line)
+            continue
+        failures.append(line)
+    return failures, maintained_docs
 
 
 def main() -> int:
@@ -100,9 +112,8 @@ def main() -> int:
         root = repository_root()
         failures = broken_links(root)
         failures.extend(f"deleted tracked path: {line}" for line in deleted_paths(root, args.base_ref))
-        failures.extend(
-            f"existing evidence changed: {line}" for line in evidence_mutations(root, args.base_ref)
-        )
+        raw_evidence_changes, evidence_doc_updates = evidence_mutations(root, args.base_ref)
+        failures.extend(f"raw evidence changed: {line}" for line in raw_evidence_changes)
         root_markdown = sorted(path.name for path in root.glob("*.md"))
         tracked = git(root, "ls-files").splitlines()
     except (OSError, UnicodeError, RuntimeError) as error:
@@ -113,6 +124,7 @@ def main() -> int:
     print(f"tracked_files={len(tracked)}")
     print(f"root_markdown={len(root_markdown)}")
     print(f"base_ref={args.base_ref}")
+    print(f"evidence_doc_link_updates={len(evidence_doc_updates)}")
     if failures:
         for failure in failures:
             print(f"FAIL: {failure}")

@@ -73,4 +73,4 @@ user packages 與 handoff Git repository 搬到 `P450_DATA`，原路徑全部保
 線上遷移完成後 eMMC 為 62%、可用約 5.1 GB；SD 為 8%、可用約 103 GB。
 `~/.codex` 與 `~/.cache` 因目前
 Codex/Firefox 仍在使用，改由桌面離線腳本在程式關閉後執行。詳細路徑、guard、rollback 與
-finalize 流程見 [`../../SD_STORAGE_POLICY_20260817.md`](../../SD_STORAGE_POLICY_20260817.md)。
+finalize 流程見 [`../../SD_STORAGE_POLICY_20260817.md`](../../docs/runbooks/SD_STORAGE_POLICY_20260817.md)。

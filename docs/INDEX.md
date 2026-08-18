@@ -7,8 +7,8 @@ This index separates current decision material from dated history and raw eviden
 1. [`README.md`](../README.md) — current top-level state and warnings.
 2. [`current/DOC_INVENTORY.md`](current/DOC_INVENTORY.md) — authority, class, and planned location for every root-level handoff artifact.
 3. [`architecture/REPOSITORY_MAP.md`](architecture/REPOSITORY_MAP.md) — repository architecture, runtime path, verification surface, and known contradictions.
-4. [`P450 delivery PoC runbook`](../P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md) — narrowly scoped delivery demonstration path and safety boundary.
-5. [`Reliable latency remediation runbook`](../P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md) — transport diagnosis and staged remediation.
+4. [`P450 delivery PoC runbook`](runbooks/P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md) — narrowly scoped delivery demonstration path and safety boundary.
+5. [`Reliable latency remediation runbook`](runbooks/P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md) — transport diagnosis and staged remediation.
 
 ## Stable technical areas
 
@@ -19,4 +19,13 @@ This index separates current decision material from dated history and raw eviden
 - [`evidence/`](../evidence/) — timestamped experiment results and raw captures. Treat as append-only.
 - [`config/`](../config/) — NX runtime/storage configuration and subtree instructions.
 
-The next structural phase will move root-level reports and handoffs into `docs/` with `git mv`, then update all links. Until that phase is merged, the inventory's “planned path” column is a plan, not the current path.
+## Classified document areas
+
+- [`current/`](current/) — active coordination and the authority inventory.
+- [`runbooks/`](runbooks/) — gated procedures and rollback instructions.
+- [`operations/`](operations/) — setup and command references.
+- [`reports/`](reports/) — dated engineering results and plans, grouped by date.
+- [`history/`](history/) — superseded handoffs and narratives retained for provenance.
+- [`raw/`](raw/) — unstructured notes and captures preserved without promotion to verified conclusions.
+
+The structural classification was performed with `git mv`; pre-existing files were not discarded. Root now contains only `README.md` and `AGENTS.md` as Markdown entry points.

@@ -22,7 +22,7 @@ Assign one primary class to each document based on what a reader should do with 
 2. A runbook must contain safety prerequisites and stop conditions. Otherwise classify it as operations or a report.
 3. A report remains a report even when a newer report supersedes its conclusion.
 4. Do not rewrite a historical document to make it look current. Add authority metadata in the inventory/index.
-5. Do not move timestamped evidence merely to make the tree symmetrical.
+5. Do not move timestamped evidence merely to make the tree symmetrical. During a structural move, only link destinations may change in evidence `README.md`/`SUMMARY.md`; raw payloads and measured claims remain immutable.
 6. Preserve unusual names and extensions during the first move. Rename only in a separately reviewed normalization phase.
 7. Never classify a firmware checksum, CSV, pstore record, console output, or patch as disposable generated output.
 

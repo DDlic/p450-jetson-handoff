@@ -252,7 +252,7 @@ MAV_1_CONFIG   = 0
 uxrce_dds_client: Running, disconnected, serial transport
 ```
 
-完整 MAVLink Console 原始輸出保存在 `px4_uxrce_dds_console_latest.txt`。
+完整 MAVLink Console 原始輸出保存在 `docs/raw/captures/px4_uxrce_dds_console_latest.txt`。
 
 NX systemd Agent 也已同步為 460800。重新握手後可恢復完整 23 個 `/fmu/*` topics，但傳輸層仍不穩定：
 
@@ -284,7 +284,7 @@ PX4 官方提交 `a1cce7e961df` 明確包含：
 該提交位於 PX4 1.15 開發歷史。2026-07-29 已將其中與 session ping 直接相關的
 最小修改回補至 v1.14.3，並成功建置 Pixhawk 6C 韌體；2026-08-03 已完成刷入、
 參數恢復與地面通訊測試。完整結果見下方與
-`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。
+`docs/reports/2026-08-03/P450_POSTFLASH_XRCE_TEST_2026-08-03.md`。
 
 ### 2026-07-29：飛控僅以 USB 供電複測
 

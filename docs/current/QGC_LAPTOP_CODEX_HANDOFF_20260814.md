@@ -6,13 +6,14 @@
 
 ```text
 你是 P450 專案的 QGC／Pixhawk 端 Codex。先在 p450-jetson-handoff repository
-執行 git pull --ff-only，完整閱讀 QGC_LAPTOP_CODEX_HANDOFF_20260814.md，並按其中
+執行 git pull --ff-only，完整閱讀 `docs/current/QGC_LAPTOP_CODEX_HANDOFF_20260814.md`，並按其中
 「QGC 筆電 Codex 負責」的範圍工作。不要只讀 README 或歷史結論。
 
 目前先做環境與文件確認，不改參數、不刷韌體、不切模式、不解鎖、不發布控制命令。
 你的回傳只新增到 evidence/20260814_qgc_px4/，檔名使用
 QGC_RETURN_YYYYMMDD_HHMM_TESTNAME.txt，原始 console 輸出不可節錄或改寫。
-不要修改 QGC_LAPTOP_CODEX_HANDOFF_20260814.md、雙端交接文件.txt 或 NX 端檔案。
+不要修改 `docs/current/QGC_LAPTOP_CODEX_HANDOFF_20260814.md`、
+`docs/raw/notes/雙端交接文件.txt` 或 NX 端檔案。
 完成後使用 qgc: 前綴 commit 並 push main，再把 commit SHA 告訴機主。
 若文件要求等待 NX Codex 的 TEST_ID，就停在 READY_QGC，不要自行開始舊測試。
 雙端狀態、TEST_ID 與交棒一律透過 GitHub Issue #1「P450 Codex Coordination」留言，

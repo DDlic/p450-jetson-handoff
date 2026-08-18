@@ -397,7 +397,7 @@ XRCE session ping 直接相關的最小回補。實際 patch 位於
 0 次超過 100 ms，session continuity 再次 PASS；但 2 Hz NX→PX4 active stream 的
 最新 uORB marker 落後 58.383400 秒，因此此版本的**雙向新鮮度 FAIL**。20 Hz 與
 Offboard 依停止規則未測。完整結果見
-`../P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`。
+`../docs/reports/2026-08-10/P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`。
 
 此結果不代表 GPS、preflight、failsafe、Offboard 或飛行安全已通過。
 
@@ -409,5 +409,6 @@ Offboard 依停止規則未測。完整結果見
 4. 刷入後核對 airframe、校正、RC、安全與 failsafe 參數。
 5. 先做至少 10 分鐘純訂閱地面測試，不可直接解鎖或進入 Offboard。
 
-2026-08-03 初次結果見 `../P450_POSTFLASH_XRCE_TEST_2026-08-03.md`；2026-08-10
-雙向結果見 `../P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`。
+2026-08-03 初次結果見 `../docs/reports/2026-08-03/P450_POSTFLASH_XRCE_TEST_2026-08-03.md`；
+2026-08-10 雙向結果見
+`../docs/reports/2026-08-10/P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`。

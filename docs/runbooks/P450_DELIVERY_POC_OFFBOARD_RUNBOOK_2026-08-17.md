@@ -46,7 +46,7 @@
 
 已證明 Arm 與 normal Disarm 都有到達 PX4；Disarm 不是傳輸遺失，而是 Commander 因
 land detector 狀態主動拒絕。完整現場證據見
-[`evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md`](evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md)。
+[`evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md`](../../evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md)。
 
 PX4 v1.14.3 的 `Takeoff detected` 只表示 `vehicle_land_detected.landed` 從 true 轉為
 false，不等於感測器證明無槳機體真的離地：
@@ -108,7 +108,7 @@ COM_OF_LOSS_T = 1.0 s
 ```
 
 證據見
-[`evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md`](evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md)。
+[`evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md`](../../evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md)。
 
 精確解讀：
 
@@ -151,7 +151,7 @@ PX4 官方 Offboard 行為與 timeout 定義：
 
 1. 本文件。
 2. `README.md` 頁首最新狀態。
-3. `P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md` 的禁止事項。
+3. `docs/runbooks/P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md` 的禁止事項。
 4. `evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md`。
 5. `evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md`。
 

@@ -34,7 +34,9 @@ uXRCE-DDS Agent、px4_msgs、px4_ros_com
 - `/dev/serial/by-id/` 不存在，且沒有 `/dev/ttyACM*` 或 `/dev/ttyUSB*`。
 - 因此目前不能宣稱 Pixhawk↔NX 通訊通過；也尚未進入 MAVLink 心跳或 uXRCE-DDS topic 驗證。
 
-下一步應將 Pixhawk 以可確認資料線直接接到 NX，先不要經 USB Hub，然後重新執行 `JETSON_HANDOFF_COMMANDS.md` 的 I-1 檢查。只有出現穩定 serial 裝置並能由協定工具確認心跳／遙測後，才進入 ROS 2 Foxy 與 uXRCE-DDS 整合。
+下一步應將 Pixhawk 以可確認資料線直接接到 NX，先不要經 USB Hub，然後重新執行
+`docs/operations/JETSON_HANDOFF_COMMANDS.md` 的 I-1 檢查。只有出現穩定 serial 裝置並能由
+協定工具確認心跳／遙測後，才進入 ROS 2 Foxy 與 uXRCE-DDS 整合。
 
 ## 2026-07-23 ROS 2 Foxy 與 PX4 工作區完成狀態
 

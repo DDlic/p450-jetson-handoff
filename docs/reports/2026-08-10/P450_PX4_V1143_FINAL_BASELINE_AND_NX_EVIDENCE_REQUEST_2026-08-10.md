@@ -95,7 +95,7 @@ UART payload 是否損壞。XRCE 雙向穩定後，再把初始化修正獨立�
    `/fmu/out/*`，`SensorCombined` 只有一個 publisher。
 5. 10 分鐘 PX4→NX continuity PASS；2 Hz NX→PX4 freshness FAIL。
 6. 本輪 raw evidence 已保存於
-   [`evidence/20260810_163557_px4_v1143_ping_postflash/`](evidence/20260810_163557_px4_v1143_ping_postflash/)。
+   [`evidence/20260810_163557_px4_v1143_ping_postflash/`](../../../evidence/20260810_163557_px4_v1143_ping_postflash/)。
 
 ## 5. 給 NX Codex CLI 的 Phase A：只讀證據收集（已完成，保留供重現）
 

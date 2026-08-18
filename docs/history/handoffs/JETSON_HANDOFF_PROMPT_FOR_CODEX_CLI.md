@@ -5,7 +5,7 @@
 ## 2026-08-10 最高優先覆寫
 
 先完整閱讀
-`P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`。
+`docs/reports/2026-08-10/P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`。
 
 - 最終 PX4 基線固定為 v1.14.3；v1.15.4 只作歷史診斷與 backport 參考。
 - 現階段只執行該文件的 Phase A 只讀證據收集，產物放入 `evidence/` 後提交推送。

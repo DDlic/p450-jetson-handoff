@@ -11,18 +11,18 @@
 
 接近交付期的「1 m 起飛／前進 5 m／Land」最小 PoC 決策、`not landed` 根因、601.548 ms
 gap 風險與 NX CLI 下次實作順序，統一依
-[`P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md`](P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md)。
+[`P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md`](docs/runbooks/P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md)。
 該文件只提供機主明確接受殘餘風險時的受控 PoC 路徑，不代表 transport freshness 或
 NX kernel gate 已通過，也不授權 CLI 自行裝槳、改參數或解鎖。
 
 Reliable 已在現有 60 秒／600 秒場消除最終遺失，但 250 ms freshness gate 仍失敗。
 後續解法、命令、判定矩陣、rollback 與逐級飛行 gate 統一依
-[`P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md`](P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md)。
+[`P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md`](docs/runbooks/P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md)。
 目前 NX kernel gate 為 FAIL，該 runbook 內 Agent stop/start 與 transport A/B 不得跳過
 Phase 1 直接執行。
 
 > 使用 QGroundControl／Pixhawk 的筆電 Codex 請先完整閱讀
-> [`QGC_LAPTOP_CODEX_HANDOFF_20260814.md`](QGC_LAPTOP_CODEX_HANDOFF_20260814.md)。
+> [`QGC_LAPTOP_CODEX_HANDOFF_20260814.md`](docs/current/QGC_LAPTOP_CODEX_HANDOFF_20260814.md)。
 > 該文件包含目前實機真實狀態、已證實的 reliable sequence hole、雙 Codex 分工、
 > 同步測試時序、Git 回傳格式與安全停止條件。下面的長篇「目前狀態」包含歷史版本，
 > 不可取代這份專用交接。
@@ -48,7 +48,7 @@ Offboard 飛行；下一個高資訊量工作是 Agent 端 sequence/send/ACKNACK
 > 原路徑 symlink，詳見 [`storage cleanup`](evidence/20260817_storage_cleanup/README.md)。
 > 後續採 SD-first 儲存政策：Codex home/update/session、Git clone、build、log、cache、download
 > 與 temporary output 都移到 `P450_DATA`；離線遷移與失效保護見
-> [`SD_STORAGE_POLICY_20260817.md`](SD_STORAGE_POLICY_20260817.md)。
+> [`SD_STORAGE_POLICY_20260817.md`](docs/runbooks/SD_STORAGE_POLICY_20260817.md)。
 
 ## 目前狀態
 
@@ -124,7 +124,7 @@ Agent 測試沒有 session close/recreate，停用 `UXRCE_DDS_SYNCT` 也沒有�
 非控制 status 已到達 Agent 仍無效，20 Hz 會使 PX4 輸出停止直到 Agent 重啟。
 已依 PX4 官方 `d12a7dd11d` 建立 v1.15.4 接收排空候選韌體；當時 XRCE continuity
 與 Offboard 在該歷史測試點均為 FAIL。詳見
-[`P450_PX4_V1154_XRCE_TEST_2026-08-04.md`](P450_PX4_V1154_XRCE_TEST_2026-08-04.md)。
+[`P450_PX4_V1154_XRCE_TEST_2026-08-04.md`](docs/reports/2026-08-04/P450_PX4_V1154_XRCE_TEST_2026-08-04.md)。
 
 2026-08-05 已刷入上述 `996b1df7a1` 候選版。保留 `UXRCE_DDS_SYNCT=0` 的 60 秒
 純接收仍有 1005.408 ms 最大 gap、22 次超過 500 ms、7 次超過 1 秒；Agent PID
@@ -137,7 +137,7 @@ session；v1.18 development 的官方 `3169dc6` 才重新加入 inbound burst dr
 降低 poll latency 並改善 output buffer。現有 v1.15.4 `d12a7dd` 候選版可作最小
 A/B，但不等於新版完整修正。原因分級、FTDI transport 隔離、候選韌體測試順序與
 NX CLI 停止條件見
-[`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
+[`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](docs/reports/2026-08-05/P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
 
 2026-08-05 已獲機主授權建立 Phase 4 第二代候選版。以官方 v1.15.4 為單一基底，
 回移植 `3169dc6` 的 serial 共用接收排空／排程修改；clean build `1233/1233` 成功，
@@ -146,7 +146,7 @@ NX CLI 停止條件見
 [`firmware/p450-pixhawk6c-v1.15.4-xrce-full-drain-3f118ef593.px4`](firmware/p450-pixhawk6c-v1.15.4-xrce-full-drain-3f118ef593.px4)，
 目前尚未刷入或實機驗證，不可稱為修復完成。
 
-同日無槳輸入方向測試仍未通過：三段 RC 模式已確認為 STAB／ALTCTL／POSCTL，但移除發射機電池後飛控沒有偵測 RC loss；NX 的 `VehicleCommand` 可切換至 ALTCTL，外部 ARM 則未被接受。Offboard 零推力心跳在 NX 本地、DDS Agent 與 UART 發送端均連續，飛控端卻間歇回報 `offboard_control_signal_lost=true`。2026-08-04 已確認 `COM_OF_LOSS_T=1.0 s`，不是 timeout 過短；PX4 uORB 內最新 heartbeat 曾落後約 0.724 秒，較符合飛控端 XRCE 收件未及時排空。所有實體馬達步驟都被 watchdog 在解鎖前中止，馬達全程未轉；完整數據見 [`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`](P450_POSTFLASH_XRCE_TEST_2026-08-03.md)。
+同日無槳輸入方向測試仍未通過：三段 RC 模式已確認為 STAB／ALTCTL／POSCTL，但移除發射機電池後飛控沒有偵測 RC loss；NX 的 `VehicleCommand` 可切換至 ALTCTL，外部 ARM 則未被接受。Offboard 零推力心跳在 NX 本地、DDS Agent 與 UART 發送端均連續，飛控端卻間歇回報 `offboard_control_signal_lost=true`。2026-08-04 已確認 `COM_OF_LOSS_T=1.0 s`，不是 timeout 過短；PX4 uORB 內最新 heartbeat 曾落後約 0.724 秒，較符合飛控端 XRCE 收件未及時排空。所有實體馬達步驟都被 watchdog 在解鎖前中止，馬達全程未轉；完整數據見 [`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`](docs/reports/2026-08-03/P450_POSTFLASH_XRCE_TEST_2026-08-03.md)。
 
 Git repository 內也保存一份可下載副本：
 [`firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`](firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4)。
@@ -160,9 +160,9 @@ XRCE 雙向關卡仍為 FAIL。RC loss、GPS fix、水平定位／速度、航�
 Offboard 控制流程也必須分別排除，不得概括為雙向控制已通過。
 
 最新 XRCE 原因分析與下一步指引：
-[`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
+[`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](docs/reports/2026-08-05/P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
 供簡報與答辯使用的完整前因後果工程時間線：
-[`P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`](P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md)。
+[`P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`](docs/reports/2026-08-05/P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md)。
 不要重刷系統或直接進行飛行測試。
 
 ## 本週目標（2026-07-23）
@@ -173,20 +173,20 @@ Offboard 控制流程也必須分別排除，不得概括為雙向控制已通�
 
 ## 閱讀順序
 
-1. `P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md`
-2. `P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md`
+1. `docs/runbooks/P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md`
+2. `docs/runbooks/P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md`
 3. `evidence/20260813_first_principles_offboard_transport/SUMMARY.md`
 4. `evidence/20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md`
 5. `evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md`
 6. `evidence/20260812_outdoor_gps_offboard_ground/SUMMARY.md`
-7. `P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
-8. `P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
-9. `P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
-10. `P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
-11. `P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
-12. `P450_PROGRESS_2026-07-24_NEXT.md`
-13. `JETSON_HANDOFF_MASTER.md`
-14. `JETSON_HANDOFF_COMMANDS.md`
+7. `docs/reports/2026-08-10/P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
+8. `docs/reports/2026-08-10/P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
+9. `docs/reports/2026-08-05/P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
+10. `docs/reports/2026-08-05/P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
+11. `docs/reports/2026-08-04/P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
+12. `docs/reports/2026-07-24/P450_PROGRESS_2026-07-24_NEXT.md`
+13. `docs/history/JETSON_HANDOFF_MASTER.md`
+14. `docs/operations/JETSON_HANDOFF_COMMANDS.md`
 
 ## 注意
 

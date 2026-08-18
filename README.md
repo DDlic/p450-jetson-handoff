@@ -2,6 +2,11 @@
 
 本 repository 保存 P450 Jetson Xavier NX 的系統重建、刷寫與後續 ROS/PX4 整合交接文件。
 
+倉庫導覽、文件權威層級與後續分類位置請先看
+[`docs/INDEX.md`](docs/INDEX.md)；完整技術拓撲與可驗證範圍見
+[`docs/architecture/REPOSITORY_MAP.md`](docs/architecture/REPOSITORY_MAP.md)。整理工作只分類或
+以 Git rename 搬移既有檔案，不刪除實驗證據或歷史交接。
+
 ## 2026-08-17 當前協作入口
 
 接近交付期的「1 m 起飛／前進 5 m／Land」最小 PoC 決策、`not landed` 根因、601.548 ms

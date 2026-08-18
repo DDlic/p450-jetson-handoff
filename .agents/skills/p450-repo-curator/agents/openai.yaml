@@ -1,0 +1,4 @@
+interface:
+  display_name: "P450 Repository Curator"
+  short_description: "Safely classify P450 docs and preserve evidence history"
+  default_prompt: "Use $p450-repo-curator to audit and organize this P450 repository without deleting existing files."

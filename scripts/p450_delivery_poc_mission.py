@@ -62,6 +62,28 @@ PX4_CUSTOM_MAIN_MODE_OFFBOARD = 6.0
 GROUND_CONFIRMATION = "PROPS_REMOVED_KILL_READY"
 FLIGHT_CONFIRMATION = "PROPS_INSTALLED_AREA_CLEAR_KILL_READY"
 
+FAILSAFE_FLAG_NAMES = (
+    "angular_velocity_invalid",
+    "attitude_invalid",
+    "local_altitude_invalid",
+    "local_position_invalid",
+    "local_velocity_invalid",
+    "global_position_invalid",
+    "home_position_invalid",
+    "manual_control_signal_lost",
+    "gcs_connection_lost",
+    "battery_low_remaining_time",
+    "battery_unhealthy",
+    "primary_geofence_breached",
+    "wind_limit_exceeded",
+    "flight_time_limit_exceeded",
+    "local_position_accuracy_low",
+    "fd_critical_failure",
+    "fd_esc_arming_failure",
+    "fd_imbalanced_prop",
+    "fd_motor_failure",
+)
+
 
 def route_from_heading(x0, y0, z0, heading, height, forward):
     """Return takeoff and forward targets in PX4's local NED frame."""
@@ -381,27 +403,7 @@ class DeliveryMission(Node):
         if self.land is not None and not self.land.landed:
             reasons.append("optional land detector does not report landed")
         flags = self.failsafe_flags
-        for name in (
-            "angular_velocity_invalid",
-            "attitude_invalid",
-            "local_altitude_invalid",
-            "local_position_invalid",
-            "local_velocity_invalid",
-            "global_position_invalid",
-            "home_position_invalid",
-            "manual_control_signal_lost",
-            "gcs_connection_lost",
-            "battery_low_remaining_time",
-            "battery_unhealthy",
-            "primary_geofence_breached",
-            "wind_limit_exceeded",
-            "flight_time_limit_exceeded",
-            "local_position_accuracy_low",
-            "fd_critical_failure",
-            "fd_esc_arming_failure",
-            "fd_imbalanced_prop",
-            "fd_motor_failure",
-        ):
+        for name in FAILSAFE_FLAG_NAMES:
             if getattr(flags, name):
                 reasons.append(f"failsafe flag {name}=true")
         if flags.battery_warning != 0:
@@ -562,25 +564,7 @@ class DeliveryMission(Node):
             self.abort("FailsafeFlags stale for more than 2 s")
             return
         flags = self.failsafe_flags
-        for name in (
-            "angular_velocity_invalid",
-            "attitude_invalid",
-            "local_altitude_invalid",
-            "local_position_invalid",
-            "local_velocity_invalid",
-            "global_position_invalid",
-            "home_position_invalid",
-            "manual_control_signal_lost",
-            "gcs_connection_lost",
-            "battery_low_remaining_time",
-            "battery_unhealthy",
-            "primary_geofence_breached",
-            "local_position_accuracy_low",
-            "fd_critical_failure",
-            "fd_esc_arming_failure",
-            "fd_imbalanced_prop",
-            "fd_motor_failure",
-        ):
+        for name in FAILSAFE_FLAG_NAMES:
             if getattr(flags, name):
                 self.abort(f"failsafe flag {name}=true")
                 return
@@ -638,7 +622,8 @@ class DeliveryMission(Node):
             )
             return
         if self.battery is not None and (
-            self.battery.warning >= BatteryStatus.BATTERY_WARNING_CRITICAL
+            not self.battery.connected
+            or self.battery.warning >= BatteryStatus.BATTERY_WARNING_CRITICAL
             or self.battery.faults != 0
             or self.battery.is_powering_off
         ):

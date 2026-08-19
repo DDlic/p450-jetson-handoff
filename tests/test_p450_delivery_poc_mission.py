@@ -70,5 +70,15 @@ class ArgumentGateTests(unittest.TestCase):
         self.assertIn(MISSION.FLIGHT_CONFIRMATION, error)
 
 
+class RuntimeSafetyCoverageTests(unittest.TestCase):
+    def test_runtime_checks_wind_and_flight_time_limits(self):
+        self.assertIn("wind_limit_exceeded", MISSION.FAILSAFE_FLAG_NAMES)
+        self.assertIn("flight_time_limit_exceeded", MISSION.FAILSAFE_FLAG_NAMES)
+
+    def test_runtime_checks_both_gcs_and_manual_control_loss(self):
+        self.assertIn("gcs_connection_lost", MISSION.FAILSAFE_FLAG_NAMES)
+        self.assertIn("manual_control_signal_lost", MISSION.FAILSAFE_FLAG_NAMES)
+
+
 if __name__ == "__main__":
     unittest.main()

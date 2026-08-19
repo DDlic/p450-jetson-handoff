@@ -41,7 +41,7 @@
 cd /media/p450/P450_DATA/src/p450-jetson-handoff
 git branch --show-current
 git log -1 --oneline
-git merge-base --is-ancestor e7da58c HEAD && echo MISSION_COMMIT_PRESENT
+git merge-base --is-ancestor bca8d08 HEAD && echo MISSION_COMMIT_PRESENT
 systemctl show p450-micro-xrce-agent.service -p ActiveState -p MainPID -p NRestarts
 fuser -v /dev/ttyTHS1
 systemctl --user is-active sunshine.service

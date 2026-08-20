@@ -78,6 +78,30 @@ listener home_position 1
 開始任何控制前必須同時成立：PX4 `c7a3947840`、XRCE connected／Reliable、Standby、
 disarmed、非 failsafe、GPS fix／Home／local position／heading 有效、RC 未 lost、電池正常。
 
+### C1. Offboard-loss 策略 readback／接受（有槳 Gate 前必填）
+
+不得假設 NX heartbeat 中斷會自動降落。2026-08-19 的已知 readback 是
+`COM_OF_LOSS_T=1.0`、`COM_OBL_RC_ACT=0`（Position）；當天仍須重讀並填寫：
+
+```text
+COM_OF_LOSS_T 實際值：________________
+COM_OBL_RC_ACT 實際值：_______________
+
+本場只可勾選一項：
+[ ] 保持 COM_OBL_RC_ACT=0（Position），操作者接受 NX 失聯後由 RC mode switch 接管；
+    不把此策略描述成自動 Land。
+[ ] 機主另行授權改為 COM_OBL_RC_ACT=4（Land）；已保存舊值，且無槳失聯 A/B PASS。
+
+RC link 正常：PASS / FAIL
+RC mode switch 實際切換驗證：PASS / FAIL
+Kill switch 實際驗證（依現場安全程序）：PASS / FAIL
+殘餘風險已由機主接受：YES / NO
+操作者／時間：________________________
+```
+
+任一欄空白、兩項皆勾、RC 驗證 FAIL，或 readback 與勾選策略不一致，Gate F1/F2 為
+`NO-GO`。Codex 不自行改 PX4 參數；任何變更必須先取得機主明確授權並完成無槳 A/B。
+
 ## D. Gate R：125 秒 Reliable heartbeat-only
 
 槳葉保持拆除。先在 QGC 執行：
@@ -100,7 +124,7 @@ cd /media/p450/P450_DATA/src/p450-jetson-handoff
 source /opt/ros/foxy/setup.bash
 source /home/p450/p450_ros2_ws/install/setup.bash
 export ROS_DOMAIN_ID=0 ROS_LOCALHOST_ONLY=0
-systemd-inhibit --what=sleep --mode=block --who=P450-Outdoor-Reliable --why='125 s Reliable delivery gate' python3 scripts/p450_offboard_heartbeat_probe.py --duration 125 --rate 10 --reliability reliable --csv /media/p450/P450_DATA/builds/NX-user-storage/rosbags/P450_20260819_OUTDOOR_RELIABLE_125S_A/heartbeat.csv
+systemd-inhibit --what=sleep --mode=block --who=P450-Outdoor-Reliable --why='125 s Reliable delivery gate' python3 scripts/p450_offboard_heartbeat_probe.py --duration 125 --rate 10 --reliability reliable --csv /media/p450/P450_DATA/builds/NX-user-storage/rosbags/P450_20260820_OUTDOOR_RELIABLE_125S_A/heartbeat.csv
 ```
 
 完成後在 QGC 執行：
@@ -121,7 +145,7 @@ cd /media/p450/P450_DATA/src/p450-jetson-handoff
 source /opt/ros/foxy/setup.bash
 source /home/p450/p450_ros2_ws/install/setup.bash
 export ROS_DOMAIN_ID=0 ROS_LOCALHOST_ONLY=0
-python3 scripts/p450_delivery_poc_mission.py --preflight-only --test-id P450_20260819_OUTDOOR_MISSION_PREFLIGHT_A
+python3 scripts/p450_delivery_poc_mission.py --preflight-only --test-id P450_20260820_OUTDOOR_MISSION_PREFLIGHT_A
 ```
 
 必須 exit 0 並顯示 `PREFLIGHT_PASS`；此模式 publishes=0。任何 REFUSED 都不得進 Gate G。
@@ -135,7 +159,7 @@ cd /media/p450/P450_DATA/src/p450-jetson-handoff
 source /opt/ros/foxy/setup.bash
 source /home/p450/p450_ros2_ws/install/setup.bash
 export ROS_DOMAIN_ID=0 ROS_LOCALHOST_ONLY=0
-systemd-inhibit --what=sleep --mode=block --who=P450-Ground-Sequence --why='propeller-free ground sequence' python3 scripts/p450_delivery_poc_mission.py --ground-sequence --test-id P450_20260819_OUTDOOR_GROUND_SEQUENCE_A --allow-armed --operator-confirmation PROPS_REMOVED_KILL_READY --takeoff-height 0.5 --forward-distance 0
+systemd-inhibit --what=sleep --mode=block --who=P450-Ground-Sequence --why='propeller-free ground sequence' python3 scripts/p450_delivery_poc_mission.py --ground-sequence --test-id P450_20260820_OUTDOOR_GROUND_SEQUENCE_A --allow-armed --operator-confirmation PROPS_REMOVED_KILL_READY --takeoff-height 0.5 --forward-distance 0
 ```
 
 PASS 必須包含 Offboard、normal Arm、PX4 `AUTO_LAND`、
@@ -151,7 +175,7 @@ cd /media/p450/P450_DATA/src/p450-jetson-handoff
 source /opt/ros/foxy/setup.bash
 source /home/p450/p450_ros2_ws/install/setup.bash
 export ROS_DOMAIN_ID=0 ROS_LOCALHOST_ONLY=0
-systemd-inhibit --what=sleep --mode=block --who=P450-Flight-05M --why='0.5 m functional gate' python3 scripts/p450_delivery_poc_mission.py --flight --test-id P450_20260819_OUTDOOR_FLIGHT_05M_A --allow-armed --operator-confirmation PROPS_INSTALLED_AREA_CLEAR_KILL_READY --takeoff-height 0.5 --forward-distance 0
+systemd-inhibit --what=sleep --mode=block --who=P450-Flight-05M --why='0.5 m functional gate' python3 scripts/p450_delivery_poc_mission.py --flight --test-id P450_20260820_OUTDOOR_FLIGHT_05M_A --allow-armed --operator-confirmation PROPS_INSTALLED_AREA_CLEAR_KILL_READY --takeoff-height 0.5 --forward-distance 0
 ```
 
 ## H. Gate F2：最終 1 m／前進 5 m／Land
@@ -163,7 +187,20 @@ cd /media/p450/P450_DATA/src/p450-jetson-handoff
 source /opt/ros/foxy/setup.bash
 source /home/p450/p450_ros2_ws/install/setup.bash
 export ROS_DOMAIN_ID=0 ROS_LOCALHOST_ONLY=0
-systemd-inhibit --what=sleep --mode=block --who=P450-Flight-Final --why='1 m 5 m delivery PoC' python3 scripts/p450_delivery_poc_mission.py --flight --test-id P450_20260819_OUTDOOR_FLIGHT_1M_5M_A --allow-armed --operator-confirmation PROPS_INSTALLED_AREA_CLEAR_KILL_READY --takeoff-height 1.0 --forward-distance 5.0
+systemd-inhibit --what=sleep --mode=block --who=P450-Flight-Final --why='1 m 5 m delivery PoC' python3 scripts/p450_delivery_poc_mission.py --flight --test-id P450_20260820_OUTDOOR_FLIGHT_1M_5M_A --allow-armed --operator-confirmation PROPS_INSTALLED_AREA_CLEAR_KILL_READY --takeoff-height 1.0 --forward-distance 5.0
 ```
 
 任何 Gate FAIL 都停止，不在同一 TEST_ID 重跑，不跳到後一 Gate。
+
+## I. 全部長時間／戶外測試結束後恢復休眠
+
+只有機主確認不再需要長時間測試後才執行：
+
+```bash
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'suspend'
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 3600
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'suspend'
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 3600
+```
+
+目前戶外測試準備期間保持 `nothing`；不要在 Gate 進行中恢復一小時自動休眠。

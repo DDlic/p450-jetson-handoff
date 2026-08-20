@@ -5,6 +5,7 @@ import importlib.util
 import math
 from pathlib import Path
 from types import SimpleNamespace
+import time
 import unittest
 
 
@@ -78,6 +79,78 @@ class RuntimeSafetyCoverageTests(unittest.TestCase):
     def test_runtime_checks_both_gcs_and_manual_control_loss(self):
         self.assertIn("gcs_connection_lost", MISSION.FAILSAFE_FLAG_NAMES)
         self.assertIn("manual_control_signal_lost", MISSION.FAILSAFE_FLAG_NAMES)
+
+    def test_takeoff_state_timeout_aborts(self):
+        reasons = []
+        mission = SimpleNamespace(
+            state="TAKEOFF",
+            state_entered=time.monotonic() - 16.0,
+            abort=reasons.append,
+        )
+
+        MISSION.DeliveryMission.tick_state(mission)
+
+        self.assertEqual(reasons, ["takeoff timeout"])
+
+    def test_ack_is_paired_by_vehicle_command(self):
+        mission = SimpleNamespace(
+            received_at={},
+            last_ack={},
+            log_event=lambda *_args: None,
+        )
+        ack = SimpleNamespace(
+            command=MISSION.CMD_ARM_DISARM,
+            result=MISSION.ACK_ACCEPTED,
+            result_param1=0,
+            result_param2=0,
+        )
+
+        MISSION.DeliveryMission._ack_cb(mission, ack)
+
+        self.assertEqual(
+            mission.last_ack[MISSION.CMD_ARM_DISARM], MISSION.ACK_ACCEPTED
+        )
+        self.assertNotIn(MISSION.CMD_LAND, mission.last_ack)
+
+    def test_land_ack_enters_wait_landed_branch(self):
+        transitions = []
+        mission = SimpleNamespace(
+            state="REQUEST_LAND",
+            state_entered=time.monotonic(),
+            status=SimpleNamespace(nav_state=-1),
+            last_ack={MISSION.CMD_LAND: MISSION.ACK_ACCEPTED},
+            land=SimpleNamespace(landed=False),
+            land_mode_confirmed=False,
+            transition=lambda state, detail="": transitions.append((state, detail)),
+        )
+
+        MISSION.DeliveryMission.tick_state(mission)
+
+        self.assertTrue(mission.land_mode_confirmed)
+        self.assertEqual(transitions, [("WAIT_LANDED", "")])
+
+    def test_heartbeat_pause_prevents_waypoint_state_advance(self):
+        aborts = []
+        advances = []
+        mission = SimpleNamespace(
+            previous_publish_ns=time.monotonic_ns() - 300_000_000,
+            land_mode_confirmed=False,
+            abort_reason=None,
+            abort=aborts.append,
+            age=lambda _name: 0.0,
+            POSITION_STALE_FREEZE_SECONDS=1.0,
+            tick_state=lambda: advances.append("advanced"),
+        )
+        mission.abort_if_heartbeat_overdue = lambda: (
+            MISSION.DeliveryMission.abort_if_heartbeat_overdue(mission)
+        )
+
+        result = MISSION.DeliveryMission.advance_state_if_safe(mission)
+
+        self.assertFalse(result)
+        self.assertEqual(advances, [])
+        self.assertEqual(len(aborts), 1)
+        self.assertIn("heartbeat gap", aborts[0])
 
 
 if __name__ == "__main__":

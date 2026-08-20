@@ -520,6 +520,29 @@ class DeliveryMission(Node):
             ]
         )
 
+    def abort_if_heartbeat_overdue(self, now_ns=None):
+        """Fail closed before a delayed loop can advance the mission state."""
+        if self.previous_publish_ns is None or self.land_mode_confirmed:
+            return False
+        if self.abort_reason is not None:
+            return False
+        if now_ns is None:
+            now_ns = time.monotonic_ns()
+        gap_ms = (now_ns - self.previous_publish_ns) / 1_000_000.0
+        if gap_ms <= 250.0:
+            return False
+        self.abort(f"local heartbeat gap {gap_ms:.3f} ms exceeded 250 ms")
+        return True
+
+    def advance_state_if_safe(self):
+        """Advance a waypoint only while heartbeat and position data are fresh."""
+        if self.abort_if_heartbeat_overdue():
+            return False
+        if self.age("position") > self.POSITION_STALE_FREEZE_SECONDS:
+            return False
+        self.tick_state()
+        return True
+
     def reached(self, target, horizontal_tolerance, vertical_tolerance, velocity):
         horizontal_error = math.hypot(
             self.position.x - target[0], self.position.y - target[1]
@@ -793,8 +816,7 @@ class DeliveryMission(Node):
                 rclpy.spin_once(self, timeout_sec=0.005)
                 now = time.monotonic()
                 self.safety_check()
-                if self.age("position") <= self.POSITION_STALE_FREEZE_SECONDS:
-                    self.tick_state()
+                self.advance_state_if_safe()
                 if now >= self.next_publish and not self.land_mode_confirmed:
                     self.publish_control()
                     self.next_publish += self.HEARTBEAT_PERIOD

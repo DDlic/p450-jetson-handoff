@@ -1,0 +1,53 @@
+P450 QGC MAVLink Console copy/paste blocks — 2026-08-20
+
+RULE: paste only the block for the current Gate. These are read-only commands.
+Do not run Gate G/F1/F2 until the operator card says the preceding Gate passed.
+
+=== STARTUP BASELINE ===
+ver all
+commander status
+uxrce_dds_client status
+param show COM_OF_LOSS_T
+param show COM_OBL_RC_ACT
+param show COM_DISARM_LAND
+param show MPC_LAND_SPEED
+listener vehicle_status 1
+listener failsafe_flags 1
+listener vehicle_land_detected 1
+listener vehicle_local_position 1
+listener vehicle_gps_position 1
+listener home_position 1
+
+Record before any propeller Gate:
+COM_OF_LOSS_T actual: __________________
+COM_OBL_RC_ACT actual: _________________
+Accepted strategy: Position + verified RC takeover / owner-authorized Land after prop-free A/B
+RC link / mode switch / Kill verified: PASS / FAIL
+Owner accepts residual risk: YES / NO
+
+=== GATE R — BEFORE 125 s RELIABLE PROBE ===
+commander status
+uxrce_dds_client status
+uxrce_dds_client trace reset
+uxrce_dds_client trace
+
+Expected: disarmed, not Offboard, connected, Reliable, count=0, frozen=0.
+
+=== GATE R — AFTER 125 s RELIABLE PROBE ===
+uxrce_dds_client status
+uxrce_dds_client trace
+commander status
+
+=== AFTER EACH HARDWARE GATE ===
+commander status
+uxrce_dds_client status
+uxrce_dds_client trace
+listener vehicle_status 1
+listener failsafe_flags 1
+listener vehicle_land_detected 1
+
+STOP on armed/Offboard/failsafe state mismatch, Offboard loss, Agent reconnect,
+kernel warning/Oops, invalid GPS/Home/heading, nonzero script exit, or any
+unexpected disarm reason. Never use force arm/disarm and do not change PX4
+parameters from this file.
+PATCH

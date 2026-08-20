@@ -100,6 +100,39 @@ def finite(*values):
     return all(math.isfinite(value) for value in values)
 
 
+def position_is_navigation_valid(position):
+    """Return whether position/yaw data is usable before takeoff.
+
+    PX4 v1.14 sets heading_good_for_control from isYawFinalAlignComplete().
+    When magnetometer fusion is active that flag normally remains false on the
+    ground until in-flight magnetic alignment completes, so it must not be a
+    ground arming prerequisite.
+    """
+    return (
+        position.xy_valid
+        and position.z_valid
+        and position.v_xy_valid
+        and position.v_z_valid
+        and position.xy_global
+        and position.z_global
+        and not position.dead_reckoning
+        and finite(
+            position.x,
+            position.y,
+            position.z,
+            position.vx,
+            position.vy,
+            position.vz,
+            position.heading,
+        )
+    )
+
+
+def final_heading_required(mode, state):
+    """Require PX4's final yaw alignment only after an actual flight climb."""
+    return mode == "flight" and state in ("HOLD_AFTER_TAKEOFF", "MOVE_FORWARD")
+
+
 class DeliveryMission(Node):
     HEARTBEAT_HZ = 10.0
     HEARTBEAT_PERIOD = 0.1
@@ -408,17 +441,8 @@ class DeliveryMission(Node):
                 reasons.append(f"failsafe flag {name}=true")
         if flags.battery_warning != 0:
             reasons.append(f"battery_warning={flags.battery_warning}")
-        if not (
-            self.position.xy_valid
-            and self.position.z_valid
-            and self.position.v_xy_valid
-            and self.position.v_z_valid
-            and self.position.xy_global
-            and self.position.z_global
-            and self.position.heading_good_for_control
-            and not self.position.dead_reckoning
-        ):
-            reasons.append("local/global position or heading is not flight-valid")
+        if not position_is_navigation_valid(self.position):
+            reasons.append("local/global position or finite heading is not flight-valid")
         if not finite(
             self.position.x,
             self.position.y,
@@ -618,17 +642,14 @@ class DeliveryMission(Node):
         if self.age("position") > self.POSITION_STALE_ABORT_SECONDS:
             self.abort("VehicleLocalPosition stale for more than 2 s")
             return
-        if not (
-            self.position.xy_valid
-            and self.position.z_valid
-            and self.position.v_xy_valid
-            and self.position.v_z_valid
-            and self.position.xy_global
-            and self.position.z_global
-            and self.position.heading_good_for_control
-            and not self.position.dead_reckoning
+        if not position_is_navigation_valid(self.position):
+            self.abort("position or finite heading validity was lost")
+            return
+        if (
+            final_heading_required(self.args.mode, self.state)
+            and not self.position.heading_good_for_control
         ):
-            self.abort("position or heading validity was lost")
+            self.abort("final in-flight heading alignment did not complete")
             return
         if self.land is not None and self.age("land") > 2.0:
             self.abort("optional VehicleLandDetected became stale")
@@ -798,6 +819,11 @@ class DeliveryMission(Node):
                 self.log_event("PREFLIGHT_REFUSED", reason)
             return 2
         self.capture_route()
+        if not self.position.heading_good_for_control:
+            self.log_event(
+                "PREFLIGHT_HEADING_PENDING",
+                "PX4 final heading alignment is expected after liftoff when using magnetometer fusion",
+            )
         self.log_event(
             "PREFLIGHT_PASS",
             f"offboard_subscriptions={self.offboard_pub.get_subscription_count()} "

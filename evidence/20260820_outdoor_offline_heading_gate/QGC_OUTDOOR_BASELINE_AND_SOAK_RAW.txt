@@ -1,0 +1,387 @@
+nsh: sysinit: fopen failed: No such file or directory
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> commander status
+INFO  [commander] Arm state: Standby
+INFO  [commander] navigation mode: STAB
+INFO  [commander] user intended navigation mode: STAB
+INFO  [commander] in failsafe: no
+commander: cycle: 83721 events, 5983392us elapsed, 71.47us avg, min 23us max 25059us 248.666us rms
+commander: preflight check: 8393 events, 2195440us elapsed, 261.58us avg, min 124us max 25025us 716.593us rms
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 3274 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 1
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 20
+INFO  [uxrce_dds_client] Serial RX pending max: 20 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 0
+INFO  [uxrce_dds_client] Serial framing: state 0, buffered 0 B, message 36/36 B
+INFO  [uxrce_dds_client] Offboard RX: count 0, max gap 0 us, >150/250/500 ms 0/0/0
+INFO  [uxrce_dds_client] Offboard RX stream: reliable
+INFO  [uxrce_dds_client] Reliable RX trace: count 20/96, frozen 0, trigger gap 0 us
+nsh> param show COM_OF_LOSS_T
+Symbols: x = used, + = saved, * = unsaved
+x   COM_OF_LOSS_T [285,490] : 1.0000
+
+ 1093/1813 parameters used.
+nsh> param show COM_OBL_RC_ACT
+Symbols: x = used, + = saved, * = unsaved
+x   COM_OBL_RC_ACT [283,488] : 0
+
+ 1093/1813 parameters used.
+nsh> listener vehicle_status 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 922052383 (0.274144 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 740169383
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 0
+    latest_disarming_reason: 0
+    nav_state_user_intention: 15
+    nav_state: 15
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    gcs_connection_lost: False
+    gcs_connection_lost_counter: 1
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: False
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    avoidance_system_required: False
+    avoidance_system_valid: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: False
+
+nsh> listener failsafe_flags 1
+
+TOPIC: failsafe_flags
+ failsafe_flags
+    timestamp: 922184537 (0.461960 seconds ago)
+    mode_req_angular_velocity: 8311870
+    mode_req_attitude: 8310846
+    mode_req_local_alt: 8261694
+    mode_req_local_position: 8257592
+    mode_req_local_position_relaxed: 4
+    mode_req_global_position: 56
+    mode_req_mission: 8
+    mode_req_offboard_signal: 16384
+    mode_req_home_position: 32
+    mode_req_wind_and_flight_time_compliance: 2621464
+    mode_req_prevent_arming: 3944480
+    mode_req_manual_control: 33799
+    mode_req_other: 0
+    angular_velocity_invalid: False
+    attitude_invalid: False
+    local_altitude_invalid: False
+    local_position_invalid: False
+    local_position_invalid_relaxed: False
+    local_velocity_invalid: False
+    global_position_invalid: False
+    auto_mission_missing: True
+    offboard_control_signal_lost: True
+    home_position_invalid: False
+    manual_control_signal_lost: False
+    gcs_connection_lost: False
+    battery_warning: 0
+    battery_low_remaining_time: False
+    battery_unhealthy: False
+    primary_geofence_breached: False
+    mission_failure: False
+    vtol_fixed_wing_system_failure: False
+    wind_limit_exceeded: False
+    flight_time_limit_exceeded: False
+    local_position_accuracy_low: False
+    fd_critical_failure: False
+    fd_esc_arming_failure: False
+    fd_imbalanced_prop: False
+    fd_motor_failure: False
+
+nsh> listener vehicle_local_position 1
+
+TOPIC: vehicle_local_position
+ vehicle_local_position
+    timestamp: 923129803 (0.002732 seconds ago)
+    timestamp_sample: 923129269 (534 us before timestamp)
+    ref_timestamp: 705678343
+    ref_lat: 24.776076
+    ref_lon: 121.042208
+    x: -14.09263
+    y: 16.03150
+    z: -20.72210
+    delta_xy: [0.00541, -0.00394]
+    delta_z: -21.85773
+    vx: -0.00671
+    vy: -0.04074
+    vz: 0.06284
+    z_deriv: 0.06457
+    delta_vxy: [-0.00883, 0.01830]
+    delta_vz: 0.00046
+    ax: 0.00797
+    ay: 0.01614
+    az: 0.00373
+    heading: 0.90202
+    delta_heading: -0.02688
+    ref_alt: 120.58822
+    dist_bottom: 0.09765
+    eph: 0.40058
+    epv: 0.45486
+    evh: 0.15100
+    evv: 0.11884
+    vxy_max: inf
+    vz_max: inf
+    hagl_min: inf
+    hagl_max: inf
+    xy_valid: True
+    z_valid: True
+    v_xy_valid: True
+    v_z_valid: True
+    xy_reset_counter: 6
+    z_reset_counter: 7
+    vxy_reset_counter: 6
+    vz_reset_counter: 3
+    heading_reset_counter: 3
+    heading_good_for_control: False
+    xy_global: True
+    z_global: True
+    dist_bottom_valid: False
+    dist_bottom_sensor_bitfield: 0
+    dead_reckoning: False
+
+nsh> listener vehicle_gps_position 1
+
+TOPIC: vehicle_gps_position
+ vehicle_gps_position
+    timestamp: 923275342 (0.155435 seconds ago)
+    timestamp_sample: 0
+    time_utc_usec: 1787205175600222
+    device_id: 11010053 (Type: 0xA8, SERIAL:0 (0x00))
+    lat: 247759482
+    lon: 1210423647
+    alt: 140959
+    alt_ellipsoid: 157344
+    s_variance_m_s: 0.33400
+    c_variance_rad: 0.55210
+    eph: 1.26500
+    epv: 3.26200
+    hdop: 0.70000
+    vdop: 1.41000
+    noise_per_ms: 93
+    jamming_indicator: 9
+    vel_m_s: 0.07900
+    vel_n_m_s: 0.01400
+    vel_e_m_s: -0.07800
+    vel_d_m_s: 0.10300
+    cog_rad: 2.28862
+    timestamp_time_relative: 0
+    heading: nan
+    heading_offset: 0.00000
+    heading_accuracy: 0.00000
+    rtcm_injection_rate: 0.00000
+    automatic_gain_control: 468
+    fix_type: 3
+    jamming_state: 0
+    spoofing_state: 1
+    vel_ned_valid: True
+    satellites_used: 15
+    selected_rtcm_instance: 0
+
+nsh> listener home_position 1
+
+TOPIC: home_position
+ home_position
+    timestamp: 920479677 (3.934960 seconds ago)
+    lat: 24.775950
+    lon: 121.042369
+    alt: 141.36105
+    x: -14.00194
+    y: 16.28344
+    z: -20.77284
+    yaw: 0.90208
+    valid_alt: True
+    valid_hpos: True
+    valid_lpos: True
+    manual_home: False
+nsh> uxrce_dds_client trace reset
+INFO  [uxrce_dds_client] reliable input trace reset
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 3320 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 1
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 20
+INFO  [uxrce_dds_client] Serial RX pending max: 20 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 0
+INFO  [uxrce_dds_client] Serial framing: state 0, buffered 0 B, message 36/36 B
+INFO  [uxrce_dds_client] Offboard RX: count 0, max gap 0 us, >150/250/500 ms 0/0/0
+INFO  [uxrce_dds_client] Offboard RX stream: reliable
+INFO  [uxrce_dds_client] Reliable RX trace: count 0/96, frozen 0, trigger gap 0 us
+nsh> uxrce_dds_client trace
+INFO  [uxrce_dds_client] RXTRACE summary,count=0,frozen=0,trigger_gap_us=0
+INFO  [uxrce_dds_client] RXTRACE columns,i,event,t_us,stream,seq,handled_before,handled_after,announced_before,announced_after
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 3183 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 26181
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 1045785
+INFO  [uxrce_dds_client] Serial RX pending max: 255 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 141008
+INFO  [uxrce_dds_client] Serial framing: state 0, buffered 0 B, message 36/36 B
+INFO  [uxrce_dds_client] Offboard RX: count 3042, max gap 742131 us, >150/250/500 ms 640/139/7
+INFO  [uxrce_dds_client] Offboard RX stream: reliable
+INFO  [uxrce_dds_client] Reliable RX trace: count 67/96, frozen 1, trigger gap 335873 us
+INFO  [uxrce_dds_client] Offboard RX last age: 95959341 us
+nsh> uxrce_dds_client trace
+INFO  [uxrce_dds_client] RXTRACE summary,count=67,frozen=1,trigger_gap_us=335873
+INFO  [uxrce_dds_client] RXTRACE columns,i,event,t_us,stream,seq,handled_before,handled_after,announced_before,announced_after
+INFO  [uxrce_dds_client] RXTRACE,0,1,973949736,128,58,57,58,57,58,0,1,59,0x0000,1,0,973949534,973931116
+INFO  [uxrce_dds_client] RXTRACE,1,1,974148542,128,60,58,58,58,60,1,0,59,0x0001,1,0,973949534,973931116
+INFO  [uxrce_dds_client] RXTRACE,2,1,974159401,128,59,58,60,60,60,0,1,61,0x0000,3,0,974159397,974136678
+INFO  [uxrce_dds_client] RXTRACE,3,1,974248551,128,61,60,61,60,61,0,1,62,0x0000,4,0,974248546,974233273
+INFO  [uxrce_dds_client] RXTRACE,4,1,974449305,128,63,61,61,61,63,1,0,62,0x0001,4,0,974248546,974233273
+INFO  [uxrce_dds_client] RXTRACE,5,1,974467089,128,62,61,63,63,63,0,1,64,0x0000,6,0,974467085,974432238
+INFO  [uxrce_dds_client] RXTRACE,6,2,974467695,128,63,63,63,63,63,0,0,64,0x0000,6,0,974467085,974432238
+INFO  [uxrce_dds_client] RXTRACE,7,1,974548579,128,64,63,64,63,64,0,1,65,0x0000,7,0,974548575,974532784
+INFO  [uxrce_dds_client] RXTRACE,8,1,974648606,128,65,64,65,64,65,0,1,66,0x0000,8,0,974648602,974633906
+INFO  [uxrce_dds_client] RXTRACE,9,1,974749732,128,66,65,66,65,66,0,1,67,0x0000,9,0,974749728,974732129
+INFO  [uxrce_dds_client] RXTRACE,10,2,974882208,128,67,66,66,66,67,0,0,67,0x0001,9,0,974749728,974732129
+INFO  [uxrce_dds_client] RXTRACE,11,1,974898606,128,67,66,67,67,67,0,1,68,0x0000,10,0,974898602,974836170
+INFO  [uxrce_dds_client] RXTRACE,12,1,974948531,128,68,67,68,67,68,0,1,69,0x0000,11,0,974948527,974931689
+INFO  [uxrce_dds_client] RXTRACE,13,1,975049534,128,69,68,69,68,69,0,1,70,0x0000,12,0,975049530,975034823
+INFO  [uxrce_dds_client] RXTRACE,14,2,975063644,128,69,69,69,69,69,0,0,70,0x0000,12,0,975049530,975034823
+INFO  [uxrce_dds_client] RXTRACE,15,1,975149575,128,70,69,70,69,70,0,1,71,0x0000,13,0,975149571,975132405
+INFO  [uxrce_dds_client] RXTRACE,16,1,975249602,128,71,70,71,70,71,0,1,72,0x0000,14,0,975249598,975237113
+INFO  [uxrce_dds_client] RXTRACE,17,2,975463381,128,73,71,71,71,73,0,0,72,0x0003,14,0,975249598,975237113
+INFO  [uxrce_dds_client] RXTRACE,18,1,975487474,128,72,71,72,73,73,0,1,73,0x0001,15,0,975487470,975335106
+INFO  [uxrce_dds_client] RXTRACE,19,1,975488124,128,73,72,73,73,73,0,1,74,0x0000,16,0,975488120,975433307
+INFO  [uxrce_dds_client] RXTRACE,20,1,975508619,128,73,73,73,73,73,0,0,74,0x0000,16,0,975488120,975433307
+INFO  [uxrce_dds_client] RXTRACE,21,1,975549563,128,74,73,74,73,74,0,1,75,0x0000,17,0,975549559,975534312
+INFO  [uxrce_dds_client] RXTRACE,22,1,975649645,128,75,74,75,74,75,0,1,76,0x0000,18,0,975649641,975634787
+INFO  [uxrce_dds_client] RXTRACE,23,1,975749547,128,76,75,76,75,76,0,1,77,0x0000,19,0,975749542,975731626
+INFO  [uxrce_dds_client] RXTRACE,24,1,975849952,128,77,76,77,76,77,0,1,78,0x0000,20,0,975849947,975831082
+INFO  [uxrce_dds_client] RXTRACE,25,1,975936831,128,78,77,78,77,78,0,1,79,0x0000,21,0,975936827,975932986
+INFO  [uxrce_dds_client] RXTRACE,26,2,976065390,128,79,78,78,78,79,0,0,79,0x0001,21,0,975936827,975932986
+INFO  [uxrce_dds_client] RXTRACE,27,1,976071497,128,79,78,79,79,79,0,1,80,0x0000,22,0,976071396,976032095
+INFO  [uxrce_dds_client] RXTRACE,28,1,976249526,128,81,79,79,79,81,1,0,80,0x0001,22,0,976071396,976032095
+INFO  [uxrce_dds_client] RXTRACE,29,1,976262567,128,80,79,81,81,81,0,1,82,0x0000,24,0,976262563,976232461
+INFO  [uxrce_dds_client] RXTRACE,30,1,976448530,128,83,81,81,81,83,1,0,82,0x0001,24,0,976262563,976232461
+INFO  [uxrce_dds_client] RXTRACE,31,1,976461391,128,82,81,83,83,83,0,1,84,0x0000,26,0,976461388,976433234
+INFO  [uxrce_dds_client] RXTRACE,32,2,976465409,128,83,83,83,83,83,0,0,84,0x0000,26,0,976461388,976433234
+INFO  [uxrce_dds_client] RXTRACE,33,1,976649905,128,85,83,83,83,85,1,0,84,0x0001,26,0,976461388,976433234
+INFO  [uxrce_dds_client] RXTRACE,34,1,976662391,128,84,83,85,85,85,0,1,86,0x0000,28,0,976662387,976635697
+INFO  [uxrce_dds_client] RXTRACE,35,2,976666376,128,85,85,85,85,85,0,0,86,0x0000,28,0,976662387,976635697
+INFO  [uxrce_dds_client] RXTRACE,36,1,976748730,128,86,85,86,85,86,0,1,87,0x0000,29,0,976748726,976731149
+INFO  [uxrce_dds_client] RXTRACE,37,1,976948770,128,88,86,86,86,88,1,0,87,0x0001,29,0,976748726,976731149
+INFO  [uxrce_dds_client] RXTRACE,38,1,976961394,128,87,86,88,88,88,0,1,89,0x0000,31,0,976961391,976932367
+INFO  [uxrce_dds_client] RXTRACE,39,1,977050286,128,89,88,89,88,89,0,1,90,0x0000,32,0,977050282,977035793
+INFO  [uxrce_dds_client] RXTRACE,40,1,977134390,128,90,89,90,89,90,0,1,91,0x0000,33,0,977134386,977131291
+INFO  [uxrce_dds_client] RXTRACE,41,1,977259176,128,91,90,91,90,91,0,1,92,0x0000,34,0,977259172,977242478
+INFO  [uxrce_dds_client] RXTRACE,42,2,977267387,128,91,91,91,91,91,0,0,92,0x0000,34,0,977259172,977242478
+INFO  [uxrce_dds_client] RXTRACE,43,1,977349535,128,92,91,92,91,92,0,1,93,0x0000,35,0,977349531,977333656
+INFO  [uxrce_dds_client] RXTRACE,44,1,977449531,128,93,92,93,92,93,0,1,94,0x0000,36,0,977449527,977432625
+INFO  [uxrce_dds_client] RXTRACE,45,1,977549599,128,94,93,94,93,94,0,1,95,0x0000,37,0,977549595,977539707
+INFO  [uxrce_dds_client] RXTRACE,46,2,977690945,128,95,94,94,94,95,0,0,95,0x0001,37,0,977549595,977539707
+INFO  [uxrce_dds_client] RXTRACE,47,1,977709386,128,95,94,95,95,95,0,1,96,0x0000,38,0,977709382,977637260
+INFO  [uxrce_dds_client] RXTRACE,48,1,977748858,128,96,95,96,95,96,0,1,97,0x0000,39,0,977748854,977735218
+INFO  [uxrce_dds_client] RXTRACE,49,1,977848766,128,97,96,97,96,97,0,1,98,0x0000,40,0,977848761,977833054
+INFO  [uxrce_dds_client] RXTRACE,50,1,977949855,128,98,97,98,97,98,0,1,99,0x0000,41,0,977949851,977931762
+INFO  [uxrce_dds_client] RXTRACE,51,2,978068875,128,99,98,98,98,99,0,0,99,0x0001,41,0,977949851,977931762
+INFO  [uxrce_dds_client] RXTRACE,52,1,978085032,128,99,98,99,99,99,0,1,100,0x0000,42,0,978085028,978032202
+INFO  [uxrce_dds_client] RXTRACE,53,1,978149146,128,100,99,100,99,100,0,1,101,0x0000,43,0,978149142,978132126
+INFO  [uxrce_dds_client] RXTRACE,54,1,978248663,128,101,100,101,100,101,0,1,102,0x0000,44,0,978248659,978230898
+INFO  [uxrce_dds_client] RXTRACE,55,1,978448529,128,103,101,101,101,103,1,0,102,0x0001,44,0,978248659,978230898
+INFO  [uxrce_dds_client] RXTRACE,56,1,978461846,128,102,101,103,103,103,0,1,104,0x0000,46,0,978461842,978433952
+INFO  [uxrce_dds_client] RXTRACE,57,1,978548538,128,104,103,104,103,104,0,1,105,0x0000,47,0,978548534,978533328
+INFO  [uxrce_dds_client] RXTRACE,58,2,978670427,128,105,104,104,104,105,0,0,105,0x0001,47,0,978548534,978533328
+INFO  [uxrce_dds_client] RXTRACE,59,1,978748661,128,106,104,104,105,106,1,0,105,0x0001,47,0,978548534,978533328
+INFO  [uxrce_dds_client] RXTRACE,60,1,978761542,128,105,104,106,106,106,0,1,107,0x0000,49,0,978761538,978731525
+INFO  [uxrce_dds_client] RXTRACE,61,1,978848711,128,107,106,107,106,107,0,1,108,0x0000,50,0,978848707,978833708
+INFO  [uxrce_dds_client] RXTRACE,62,1,979048682,128,109,107,107,107,109,1,0,108,0x0001,50,0,978848707,978833708
+INFO  [uxrce_dds_client] RXTRACE,63,1,979061574,128,108,107,109,109,109,0,1,110,0x0000,52,0,979061570,979031684
+INFO  [uxrce_dds_client] RXTRACE,64,1,979149519,128,110,109,110,109,110,0,1,111,0x0000,53,0,979149515,979131191
+INFO  [uxrce_dds_client] RXTRACE,65,1,979448529,128,113,110,110,110,113,1,0,111,0x0003,53,0,979149515,979131191
+INFO  [uxrce_dds_client] RXTRACE,66,1,979485393,128,111,110,111,113,113,0,1,112,0x0001,54,335873,979485388,979232908
+nsh> commander status
+INFO  [commander] Arm state: Standby
+INFO  [commander] navigation mode: STAB
+INFO  [commander] user intended navigation mode: STAB
+INFO  [commander] in failsafe: no
+commander: cycle: 125017 events, 8896551us elapsed, 71.16us avg, min 23us max 25059us 212.197us rms
+commander: preflight check: 12525 events, 3304326us elapsed, 263.82us avg, min 124us max 25025us 591.795us rms
+nsh> listener vehicle_status 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 1375934602 (0.343888 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 1324717358
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 0
+    latest_disarming_reason: 0
+    nav_state_user_intention: 15
+    nav_state: 15
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    gcs_connection_lost: False
+    gcs_connection_lost_counter: 1
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: False
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    avoidance_system_required: False
+    avoidance_system_valid: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: True
+
+nsh> commander mode stabilized
+nsh> commander status
+INFO  [commander] Arm state: Standby
+INFO  [commander] navigation mode: STAB
+INFO  [commander] user intended navigation mode: STAB
+INFO  [commander] in failsafe: no
+commander: cycle: 125169 events, 8907023us elapsed, 71.16us avg, min 23us max 25059us 212.092us rms
+commander: preflight check: 12540 events, 3307124us elapsed, 263.73us avg, min 124us max 25025us 591.448us rms
+nsh>

@@ -32,6 +32,28 @@ def arguments(**overrides):
     return SimpleNamespace(**values)
 
 
+def valid_position(**overrides):
+    values = {
+        "xy_valid": True,
+        "z_valid": True,
+        "v_xy_valid": True,
+        "v_z_valid": True,
+        "xy_global": True,
+        "z_global": True,
+        "heading_good_for_control": False,
+        "dead_reckoning": False,
+        "x": 1.0,
+        "y": 2.0,
+        "z": -0.2,
+        "vx": 0.0,
+        "vy": 0.0,
+        "vz": 0.0,
+        "heading": 0.9,
+    }
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
 class RouteTests(unittest.TestCase):
     def test_north_heading_moves_positive_x_and_climbs_negative_z(self):
         takeoff, goal = MISSION.route_from_heading(10.0, 20.0, -0.4, 0.0, 1.0, 5.0)
@@ -72,6 +94,85 @@ class ArgumentGateTests(unittest.TestCase):
 
 
 class RuntimeSafetyCoverageTests(unittest.TestCase):
+    def test_ground_navigation_accepts_finite_yaw_before_final_inflight_alignment(self):
+        self.assertTrue(MISSION.position_is_navigation_valid(valid_position()))
+
+    def test_navigation_still_rejects_dead_reckoning_or_nonfinite_yaw(self):
+        self.assertFalse(
+            MISSION.position_is_navigation_valid(valid_position(dead_reckoning=True))
+        )
+        self.assertFalse(
+            MISSION.position_is_navigation_valid(valid_position(heading=math.nan))
+        )
+
+    def test_final_heading_is_not_required_until_after_flight_takeoff(self):
+        self.assertFalse(
+            MISSION.final_heading_required("ground-sequence", "GROUND_ARMED_HOLD")
+        )
+        self.assertFalse(MISSION.final_heading_required("flight", "TAKEOFF"))
+        self.assertTrue(
+            MISSION.final_heading_required("flight", "HOLD_AFTER_TAKEOFF")
+        )
+        self.assertTrue(MISSION.final_heading_required("flight", "MOVE_FORWARD"))
+
+    def test_preflight_does_not_deadlock_on_px4_inflight_heading_flag(self):
+        flags = SimpleNamespace(
+            **{name: False for name in MISSION.FAILSAFE_FLAG_NAMES},
+            battery_warning=0,
+        )
+        mission = SimpleNamespace(
+            data_ready=lambda: True,
+            status=SimpleNamespace(
+                arming_state=MISSION.DISARMED,
+                nav_state=15,
+                failsafe=False,
+                pre_flight_checks_pass=True,
+            ),
+            control=SimpleNamespace(flag_armed=False),
+            land=SimpleNamespace(landed=True),
+            failsafe_flags=flags,
+            position=valid_position(heading_good_for_control=False),
+            battery=None,
+            endpoints_ready=lambda: True,
+        )
+
+        self.assertEqual(MISSION.DeliveryMission.preflight_reasons(mission), [])
+
+    def test_runtime_allows_pending_final_heading_during_takeoff_only(self):
+        def run_safety(state):
+            aborts = []
+            flags = SimpleNamespace(
+                **{name: False for name in MISSION.FAILSAFE_FLAG_NAMES},
+                battery_warning=0,
+                offboard_control_signal_lost=False,
+            )
+            mission = SimpleNamespace(
+                state=state,
+                args=SimpleNamespace(mode="flight"),
+                age=lambda _name: 0.0,
+                STATUS_STALE_ABORT_SECONDS=2.0,
+                POSITION_STALE_ABORT_SECONDS=2.0,
+                failsafe_flags=flags,
+                status=SimpleNamespace(
+                    failsafe=False,
+                    failure_detector_status=0,
+                    gcs_connection_lost=False,
+                ),
+                position=valid_position(heading_good_for_control=False),
+                land=None,
+                battery=None,
+                endpoints_ready=lambda: True,
+                abort=aborts.append,
+            )
+            MISSION.DeliveryMission.safety_check(mission)
+            return aborts
+
+        self.assertEqual(run_safety("TAKEOFF"), [])
+        self.assertEqual(
+            run_safety("HOLD_AFTER_TAKEOFF"),
+            ["final in-flight heading alignment did not complete"],
+        )
+
     def test_runtime_checks_wind_and_flight_time_limits(self):
         self.assertIn("wind_limit_exceeded", MISSION.FAILSAFE_FLAG_NAMES)
         self.assertIn("flight_time_limit_exceeded", MISSION.FAILSAFE_FLAG_NAMES)

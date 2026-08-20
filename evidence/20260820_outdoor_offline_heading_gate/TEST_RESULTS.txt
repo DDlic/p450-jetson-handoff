@@ -1,0 +1,31 @@
+test_dry_run_defaults_are_allowed (tests.test_p450_delivery_poc_mission.ArgumentGateTests) ... ok
+test_flight_requires_distinct_operator_confirmation (tests.test_p450_delivery_poc_mission.ArgumentGateTests) ... ok
+test_forward_distance_above_delivery_scope_is_refused (tests.test_p450_delivery_poc_mission.ArgumentGateTests) ... ok
+test_ground_sequence_requires_props_removed_confirmation (tests.test_p450_delivery_poc_mission.ArgumentGateTests) ... ok
+test_height_above_delivery_scope_is_refused (tests.test_p450_delivery_poc_mission.ArgumentGateTests) ... ok
+test_east_heading_moves_positive_y (tests.test_p450_delivery_poc_mission.RouteTests) ... ok
+test_north_heading_moves_positive_x_and_climbs_negative_z (tests.test_p450_delivery_poc_mission.RouteTests) ... ok
+test_ack_is_paired_by_vehicle_command (tests.test_p450_delivery_poc_mission.RuntimeSafetyCoverageTests) ... ok
+test_final_heading_is_not_required_until_after_flight_takeoff (tests.test_p450_delivery_poc_mission.RuntimeSafetyCoverageTests) ... ok
+test_ground_navigation_accepts_finite_yaw_before_final_inflight_alignment (tests.test_p450_delivery_poc_mission.RuntimeSafetyCoverageTests) ... ok
+test_heartbeat_pause_prevents_waypoint_state_advance (tests.test_p450_delivery_poc_mission.RuntimeSafetyCoverageTests) ... ok
+test_land_ack_enters_wait_landed_branch (tests.test_p450_delivery_poc_mission.RuntimeSafetyCoverageTests) ... ok
+test_navigation_still_rejects_dead_reckoning_or_nonfinite_yaw (tests.test_p450_delivery_poc_mission.RuntimeSafetyCoverageTests) ... ok
+test_preflight_does_not_deadlock_on_px4_inflight_heading_flag (tests.test_p450_delivery_poc_mission.RuntimeSafetyCoverageTests) ... ok
+test_runtime_allows_pending_final_heading_during_takeoff_only (tests.test_p450_delivery_poc_mission.RuntimeSafetyCoverageTests) ... ok
+test_runtime_checks_both_gcs_and_manual_control_loss (tests.test_p450_delivery_poc_mission.RuntimeSafetyCoverageTests) ... ok
+test_runtime_checks_wind_and_flight_time_limits (tests.test_p450_delivery_poc_mission.RuntimeSafetyCoverageTests) ... ok
+test_takeoff_state_timeout_aborts (tests.test_p450_delivery_poc_mission.RuntimeSafetyCoverageTests) ... ok
+test_default_15_minute_soak_is_valid (tests.test_p450_disarmed_command_soak.ArgumentTests) ... ok
+test_duration_outside_5_to_20_minutes_is_refused (tests.test_p450_disarmed_command_soak.ArgumentTests) ... ok
+test_five_minute_outdoor_soak_is_valid (tests.test_p450_disarmed_command_soak.ArgumentTests) ... ok
+test_non_ten_hz_rate_is_refused (tests.test_p450_disarmed_command_soak.ArgumentTests) ... ok
+test_arm_disarm_is_hard_blocked (tests.test_p450_disarmed_command_soak.CommandAllowlistTests) ... ok
+test_delivery_non_arming_commands_are_allowed (tests.test_p450_disarmed_command_soak.CommandAllowlistTests) ... ok
+test_nav_state_can_confirm_commands_without_ack_bridge (tests.test_p450_disarmed_command_soak.CommandAllowlistTests) ... ok
+test_virtual_phases_follow_takeoff_hold_forward_order (tests.test_p450_disarmed_command_soak.VirtualRouteTests) ... ok
+
+----------------------------------------------------------------------
+Ran 26 tests in 0.006s
+
+OK

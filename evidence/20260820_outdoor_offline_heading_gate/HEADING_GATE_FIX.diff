@@ -1,0 +1,220 @@
+diff --git a/scripts/p450_delivery_poc_mission.py b/scripts/p450_delivery_poc_mission.py
+index 37d153c..433ef9f 100755
+--- a/scripts/p450_delivery_poc_mission.py
++++ b/scripts/p450_delivery_poc_mission.py
+@@ -100,6 +100,39 @@ def finite(*values):
+     return all(math.isfinite(value) for value in values)
+
+
++def position_is_navigation_valid(position):
++    """Return whether position/yaw data is usable before takeoff.
++
++    PX4 v1.14 sets heading_good_for_control from isYawFinalAlignComplete().
++    When magnetometer fusion is active that flag normally remains false on the
++    ground until in-flight magnetic alignment completes, so it must not be a
++    ground arming prerequisite.
++    """
++    return (
++        position.xy_valid
++        and position.z_valid
++        and position.v_xy_valid
++        and position.v_z_valid
++        and position.xy_global
++        and position.z_global
++        and not position.dead_reckoning
++        and finite(
++            position.x,
++            position.y,
++            position.z,
++            position.vx,
++            position.vy,
++            position.vz,
++            position.heading,
++        )
++    )
++
++
++def final_heading_required(mode, state):
++    """Require PX4's final yaw alignment only after an actual flight climb."""
++    return mode == "flight" and state in ("HOLD_AFTER_TAKEOFF", "MOVE_FORWARD")
++
++
+ class DeliveryMission(Node):
+     HEARTBEAT_HZ = 10.0
+     HEARTBEAT_PERIOD = 0.1
+@@ -408,17 +441,8 @@ class DeliveryMission(Node):
+                 reasons.append(f"failsafe flag {name}=true")
+         if flags.battery_warning != 0:
+             reasons.append(f"battery_warning={flags.battery_warning}")
+-        if not (
+-            self.position.xy_valid
+-            and self.position.z_valid
+-            and self.position.v_xy_valid
+-            and self.position.v_z_valid
+-            and self.position.xy_global
+-            and self.position.z_global
+-            and self.position.heading_good_for_control
+-            and not self.position.dead_reckoning
+-        ):
+-            reasons.append("local/global position or heading is not flight-valid")
++        if not position_is_navigation_valid(self.position):
++            reasons.append("local/global position or finite heading is not flight-valid")
+         if not finite(
+             self.position.x,
+             self.position.y,
+@@ -618,17 +642,14 @@ class DeliveryMission(Node):
+         if self.age("position") > self.POSITION_STALE_ABORT_SECONDS:
+             self.abort("VehicleLocalPosition stale for more than 2 s")
+             return
+-        if not (
+-            self.position.xy_valid
+-            and self.position.z_valid
+-            and self.position.v_xy_valid
+-            and self.position.v_z_valid
+-            and self.position.xy_global
+-            and self.position.z_global
+-            and self.position.heading_good_for_control
+-            and not self.position.dead_reckoning
++        if not position_is_navigation_valid(self.position):
++            self.abort("position or finite heading validity was lost")
++            return
++        if (
++            final_heading_required(self.args.mode, self.state)
++            and not self.position.heading_good_for_control
+         ):
+-            self.abort("position or heading validity was lost")
++            self.abort("final in-flight heading alignment did not complete")
+             return
+         if self.land is not None and self.age("land") > 2.0:
+             self.abort("optional VehicleLandDetected became stale")
+@@ -798,6 +819,11 @@ class DeliveryMission(Node):
+                 self.log_event("PREFLIGHT_REFUSED", reason)
+             return 2
+         self.capture_route()
++        if not self.position.heading_good_for_control:
++            self.log_event(
++                "PREFLIGHT_HEADING_PENDING",
++                "PX4 final heading alignment is expected after liftoff when using magnetometer fusion",
++            )
+         self.log_event(
+             "PREFLIGHT_PASS",
+             f"offboard_subscriptions={self.offboard_pub.get_subscription_count()} "
+diff --git a/tests/test_p450_delivery_poc_mission.py b/tests/test_p450_delivery_poc_mission.py
+index 4b7547e..00b2506 100644
+--- a/tests/test_p450_delivery_poc_mission.py
++++ b/tests/test_p450_delivery_poc_mission.py
+@@ -32,6 +32,28 @@ def arguments(**overrides):
+     return SimpleNamespace(**values)
+
+
++def valid_position(**overrides):
++    values = {
++        "xy_valid": True,
++        "z_valid": True,
++        "v_xy_valid": True,
++        "v_z_valid": True,
++        "xy_global": True,
++        "z_global": True,
++        "heading_good_for_control": False,
++        "dead_reckoning": False,
++        "x": 1.0,
++        "y": 2.0,
++        "z": -0.2,
++        "vx": 0.0,
++        "vy": 0.0,
++        "vz": 0.0,
++        "heading": 0.9,
++    }
++    values.update(overrides)
++    return SimpleNamespace(**values)
++
++
+ class RouteTests(unittest.TestCase):
+     def test_north_heading_moves_positive_x_and_climbs_negative_z(self):
+         takeoff, goal = MISSION.route_from_heading(10.0, 20.0, -0.4, 0.0, 1.0, 5.0)
+@@ -72,6 +94,85 @@ class ArgumentGateTests(unittest.TestCase):
+
+
+ class RuntimeSafetyCoverageTests(unittest.TestCase):
++    def test_ground_navigation_accepts_finite_yaw_before_final_inflight_alignment(self):
++        self.assertTrue(MISSION.position_is_navigation_valid(valid_position()))
++
++    def test_navigation_still_rejects_dead_reckoning_or_nonfinite_yaw(self):
++        self.assertFalse(
++            MISSION.position_is_navigation_valid(valid_position(dead_reckoning=True))
++        )
++        self.assertFalse(
++            MISSION.position_is_navigation_valid(valid_position(heading=math.nan))
++        )
++
++    def test_final_heading_is_not_required_until_after_flight_takeoff(self):
++        self.assertFalse(
++            MISSION.final_heading_required("ground-sequence", "GROUND_ARMED_HOLD")
++        )
++        self.assertFalse(MISSION.final_heading_required("flight", "TAKEOFF"))
++        self.assertTrue(
++            MISSION.final_heading_required("flight", "HOLD_AFTER_TAKEOFF")
++        )
++        self.assertTrue(MISSION.final_heading_required("flight", "MOVE_FORWARD"))
++
++    def test_preflight_does_not_deadlock_on_px4_inflight_heading_flag(self):
++        flags = SimpleNamespace(
++            **{name: False for name in MISSION.FAILSAFE_FLAG_NAMES},
++            battery_warning=0,
++        )
++        mission = SimpleNamespace(
++            data_ready=lambda: True,
++            status=SimpleNamespace(
++                arming_state=MISSION.DISARMED,
++                nav_state=15,
++                failsafe=False,
++                pre_flight_checks_pass=True,
++            ),
++            control=SimpleNamespace(flag_armed=False),
++            land=SimpleNamespace(landed=True),
++            failsafe_flags=flags,
++            position=valid_position(heading_good_for_control=False),
++            battery=None,
++            endpoints_ready=lambda: True,
++        )
++
++        self.assertEqual(MISSION.DeliveryMission.preflight_reasons(mission), [])
++
++    def test_runtime_allows_pending_final_heading_during_takeoff_only(self):
++        def run_safety(state):
++            aborts = []
++            flags = SimpleNamespace(
++                **{name: False for name in MISSION.FAILSAFE_FLAG_NAMES},
++                battery_warning=0,
++                offboard_control_signal_lost=False,
++            )
++            mission = SimpleNamespace(
++                state=state,
++                args=SimpleNamespace(mode="flight"),
++                age=lambda _name: 0.0,
++                STATUS_STALE_ABORT_SECONDS=2.0,
++                POSITION_STALE_ABORT_SECONDS=2.0,
++                failsafe_flags=flags,
++                status=SimpleNamespace(
++                    failsafe=False,
++                    failure_detector_status=0,
++                    gcs_connection_lost=False,
++                ),
++                position=valid_position(heading_good_for_control=False),
++                land=None,
++                battery=None,
++                endpoints_ready=lambda: True,
++                abort=aborts.append,
++            )
++            MISSION.DeliveryMission.safety_check(mission)
++            return aborts
++
++        self.assertEqual(run_safety("TAKEOFF"), [])
++        self.assertEqual(
++            run_safety("HOLD_AFTER_TAKEOFF"),
++            ["final in-flight heading alignment did not complete"],
++        )
++
+     def test_runtime_checks_wind_and_flight_time_limits(self):
+         self.assertIn("wind_limit_exceeded", MISSION.FAILSAFE_FLAG_NAMES)
+         self.assertIn("flight_time_limit_exceeded", MISSION.FAILSAFE_FLAG_NAMES)

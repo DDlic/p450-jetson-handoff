@@ -1,5 +1,8 @@
 # P450 戶外離線操作卡（2026-08-19）
 
+> **SUPERSEDED：V3 已取代本卡。不得再用 V2 執行 Gate P/G/F1/F2。**
+> 使用 `P450_OUTDOOR_OFFLINE_OPERATOR_CARD_V3_20260820.md`。
+
 本卡供筆電沒有 Internet、但透過機載基地台使用 QGC TCP 與 Moonlight/Sunshine 操作 NX
 時使用。所有 ROS 2／PX4 控制皆在 NX 本機與 `/dev/ttyTHS1` 上運行，不依賴 Internet。
 

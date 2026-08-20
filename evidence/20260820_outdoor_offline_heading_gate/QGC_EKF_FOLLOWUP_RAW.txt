@@ -1,0 +1,116 @@
+ekf2 status
+INFO  [ekf2] available instances: 2
+INFO  [ekf2] 0: ACC: 4259850, GYRO: 4325386, MAG: 396809, healthy, test ratio: 1.0000000 (0.11435)
+INFO  [ekf2] 1: ACC: 2490378, GYRO: 2490378, MAG: 396809, healthy, test ratio: 1.0000000 (0.00000) *
+
+ekf2:0 EKF dt: 0.0090s, attitude: 1, local position: 0, global position: 0
+ekf2: ECL update: 137368 events, 46662us elapsed, 0.34us avg, min 0us max 110us 1.489us rms
+ekf2: ECL full update: 137371 events, 16821452us elapsed, 122.45us avg, min 82us max 592us 73.531us rms
+ekf2: IMU message missed: 0 events
+ekf2: vehicle_air_data messages missed: 0 events
+ekf2: vehicle_gps_position messages missed: 0 events
+ekf2: vehicle_magnetometer messages missed: 0 events
+
+ekf2:1 EKF dt: 0.0098s, attitude: 1, local position: 0, global position: 0
+ekf2: ECL update: 125084 events, 43829us elapsed, 0.35us avg, min 1us max 376us 2.808us rms
+ekf2: ECL full update: 125089 events, 15808243us elapsed, 126.38us avg, min 82us max 864us 96.725us rms
+ekf2: IMU message missed: 0 events
+ekf2: vehicle_air_data messages missed: 0 events
+ekf2: vehicle_gps_position messages missed: 0 events
+ekf2: vehicle_magnetometer messages missed: 0 events
+nsh> listener estimator_status_flag 1
+Topic estimator_status_flag did not match any known topics
+nsh> listener vehicle_local_position 1
+
+TOPIC: vehicle_local_position
+ vehicle_local_position
+    timestamp: 2963196237 (0.004228 seconds ago)
+    timestamp_sample: 2963195766 (471 us before timestamp)
+    ref_timestamp: 705678343
+    ref_lat: 24.776076
+    ref_lon: 121.042208
+    x: -62.67439
+    y: 150.19624
+    z: -1.77015
+    delta_xy: [0.00000, 0.00000]
+    delta_z: 0.50941
+    vx: -0.00008
+    vy: 0.00116
+    vz: 0.00117
+    z_deriv: 0.00107
+    delta_vxy: [15.16393, -10.70093]
+    delta_vz: 0.00046
+    ax: -0.03782
+    ay: 0.04100
+    az: 0.03011
+    heading: 2.38912
+    delta_heading: -0.00984
+    ref_alt: 120.58822
+    dist_bottom: 0.10190
+    eph: 0.01181
+    epv: 0.27182
+    evh: 0.03720
+    evv: 0.06925
+    vxy_max: inf
+    vz_max: inf
+    hagl_min: inf
+    hagl_max: inf
+    xy_valid: False
+    z_valid: True
+    v_xy_valid: False
+    v_z_valid: True
+    xy_reset_counter: 7
+    z_reset_counter: 17
+    vxy_reset_counter: 7
+    vz_reset_counter: 3
+    heading_reset_counter: 4
+    heading_good_for_control: False
+    xy_global: True
+    z_global: True
+    dist_bottom_valid: False
+    dist_bottom_sensor_bitfield: 0
+    dead_reckoning: True
+
+nsh> listener vehicle_status 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 2972045622 (0.193292 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 2512956358
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 1
+    latest_disarming_reason: 6
+    nav_state_user_intention: 15
+    nav_state: 15
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    gcs_connection_lost: False
+    gcs_connection_lost_counter: 2
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: False
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    avoidance_system_required: False
+    avoidance_system_valid: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: True
+
+nsh>

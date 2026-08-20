@@ -10,7 +10,7 @@ This package preserves the complete NX/QGC evidence available for the 2026-08-20
 - The incorrect assumptions and process deviations discovered after the attempt.
 - The corrected mission implementation, regression tests, and the superseding V3 offline card.
 
-No actual flight occurred in either F1 or F2 attempt.
+No actual flight occurred in either F1 or F2 script attempt. The operator subsequently performed a separate manual GPS-mode flight during the same field session and reported normal flight; that follow-up does not validate the Offboard mission.
 
 The QGC text files preserve all posted commands, fields and values. Trailing spaces and extra blank lines at EOF were normalized for repository hygiene.
 
@@ -88,6 +88,15 @@ Outdoor evidence before the attempts had valid XY/Z position and velocity, valid
 
 The later EKF follow-up showed two healthy EKF instances, a healthy shared magnetometer, and no missed IMU/GPS/magnetometer messages. Its later `xy_valid=false` / `dead_reckoning=true` sample was captured after outdoor positioning was no longer available and is not the state at the rejected attempts.
 
+## Operator follow-up after the rejected attempts
+
+- Propellers were installed during both F1 and F2 command attempts. Both scripts stopped in PRECHECK with publishes=0, so neither script requested Offboard, Arm, motor output or flight.
+- After F1/F2 were rejected, the operator manually armed and flew the aircraft in GPS mode. The operator reported normal flight.
+- The RC, including mode switching and Kill, was reported normal.
+- Moonlight remained connected throughout the 300-second soak, F1/F2 attempts and the later manual flight, with no observed connection instability.
+- This follow-up supports basic airframe, RC/Kill, GPS-mode flight and loaded display-link operation. It does not prove corrected Offboard takeoff, final in-flight heading alignment, autonomous forward motion or autonomous landing.
+- A PX4 ULog and QGC TLog covering the manual flight remain requested for machine-verifiable flight evidence.
+
 Official source references:
 
 - https://github.com/PX4/PX4-Autopilot/blob/v1.14.3/src/modules/ekf2/EKF2.cpp#L1358-L1360
@@ -130,4 +139,5 @@ Verification:
 - `HEADING_GATE_FIX.diff`: pre-commit implementation diff.
 - `TEST_RESULTS.txt`: complete 26-test output.
 - `MISSING_DATA.md`: data that only the operator/QGC laptop can still supply.
+- `OPERATOR_FOLLOWUP_20260820.md`: operator-confirmed propeller, manual-flight, RC/Kill and Moonlight facts.
 - `MANIFEST.sha256`: checksums for the evidence package.

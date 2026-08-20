@@ -9,6 +9,8 @@
 - PX4 3042/3042，max gap 742131 us，未達 `COM_OF_LOSS_T=1.0 s`。
 - 嚴格 250 ms Gate R 仍非 PASS；此殘餘風險不隱藏。
 - F1/F2 的 `_B` 只留下 PRECHECK FAIL，publishes=0，沒有實際飛行。
+- F1/F2 當時已裝槳，但腳本未發布任何命令，沒有要求 Arm 或帶動馬達。
+- 隨後獨立的 RC／GPS mode 手動飛行正常，RC mode switch、Kill 與 Moonlight 連線均正常；這不取代修正版 Offboard Gate G/F1/F2。
 
 ## 本卡使用的 mission artifact
 

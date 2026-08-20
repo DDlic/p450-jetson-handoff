@@ -1,0 +1,19 @@
+Command:
+  source /opt/ros/foxy/setup.bash
+  source /home/p450/p450_ros2_ws/install/setup.bash
+  PYTHONDONTWRITEBYTECODE=1 python3 evidence/20260820_first_principles_mission_review/ADVERSARIAL_REPRO.py
+
+Output:
+baseline_offboard: []
+low_alt_heading_pending_hold: ['final in-flight heading alignment did not complete']
+raw_gcs_lost_no_active_failsafe: ['PX4 reports GCS connection lost']
+active_gcs_failsafe: ['failsafe flag gcs_connection_lost=true']
+rc_takeover_posctl: []
+rc_takeover_then_state_machine_transition: [('REQUEST_LAND', '')]
+land_ack_before_nav_land: land_mode_confirmed=True transitions=[('WAIT_LANDED', '')]
+
+Interpretation:
+- `[]` means current `safety_check()` did not abort.
+- POSCTL/RC takeover is therefore not detected, and the normal timer can still request Land.
+- An accepted Land ACK stops the Offboard heartbeat before AUTO_LAND nav state is observed.
+- The script was imported in memory; no ROS node, publisher, MAVLink command or vehicle action was created.

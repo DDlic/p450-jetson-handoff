@@ -1,0 +1,30 @@
+Date: 2026-08-20
+Branch commit: b7fea742f1726c7584db0cc6a558e58904f6f0d3
+Mission SHA-256: 32c2360cc533507317ee036707916351a3dff783e0ab93354009e1f4bb33b53b
+Soak SHA-256: 663940a4fb7c70c52570e26e4971b4590b490ed3f01f1a5af95e090c77363f3e
+
+Environment:
+  /opt/ros/foxy/setup.bash
+  /home/p450/p450_ros2_ws/install/setup.bash
+  ROS_LOCALHOST_ONLY=1
+  PYTHONDONTWRITEBYTECODE=1
+  ROS_LOG_DIR on /media/p450/P450_DATA
+
+Unit tests:
+  python3 -m unittest -v tests/test_p450_delivery_poc_mission.py tests/test_p450_disarmed_command_soak.py
+  Result: PASS, 26 tests, 0 failures, 0 errors, 0.006 s
+
+Syntax:
+  python3 -m py_compile scripts/p450_delivery_poc_mission.py scripts/p450_disarmed_command_soak.py
+  Result: PASS
+
+Dry-run geometry:
+  python3 scripts/p450_delivery_poc_mission.py --dry-run --takeoff-height 1 --forward-distance 5 --x0 10 --y0 20 --z0 -0.4 --heading 1.5707963267948966
+  Result: PASS
+  NED_START x=10.000 y=20.000 z=-0.400 heading_rad=1.570796
+  NED_TAKEOFF x=10.000 y=20.000 z=-1.400
+  NED_GOAL x=10.000 y=25.000 z=-1.400
+  publishes=0 commands=0
+
+Important limitation:
+Passing tests prove the currently encoded behavior. They do not prove flight readiness. In particular, the suite expects a Land ACK to enter WAIT_LANDED, and has no RC-takeover or estimator-reset coverage. See ADVERSARIAL_RESULTS.txt.

@@ -27,6 +27,7 @@ def arguments(**overrides):
         "y0": 0.0,
         "z0": 0.0,
         "heading": 0.0,
+        "log_root": str(MISSION.DEFAULT_LOG_ROOT),
     }
     values.update(overrides)
     return SimpleNamespace(**values)
@@ -49,6 +50,16 @@ def valid_position(**overrides):
         "vy": 0.0,
         "vz": 0.0,
         "heading": 0.9,
+        "delta_xy": [0.0, 0.0],
+        "xy_reset_counter": 0,
+        "delta_z": 0.0,
+        "z_reset_counter": 0,
+        "delta_vxy": [0.0, 0.0],
+        "vxy_reset_counter": 0,
+        "delta_vz": 0.0,
+        "vz_reset_counter": 0,
+        "delta_heading": 0.0,
+        "heading_reset_counter": 0,
     }
     values.update(overrides)
     return SimpleNamespace(**values)
@@ -92,6 +103,16 @@ class ArgumentGateTests(unittest.TestCase):
         )
         self.assertIn(MISSION.FLIGHT_CONFIRMATION, error)
 
+    def test_active_log_root_must_resolve_below_sd_mount(self):
+        error = MISSION.validate_args(
+            arguments(
+                mode="preflight-only",
+                test_id="P450_PREFLIGHT_TEST",
+                log_root="/home/p450/flight-logs",
+            )
+        )
+        self.assertIn("below the mounted SD", error)
+
 
 class RuntimeSafetyCoverageTests(unittest.TestCase):
     def test_ground_navigation_accepts_finite_yaw_before_final_inflight_alignment(self):
@@ -104,16 +125,6 @@ class RuntimeSafetyCoverageTests(unittest.TestCase):
         self.assertFalse(
             MISSION.position_is_navigation_valid(valid_position(heading=math.nan))
         )
-
-    def test_final_heading_is_not_required_until_after_flight_takeoff(self):
-        self.assertFalse(
-            MISSION.final_heading_required("ground-sequence", "GROUND_ARMED_HOLD")
-        )
-        self.assertFalse(MISSION.final_heading_required("flight", "TAKEOFF"))
-        self.assertTrue(
-            MISSION.final_heading_required("flight", "HOLD_AFTER_TAKEOFF")
-        )
-        self.assertTrue(MISSION.final_heading_required("flight", "MOVE_FORWARD"))
 
     def test_preflight_does_not_deadlock_on_px4_inflight_heading_flag(self):
         flags = SimpleNamespace(
@@ -138,14 +149,16 @@ class RuntimeSafetyCoverageTests(unittest.TestCase):
 
         self.assertEqual(MISSION.DeliveryMission.preflight_reasons(mission), [])
 
-    def test_runtime_allows_pending_final_heading_during_takeoff_only(self):
-        def run_safety(state):
+    def test_runtime_treats_pending_final_heading_as_low_altitude_diagnostic(self):
+        def run_safety(state, raw_gcs_lost=False, active_gcs_lost=False):
             aborts = []
+            relinquished = []
             flags = SimpleNamespace(
                 **{name: False for name in MISSION.FAILSAFE_FLAG_NAMES},
                 battery_warning=0,
                 offboard_control_signal_lost=False,
             )
+            flags.gcs_connection_lost = active_gcs_lost
             mission = SimpleNamespace(
                 state=state,
                 args=SimpleNamespace(mode="flight"),
@@ -154,24 +167,139 @@ class RuntimeSafetyCoverageTests(unittest.TestCase):
                 POSITION_STALE_ABORT_SECONDS=2.0,
                 failsafe_flags=flags,
                 status=SimpleNamespace(
+                    arming_state=MISSION.ARMED,
+                    nav_state=MISSION.NAV_OFFBOARD,
                     failsafe=False,
                     failure_detector_status=0,
-                    gcs_connection_lost=False,
+                    gcs_connection_lost=raw_gcs_lost,
                 ),
+                control=SimpleNamespace(flag_control_offboard_enabled=True),
                 position=valid_position(heading_good_for_control=False),
+                position_reset_abort_reason=None,
                 land=None,
                 battery=None,
                 endpoints_ready=lambda: True,
                 abort=aborts.append,
+                relinquish_control=relinquished.append,
             )
             MISSION.DeliveryMission.safety_check(mission)
-            return aborts
+            return aborts, relinquished
 
-        self.assertEqual(run_safety("TAKEOFF"), [])
-        self.assertEqual(
-            run_safety("HOLD_AFTER_TAKEOFF"),
-            ["final in-flight heading alignment did not complete"],
+        self.assertEqual(run_safety("TAKEOFF"), ([], []))
+        self.assertEqual(run_safety("HOLD_AFTER_TAKEOFF"), ([], []))
+        self.assertEqual(run_safety("MOVE_FORWARD"), ([], []))
+        self.assertEqual(run_safety("MOVE_FORWARD", raw_gcs_lost=True), ([], []))
+        aborts, relinquished = run_safety(
+            "MOVE_FORWARD", active_gcs_lost=True
         )
+        self.assertEqual(aborts, ["failsafe flag gcs_connection_lost=true"])
+        self.assertEqual(relinquished, [])
+
+    def test_posctl_takeover_is_detected_before_later_land_request(self):
+        relinquished = []
+        flags = SimpleNamespace(
+            **{name: False for name in MISSION.FAILSAFE_FLAG_NAMES},
+            battery_warning=0,
+            offboard_control_signal_lost=False,
+        )
+        mission = SimpleNamespace(
+            state="HOLD_AFTER_TAKEOFF",
+            args=SimpleNamespace(mode="flight"),
+            age=lambda _name: 0.0,
+            STATUS_STALE_ABORT_SECONDS=2.0,
+            POSITION_STALE_ABORT_SECONDS=2.0,
+            failsafe_flags=flags,
+            status=SimpleNamespace(
+                arming_state=MISSION.ARMED,
+                nav_state=2,
+                failsafe=False,
+                failure_detector_status=0,
+                gcs_connection_lost=False,
+            ),
+            control=SimpleNamespace(flag_control_offboard_enabled=False),
+            position=valid_position(heading_good_for_control=False),
+            position_reset_abort_reason=None,
+            land=None,
+            battery=None,
+            endpoints_ready=lambda: True,
+            abort=lambda reason: self.fail(f"unexpected Land abort: {reason}"),
+            relinquish_control=relinquished.append,
+        )
+
+        MISSION.DeliveryMission.safety_check(mission)
+
+        self.assertEqual(len(relinquished), 1)
+        self.assertIn("left Offboard", relinquished[0])
+
+    def test_relinquish_stops_targets_and_commands_without_requesting_land(self):
+        events = []
+        transitions = []
+        cleared = []
+        mission = SimpleNamespace(
+            control_relinquished=False,
+            abort_reason=None,
+            target=(1.0, 2.0, -1.0),
+            result=None,
+            clear_command=lambda: cleared.append(True),
+            log_event=lambda event, detail="": events.append((event, detail)),
+            transition=lambda state, detail="": transitions.append((state, detail)),
+        )
+
+        MISSION.DeliveryMission.relinquish_control(mission, "operator selected POSCTL")
+
+        self.assertTrue(mission.control_relinquished)
+        self.assertIsNone(mission.target)
+        self.assertEqual(mission.result, MISSION.RESULT_CONTROL_RELINQUISHED)
+        self.assertEqual(cleared, [True])
+        self.assertEqual(transitions, [("FAILED", "operator selected POSCTL")])
+        self.assertEqual(events[0][0], "CONTROL_RELINQUISHED")
+
+    def test_offboard_control_flag_loss_relinquishes_even_before_nav_update(self):
+        relinquished = []
+        flags = SimpleNamespace(
+            **{name: False for name in MISSION.FAILSAFE_FLAG_NAMES},
+            battery_warning=0,
+            offboard_control_signal_lost=False,
+        )
+        mission = SimpleNamespace(
+            state="TAKEOFF",
+            args=SimpleNamespace(mode="flight"),
+            age=lambda _name: 0.0,
+            STATUS_STALE_ABORT_SECONDS=2.0,
+            POSITION_STALE_ABORT_SECONDS=2.0,
+            failsafe_flags=flags,
+            status=SimpleNamespace(
+                arming_state=MISSION.ARMED,
+                nav_state=MISSION.NAV_OFFBOARD,
+                failsafe=False,
+                failure_detector_status=0,
+                gcs_connection_lost=False,
+            ),
+            control=SimpleNamespace(flag_control_offboard_enabled=False),
+            position=valid_position(),
+            position_reset_abort_reason=None,
+            land=None,
+            battery=None,
+            endpoints_ready=lambda: True,
+            abort=lambda reason: self.fail(f"unexpected Land abort: {reason}"),
+            relinquish_control=relinquished.append,
+        )
+
+        MISSION.DeliveryMission.safety_check(mission)
+
+        self.assertEqual(
+            relinquished,
+            ["PX4 control mode no longer reports Offboard enabled"],
+        )
+
+    def test_relinquished_publisher_returns_without_ros_publication(self):
+        mission = SimpleNamespace(
+            control_relinquished=True,
+            land_mode_confirmed=False,
+            target=(1.0, 2.0, -1.0),
+        )
+
+        self.assertIsNone(MISSION.DeliveryMission.publish_control(mission))
 
     def test_runtime_checks_wind_and_flight_time_limits(self):
         self.assertIn("wind_limit_exceeded", MISSION.FAILSAFE_FLAG_NAMES)
@@ -180,6 +308,20 @@ class RuntimeSafetyCoverageTests(unittest.TestCase):
     def test_runtime_checks_both_gcs_and_manual_control_loss(self):
         self.assertIn("gcs_connection_lost", MISSION.FAILSAFE_FLAG_NAMES)
         self.assertIn("manual_control_signal_lost", MISSION.FAILSAFE_FLAG_NAMES)
+
+    def test_preflight_only_returns_before_any_active_transition(self):
+        events = []
+        mission = SimpleNamespace(
+            args=SimpleNamespace(mode="preflight-only"),
+            run_preflight=lambda: 0,
+            log_event=lambda event, detail="": events.append((event, detail)),
+            transition=lambda *_args: self.fail("active transition must not run"),
+        )
+
+        result = MISSION.DeliveryMission.run(mission)
+
+        self.assertEqual(result, 0)
+        self.assertEqual(events, [("PREFLIGHT_ONLY", "publishes=0 commands=0")])
 
     def test_takeoff_state_timeout_aborts(self):
         reasons = []
@@ -213,15 +355,38 @@ class RuntimeSafetyCoverageTests(unittest.TestCase):
         )
         self.assertNotIn(MISSION.CMD_LAND, mission.last_ack)
 
-    def test_land_ack_enters_wait_landed_branch(self):
+    def test_land_ack_does_not_stop_heartbeat_before_auto_land_nav_state(self):
         transitions = []
         mission = SimpleNamespace(
             state="REQUEST_LAND",
             state_entered=time.monotonic(),
-            status=SimpleNamespace(nav_state=-1),
+            status=SimpleNamespace(nav_state=MISSION.NAV_OFFBOARD),
             last_ack={MISSION.CMD_LAND: MISSION.ACK_ACCEPTED},
             land=SimpleNamespace(landed=False),
             land_mode_confirmed=False,
+            command_deadline=time.monotonic() + 5.0,
+            abort_land_deadline=None,
+            begin_command=lambda *_args: None,
+            send_command_if_due=lambda: None,
+            log_event=lambda *_args: None,
+            transition=lambda state, detail="": transitions.append((state, detail)),
+        )
+
+        MISSION.DeliveryMission.tick_state(mission)
+
+        self.assertFalse(mission.land_mode_confirmed)
+        self.assertEqual(transitions, [])
+
+    def test_auto_land_nav_state_stops_heartbeat_and_enters_wait_landed(self):
+        transitions = []
+        mission = SimpleNamespace(
+            state="REQUEST_LAND",
+            state_entered=time.monotonic(),
+            status=SimpleNamespace(nav_state=MISSION.NAV_LAND),
+            last_ack={},
+            land=SimpleNamespace(landed=False),
+            land_mode_confirmed=False,
+            log_event=lambda *_args: None,
             transition=lambda state, detail="": transitions.append((state, detail)),
         )
 
@@ -229,6 +394,62 @@ class RuntimeSafetyCoverageTests(unittest.TestCase):
 
         self.assertTrue(mission.land_mode_confirmed)
         self.assertEqual(transitions, [("WAIT_LANDED", "")])
+
+    def test_forward_goal_is_refreshed_from_latest_hold_position_and_heading(self):
+        events = []
+        mission = SimpleNamespace(
+            args=SimpleNamespace(forward_distance=5.0),
+            position=valid_position(x=4.0, y=6.0, z=-1.1, heading=math.pi / 2),
+            takeoff=(1.0, 2.0, -1.0),
+            goal=(99.0, 99.0, -1.0),
+            target=None,
+            yaw_target=0.0,
+            log_event=lambda event, detail="": events.append((event, detail)),
+        )
+
+        MISSION.DeliveryMission.refresh_forward_goal(mission)
+
+        self.assertAlmostEqual(mission.goal[0], 4.0)
+        self.assertAlmostEqual(mission.goal[1], 11.0)
+        self.assertAlmostEqual(mission.goal[2], -1.0)
+        self.assertEqual(mission.target, mission.goal)
+        self.assertAlmostEqual(mission.yaw_target, math.pi / 2)
+        self.assertEqual(events[0][0], "ROUTE_REFRESH")
+
+    def test_local_position_reset_shifts_targets_and_material_reset_requests_land(self):
+        events = []
+        mission = SimpleNamespace(
+            reset_counters={"xy": 0, "z": 0, "vxy": 0, "vz": 0, "heading": 0},
+            start=(1.0, 2.0, -0.2, 0.3),
+            takeoff=(1.0, 2.0, -1.2),
+            goal=(6.0, 2.0, -1.2),
+            target=(1.0, 2.0, -1.2),
+            yaw_target=0.3,
+            position_reset_abort_reason=None,
+            XY_RESET_ABORT_METERS=0.25,
+            Z_RESET_ABORT_METERS=0.20,
+            log_event=lambda event, detail="": events.append((event, detail)),
+        )
+        mission.shift_stored_route = lambda dx=0.0, dy=0.0, dz=0.0: (
+            MISSION.DeliveryMission.shift_stored_route(mission, dx, dy, dz)
+        )
+        reset = valid_position(
+            xy_reset_counter=1,
+            delta_xy=[0.30, -0.10],
+            z_reset_counter=1,
+            delta_z=0.05,
+            heading_reset_counter=1,
+            delta_heading=0.02,
+        )
+
+        MISSION.DeliveryMission.handle_position_resets(mission, reset)
+
+        self.assertEqual(mission.target, (1.3, 1.9, -1.15))
+        self.assertAlmostEqual(mission.yaw_target, 0.32)
+        self.assertIn("XY reset", mission.position_reset_abort_reason)
+        self.assertTrue(any(event == "EKF_XY_RESET" for event, _ in events))
+        self.assertTrue(any(event == "EKF_Z_RESET" for event, _ in events))
+        self.assertTrue(any(event == "EKF_HEADING_RESET" for event, _ in events))
 
     def test_heartbeat_pause_prevents_waypoint_state_advance(self):
         aborts = []

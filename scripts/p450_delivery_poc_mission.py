@@ -13,7 +13,6 @@ hands landing to PX4 with VEHICLE_CMD_NAV_LAND.
 import argparse
 import csv
 import math
-import os
 import re
 import time
 from pathlib import Path
@@ -61,6 +60,8 @@ PX4_CUSTOM_MAIN_MODE_OFFBOARD = 6.0
 
 GROUND_CONFIRMATION = "PROPS_REMOVED_KILL_READY"
 FLIGHT_CONFIRMATION = "PROPS_INSTALLED_AREA_CLEAR_KILL_READY"
+MISSION_ARTIFACT_VERSION = "V4"
+RESULT_CONTROL_RELINQUISHED = 20
 
 FAILSAFE_FLAG_NAMES = (
     "angular_velocity_invalid",
@@ -128,9 +129,25 @@ def position_is_navigation_valid(position):
     )
 
 
-def final_heading_required(mode, state):
-    """Require PX4's final yaw alignment only after an actual flight climb."""
-    return mode == "flight" and state in ("HOLD_AFTER_TAKEOFF", "MOVE_FORWARD")
+def path_is_within(path, parent):
+    """Return whether a resolved path is parent itself or one of its children."""
+    try:
+        path.relative_to(parent)
+    except ValueError:
+        return False
+    return True
+
+
+def shifted_point(point, dx=0.0, dy=0.0, dz=0.0):
+    """Shift a stored NED point after PX4 changes its local-frame estimate."""
+    if point is None:
+        return None
+    return (point[0] + dx, point[1] + dy, point[2] + dz)
+
+
+def wrap_pi(angle):
+    """Normalize an angle to PX4's -pi..pi convention."""
+    return (angle + math.pi) % (2.0 * math.pi) - math.pi
 
 
 class DeliveryMission(Node):
@@ -142,6 +159,8 @@ class DeliveryMission(Node):
     STATUS_STALE_ABORT_SECONDS = 2.0
     POSITION_STALE_FREEZE_SECONDS = 1.0
     POSITION_STALE_ABORT_SECONDS = 2.0
+    XY_RESET_ABORT_METERS = 0.25
+    Z_RESET_ABORT_METERS = 0.20
 
     def __init__(self, args, log_dir):
         super().__init__("p450_delivery_poc_mission")
@@ -169,6 +188,10 @@ class DeliveryMission(Node):
         self.target = None
         self.stable_since = None
         self.land_mode_confirmed = False
+        self.control_relinquished = False
+        self.yaw_target = None
+        self.reset_counters = None
+        self.position_reset_abort_reason = None
 
         self.command = None
         self.command_params = None
@@ -273,7 +296,14 @@ class DeliveryMission(Node):
                 "command_subscriptions",
                 "arming_state",
                 "nav_state",
+                "offboard_enabled",
                 "failsafe",
+                "raw_gcs_lost",
+                "active_gcs_lost",
+                "heading_good",
+                "xy_reset_counter",
+                "z_reset_counter",
+                "heading_reset_counter",
                 "x",
                 "y",
                 "z",
@@ -282,7 +312,11 @@ class DeliveryMission(Node):
                 "vz",
             ]
         )
-        self.log_event("START", f"mode={args.mode} test_id={args.test_id}")
+        self.log_event(
+            "START",
+            f"artifact={MISSION_ARTIFACT_VERSION} mode={args.mode} "
+            f"test_id={args.test_id}",
+        )
 
     def _stamp(self, name, message):
         setattr(self, name, message)
@@ -291,20 +325,49 @@ class DeliveryMission(Node):
     def _status_cb(self, message):
         previous_arm = self.status.arming_state if self.status is not None else None
         previous_nav = self.status.nav_state if self.status is not None else None
+        previous_gcs = (
+            self.status.gcs_connection_lost if self.status is not None else None
+        )
         self._stamp("status", message)
         if message.arming_state != previous_arm:
             self.log_event("ARMING_STATE", str(message.arming_state))
         if message.nav_state != previous_nav:
             self.log_event("NAV_STATE", str(message.nav_state))
+        if message.gcs_connection_lost != previous_gcs:
+            self.log_event(
+                "GCS_CONNECTION_DIAGNOSTIC",
+                f"raw_status_lost={int(message.gcs_connection_lost)}",
+            )
 
     def _failsafe_flags_cb(self, message):
         self._stamp("failsafe_flags", message)
 
     def _control_cb(self, message):
+        previous_offboard = (
+            self.control.flag_control_offboard_enabled
+            if self.control is not None
+            else None
+        )
         self._stamp("control", message)
+        if message.flag_control_offboard_enabled != previous_offboard:
+            self.log_event(
+                "OFFBOARD_CONTROL_DIAGNOSTIC",
+                f"enabled={int(message.flag_control_offboard_enabled)}",
+            )
 
     def _position_cb(self, message):
+        previous_heading_good = (
+            self.position.heading_good_for_control
+            if self.position is not None
+            else None
+        )
         self._stamp("position", message)
+        if message.heading_good_for_control != previous_heading_good:
+            self.log_event(
+                "HEADING_GOOD_DIAGNOSTIC",
+                f"value={int(message.heading_good_for_control)}",
+            )
+        self.handle_position_resets(message)
 
     def _land_cb(self, message):
         previous = self.land.landed if self.land is not None else None
@@ -482,13 +545,124 @@ class DeliveryMission(Node):
             self.args.forward_distance,
         )
         self.target = self.start[:3]
+        self.yaw_target = self.start[3]
+        self.reset_counters = {
+            "xy": int(self.position.xy_reset_counter),
+            "z": int(self.position.z_reset_counter),
+            "vxy": int(self.position.vxy_reset_counter),
+            "vz": int(self.position.vz_reset_counter),
+            "heading": int(self.position.heading_reset_counter),
+        }
         self.log_event(
             "ROUTE",
-            f"start={self.start} takeoff={self.takeoff} goal={self.goal}",
+            f"start={self.start} takeoff={self.takeoff} goal={self.goal} "
+            f"reset_counters={self.reset_counters}",
+        )
+
+    def shift_stored_route(self, dx=0.0, dy=0.0, dz=0.0):
+        if self.start is not None:
+            self.start = (
+                self.start[0] + dx,
+                self.start[1] + dy,
+                self.start[2] + dz,
+                self.start[3],
+            )
+        self.takeoff = shifted_point(self.takeoff, dx, dy, dz)
+        self.goal = shifted_point(self.goal, dx, dy, dz)
+        self.target = shifted_point(self.target, dx, dy, dz)
+
+    def handle_position_resets(self, message):
+        """Track PX4 EKF frame resets and preserve stored physical targets."""
+        if self.reset_counters is None:
+            return
+
+        if int(message.xy_reset_counter) != self.reset_counters["xy"]:
+            dx = float(message.delta_xy[0])
+            dy = float(message.delta_xy[1])
+            magnitude = math.hypot(dx, dy) if finite(dx, dy) else math.inf
+            if finite(dx, dy):
+                self.shift_stored_route(dx, dy, 0.0)
+            self.log_event(
+                "EKF_XY_RESET",
+                f"counter={message.xy_reset_counter} dx={dx:.6f} "
+                f"dy={dy:.6f} magnitude={magnitude:.6f}",
+            )
+            self.reset_counters["xy"] = int(message.xy_reset_counter)
+            if (
+                magnitude > self.XY_RESET_ABORT_METERS
+                and self.position_reset_abort_reason is None
+            ):
+                self.position_reset_abort_reason = (
+                    f"material EKF XY reset {magnitude:.3f} m exceeded "
+                    f"{self.XY_RESET_ABORT_METERS:.2f} m"
+                )
+
+        if int(message.z_reset_counter) != self.reset_counters["z"]:
+            dz = float(message.delta_z)
+            magnitude = abs(dz) if finite(dz) else math.inf
+            if finite(dz):
+                self.shift_stored_route(0.0, 0.0, dz)
+            self.log_event(
+                "EKF_Z_RESET",
+                f"counter={message.z_reset_counter} dz={dz:.6f} "
+                f"magnitude={magnitude:.6f}",
+            )
+            self.reset_counters["z"] = int(message.z_reset_counter)
+            if (
+                magnitude > self.Z_RESET_ABORT_METERS
+                and self.position_reset_abort_reason is None
+            ):
+                self.position_reset_abort_reason = (
+                    f"material EKF Z reset {magnitude:.3f} m exceeded "
+                    f"{self.Z_RESET_ABORT_METERS:.2f} m"
+                )
+
+        if int(message.vxy_reset_counter) != self.reset_counters["vxy"]:
+            self.log_event(
+                "EKF_VXY_RESET",
+                f"counter={message.vxy_reset_counter} "
+                f"delta=({message.delta_vxy[0]:.6f},{message.delta_vxy[1]:.6f})",
+            )
+            self.reset_counters["vxy"] = int(message.vxy_reset_counter)
+
+        if int(message.vz_reset_counter) != self.reset_counters["vz"]:
+            self.log_event(
+                "EKF_VZ_RESET",
+                f"counter={message.vz_reset_counter} delta={message.delta_vz:.6f}",
+            )
+            self.reset_counters["vz"] = int(message.vz_reset_counter)
+
+        if int(message.heading_reset_counter) != self.reset_counters["heading"]:
+            delta = float(message.delta_heading)
+            self.log_event(
+                "EKF_HEADING_RESET",
+                f"counter={message.heading_reset_counter} delta_rad={delta:.6f}",
+            )
+            self.reset_counters["heading"] = int(message.heading_reset_counter)
+            if finite(delta) and self.yaw_target is not None:
+                self.yaw_target = wrap_pi(self.yaw_target + delta)
+                if self.start is not None:
+                    self.start = (*self.start[:3], wrap_pi(self.start[3] + delta))
+
+    def refresh_forward_goal(self):
+        """Build the forward leg from the latest post-takeoff pose and yaw."""
+        self.yaw_target = float(self.position.heading)
+        self.goal = (
+            float(self.position.x)
+            + self.args.forward_distance * math.cos(self.yaw_target),
+            float(self.position.y)
+            + self.args.forward_distance * math.sin(self.yaw_target),
+            self.takeoff[2],
+        )
+        self.target = self.goal
+        self.log_event(
+            "ROUTE_REFRESH",
+            f"origin=({self.position.x},{self.position.y},{self.position.z}) "
+            f"heading={self.yaw_target} goal={self.goal}",
         )
 
     def publish_control(self):
-        if self.land_mode_confirmed or self.target is None:
+        if self.control_relinquished or self.land_mode_confirmed or self.target is None:
             return
         now_ns = time.monotonic_ns()
         gap_ms = math.nan
@@ -515,7 +689,7 @@ class DeliveryMission(Node):
         setpoint.velocity = [math.nan, math.nan, math.nan]
         setpoint.acceleration = [math.nan, math.nan, math.nan]
         setpoint.jerk = [math.nan, math.nan, math.nan]
-        setpoint.yaw = self.start[3]
+        setpoint.yaw = self.yaw_target
         setpoint.yawspeed = math.nan
 
         self.offboard_pub.publish(mode)
@@ -534,7 +708,30 @@ class DeliveryMission(Node):
                 self.command_pub.get_subscription_count(),
                 "" if self.status is None else self.status.arming_state,
                 "" if self.status is None else self.status.nav_state,
+                (
+                    ""
+                    if self.control is None
+                    else int(self.control.flag_control_offboard_enabled)
+                ),
                 "" if self.status is None else int(self.status.failsafe),
+                (
+                    ""
+                    if self.status is None
+                    else int(self.status.gcs_connection_lost)
+                ),
+                (
+                    ""
+                    if self.failsafe_flags is None
+                    else int(self.failsafe_flags.gcs_connection_lost)
+                ),
+                (
+                    ""
+                    if position is None
+                    else int(position.heading_good_for_control)
+                ),
+                "" if position is None else position.xy_reset_counter,
+                "" if position is None else position.z_reset_counter,
+                "" if position is None else position.heading_reset_counter,
                 "" if position is None else f"{position.x:.4f}",
                 "" if position is None else f"{position.y:.4f}",
                 "" if position is None else f"{position.z:.4f}",
@@ -589,6 +786,21 @@ class DeliveryMission(Node):
             self.stable_since = now
         return now - self.stable_since >= seconds
 
+    def relinquish_control(self, reason):
+        """Yield to PX4/RC without sending Land or Disarm after mode takeover."""
+        if self.control_relinquished:
+            return
+        self.control_relinquished = True
+        self.abort_reason = reason
+        self.target = None
+        self.clear_command()
+        self.log_event(
+            "CONTROL_RELINQUISHED",
+            f"{reason}; no further Offboard, setpoint, Land, Arm, or Disarm publication",
+        )
+        self.result = RESULT_CONTROL_RELINQUISHED
+        self.transition("FAILED", reason)
+
     def abort(self, reason):
         if self.abort_reason is not None:
             return
@@ -607,6 +819,36 @@ class DeliveryMission(Node):
         if self.age("status") > self.STATUS_STALE_ABORT_SECONDS:
             self.abort("VehicleStatus stale for more than 2 s")
             return
+        if self.age("control") > self.STATUS_STALE_ABORT_SECONDS:
+            self.abort("VehicleControlMode stale for more than 2 s")
+            return
+
+        offboard_owned_states = (
+            "REQUEST_ARM",
+            "GROUND_ARMED_HOLD",
+            "TAKEOFF",
+            "HOLD_AFTER_TAKEOFF",
+            "MOVE_FORWARD",
+        )
+        landing_request_states = ("REQUEST_LAND", "REQUEST_LAND_ABORT")
+        if self.state in offboard_owned_states:
+            if self.status.nav_state != NAV_OFFBOARD:
+                self.relinquish_control(
+                    f"PX4 left Offboard nav_state={self.status.nav_state}"
+                )
+                return
+            if not self.control.flag_control_offboard_enabled:
+                self.relinquish_control(
+                    "PX4 control mode no longer reports Offboard enabled"
+                )
+                return
+        elif self.state in landing_request_states:
+            if self.status.nav_state not in (NAV_OFFBOARD, NAV_LAND):
+                self.relinquish_control(
+                    "PX4/RC selected another mode before AUTO_LAND confirmation "
+                    f"nav_state={self.status.nav_state}"
+                )
+                return
         if self.age("failsafe_flags") > 2.0:
             self.abort("FailsafeFlags stale for more than 2 s")
             return
@@ -618,14 +860,7 @@ class DeliveryMission(Node):
         if flags.battery_warning != 0:
             self.abort(f"battery_warning={flags.battery_warning}")
             return
-        offboard_required_states = (
-            "REQUEST_ARM",
-            "GROUND_ARMED_HOLD",
-            "TAKEOFF",
-            "HOLD_AFTER_TAKEOFF",
-            "MOVE_FORWARD",
-        )
-        if self.state in offboard_required_states and flags.offboard_control_signal_lost:
+        if self.state in offboard_owned_states and flags.offboard_control_signal_lost:
             self.abort("PX4 reports Offboard control signal lost")
             return
         if self.status.failsafe:
@@ -636,20 +871,14 @@ class DeliveryMission(Node):
                 f"failure_detector_status={self.status.failure_detector_status}"
             )
             return
-        if self.status.gcs_connection_lost:
-            self.abort("PX4 reports GCS connection lost")
-            return
         if self.age("position") > self.POSITION_STALE_ABORT_SECONDS:
             self.abort("VehicleLocalPosition stale for more than 2 s")
             return
         if not position_is_navigation_valid(self.position):
             self.abort("position or finite heading validity was lost")
             return
-        if (
-            final_heading_required(self.args.mode, self.state)
-            and not self.position.heading_good_for_control
-        ):
-            self.abort("final in-flight heading alignment did not complete")
+        if self.position_reset_abort_reason is not None:
+            self.abort(self.position_reset_abort_reason)
             return
         if self.land is not None and self.age("land") > 2.0:
             self.abort("optional VehicleLandDetected became stale")
@@ -685,7 +914,10 @@ class DeliveryMission(Node):
                 self.transition("REQUEST_OFFBOARD")
 
         elif self.state == "REQUEST_OFFBOARD":
-            if self.status.nav_state == NAV_OFFBOARD:
+            if (
+                self.status.nav_state == NAV_OFFBOARD
+                and self.control.flag_control_offboard_enabled
+            ):
                 self.transition("REQUEST_ARM")
             else:
                 self.begin_command(
@@ -725,7 +957,7 @@ class DeliveryMission(Node):
         elif self.state == "HOLD_AFTER_TAKEOFF":
             if elapsed >= 2.0:
                 if self.args.forward_distance > 0.0:
-                    self.target = self.goal
+                    self.refresh_forward_goal()
                     self.transition("MOVE_FORWARD")
                 else:
                     self.transition("REQUEST_LAND")
@@ -739,11 +971,13 @@ class DeliveryMission(Node):
                 self.transition("REQUEST_LAND")
 
         elif self.state in ("REQUEST_LAND", "REQUEST_LAND_ABORT"):
-            if self.status.nav_state == NAV_LAND or self.last_ack.get(CMD_LAND) in (
-                ACK_ACCEPTED,
-                ACK_IN_PROGRESS,
-            ):
+            if self.status.nav_state == NAV_LAND:
                 self.land_mode_confirmed = True
+                self.log_event(
+                    "LAND_MODE_CONFIRMED",
+                    f"nav_state={self.status.nav_state} "
+                    f"ack={self.last_ack.get(CMD_LAND)}",
+                )
                 if self.land is None:
                     self.log_event(
                         "LAND_FEEDBACK_FALLBACK",
@@ -834,8 +1068,11 @@ class DeliveryMission(Node):
 
     def run(self):
         result = self.run_preflight()
-        if result != 0 or self.args.mode == "preflight-only":
+        if result != 0:
             return result
+        if self.args.mode == "preflight-only":
+            self.log_event("PREFLIGHT_ONLY", "publishes=0 commands=0")
+            return 0
         self.transition("STREAM_PREROLL")
         try:
             while self.state not in ("COMPLETE", "FAILED"):
@@ -928,6 +1165,12 @@ def validate_args(args):
             return "active/preflight modes require a safe --test-id"
         if not SD_MOUNT.is_mount():
             return f"SD data volume is not mounted at {SD_MOUNT}"
+        resolved_log_root = Path(args.log_root).expanduser().resolve()
+        if not path_is_within(resolved_log_root, SD_MOUNT.resolve()):
+            return (
+                "active log root must resolve below the mounted SD data volume "
+                f"{SD_MOUNT}"
+            )
     if args.mode == "ground-sequence":
         if not args.allow_armed or args.operator_confirmation != GROUND_CONFIRMATION:
             return (

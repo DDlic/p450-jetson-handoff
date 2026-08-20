@@ -1,0 +1,24 @@
+Date: 2026-08-20
+Mission artifact: V4
+Mission SHA-256: 4d42081c1c4e1355bb49b0dcb4c73df6a7816a9872258b1c8e1b35d73746a4ff
+
+RED TEST RESULT AGAINST V3
+  23 mission tests run
+  expected failures/errors: 3 failures, 4 errors
+  defects reproduced: SD containment, heading/raw GCS, RC takeover,
+  control relinquish, Land ACK timing, route refresh, EKF reset handling
+
+FINAL GREEN RESULT
+  python3 -m unittest -v tests/test_p450_delivery_poc_mission.py tests/test_p450_disarmed_command_soak.py
+  PASS: 34 tests, 0 failures, 0 errors, 0.009 s
+
+STATIC/DRY RESULT
+  py_compile: PASS
+  git diff --check: PASS
+  dry-run: PASS, publishes=0 commands=0
+
+LIVE READ-ONLY CHECK
+  p450-micro-xrce-agent.service: active, NRestarts=0
+  DDS endpoint advertised for VehicleStatus
+  VehicleStatus samples received during 6 s rate check: 0
+  Decision: do not manufacture a preflight timeout log; run Gate P_D when PX4 telemetry resumes

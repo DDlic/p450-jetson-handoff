@@ -1,25 +1,25 @@
-# Missing operator/QGC data
+# Remaining operator/QGC data
 
-The operator has now confirmed:
+The following have been supplied and resolved:
 
-- Propellers were installed during F1 and F2. Both NX scripts published zero commands and never armed.
-- After the rejected script attempts, a separate manual arm and GPS-mode flight was normal.
-- RC mode switching and Kill were normal.
-- Moonlight remained connected during the 300-second soak, F1/F2 and the manual flight, with no observed instability.
+- Propeller state during F1/F2.
+- Separate manual arm and normal GPS-mode flight.
+- RC mode switching and Kill status.
+- Moonlight continuity.
+- PX4 ULog for the manual flight: `qgc/log_98_2026-8-20-14-06-02.ulg`, SHA-256 `854e82464f004b555cd7056e395b84901258e2714c759f7d52952b9fcf780893`.
 
-These answers explain the later arm/disarm history and establish an operator-observed manual flight, but they do not replace the corrected Offboard gates.
+No additional historical ULog is required for the present root-cause decision. If later timeout statistics or cross-day estimator comparisons are needed, request only logs from identified flight days rather than the full archive.
 
-## Requested files from the QGC laptop
+## Optional remaining files
 
-1. The PX4 `.ulg` file covering approximately 2026-08-20 13:50-14:30 Asia/Taipei, including the manual GPS-mode flight. This is the most important missing artifact because it can independently verify flight state, estimator status, RC input, mode transitions, failsafes and yaw/magnetometer control flags.
-2. The QGC `.tlog` for the same connection, if recording was enabled.
-3. Any QGC screenshots or video showing the heading indicator versus the vehicle's physical direction outdoors.
+1. The QGC `.tlog` for approximately 2026-08-20 13:50-14:30 Asia/Taipei, if recording was enabled.
+2. Any QGC screenshots or video showing the heading indicator versus the vehicle's physical direction outdoors.
 
 ## Optional field metadata
 
 - Test location description.
 - Approximate wind/weather.
-- Battery identifier and voltage at the start of the attempts.
+- Battery identifier.
 - Whether the aircraft was physically restrained during the two rejected command attempts.
 
 Do not manufacture missing values. Add later evidence under this directory with source, timestamp and SHA-256.

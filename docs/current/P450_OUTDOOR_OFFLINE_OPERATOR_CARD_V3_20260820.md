@@ -1,6 +1,13 @@
 # P450 戶外離線操作卡 V3（2026-08-20 heading 修正版）
 
-狀態：V2 已作廢；V3 為下一次戶外續測唯一操作卡。
+狀態：**V3 已暫停／禁止執行 F1、F2**。今日 ULog 證明本卡仍有兩個 runtime gate 不符合 ≤1 m 離線任務；等待明確授權與 V4 artifact。
+
+## STOP：本卡目前只供歷史查閱
+
+- 不要執行下方 Gate P/G/F1/F2 指令。
+- F1=0.5 m、F2=1.0 m 都低於 PX4 磁場 in-flight realignment 的約 1.5 m 高度條件，`heading_good_for_control` 可能無法在任務高度成立。
+- 今日手動 GPS 飛行中 raw `vehicle_status.gcs_connection_lost=true`，但 PX4 `failsafe=false`、active GCS failsafe flag=false、RC 與 Moonlight 正常；V3 仍會因 raw status 單獨 abort。
+- 飛控腳本尚未變更。只能在 V4 經測試、hash 更新並同步桌面後恢復續測。
 
 ## 已完成，不重跑
 

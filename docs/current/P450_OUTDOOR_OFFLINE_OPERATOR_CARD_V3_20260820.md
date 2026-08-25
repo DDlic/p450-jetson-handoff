@@ -1,6 +1,8 @@
 # P450 戶外離線操作卡 V3（2026-08-20 heading 修正版）
 
-狀態：**V3 已暫停／禁止執行 F1、F2**。今日 ULog 證明本卡仍有兩個 runtime gate 不符合 ≤1 m 離線任務；等待明確授權與 V4 artifact。
+狀態：**V3 已被修正版 V4 取代，禁止執行 P、G、F1、F2**。只使用
+`P450_OUTDOOR_OFFLINE_OPERATOR_CARD_V4_20260820.md`。今日 ULog 證明本卡仍有兩個
+runtime gate 不符合 ≤1 m 離線任務。
 
 ## STOP：本卡目前只供歷史查閱
 
@@ -98,7 +100,8 @@ systemd-inhibit --what=sleep --mode=block --who=P450-Ground-Gate --why='short pr
 echo "GROUND_EXIT=$?"
 ```
 
-GO：normal Arm → 3 秒 hold → PX4 Land → `AUTO_DISARM_LAND(7)` → exit 0。
+歷史 GO 條件更正：normal Arm → 3 秒 hold → PX4 Land →
+`AUTO_DISARM_LAND(6)` → exit 0。reason `7` 是 auto-disarm-preflight，必須判 FAIL。
 
 若 not-landed、無法 auto-disarm、需要 Kill、abort 或非 0：停止，不裝槳。
 

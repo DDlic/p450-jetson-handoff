@@ -442,6 +442,35 @@ class RuntimeSafetyCoverageTests(unittest.TestCase):
         )
         self.assertEqual(events, [])
 
+    def test_px4_v114_auto_disarm_preflight_reason_is_rejected(self):
+        transitions = []
+        events = []
+        mission = SimpleNamespace(
+            state="WAIT_AUTO_DISARM_FALLBACK",
+            state_entered=time.monotonic(),
+            status=SimpleNamespace(
+                arming_state=MISSION.DISARMED,
+                latest_disarming_reason=7,
+            ),
+            control=SimpleNamespace(flag_armed=False),
+            abort_reason=None,
+            result=None,
+            log_event=lambda event, detail="": events.append((event, detail)),
+            transition=lambda state, detail="": transitions.append((state, detail)),
+        )
+
+        MISSION.DeliveryMission.tick_state(mission)
+
+        self.assertEqual(mission.result, 16)
+        self.assertEqual(
+            transitions,
+            [("FAILED", "disarm was not PX4 auto-disarm-land")],
+        )
+        self.assertEqual(
+            events,
+            [("UNEXPECTED_DISARM_REASON", "reason=7 expected=6")],
+        )
+
     def test_forward_goal_is_refreshed_from_latest_hold_position_and_heading(self):
         events = []
         mission = SimpleNamespace(

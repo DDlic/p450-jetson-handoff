@@ -1,7 +1,8 @@
 # P450 戶外離線操作卡（2026-08-19）
 
-> **SUPERSEDED：V3 已取代本卡。不得再用 V2 執行 Gate P/G/F1/F2。**
-> 使用 `P450_OUTDOOR_OFFLINE_OPERATOR_CARD_V3_20260820.md`。
+> **SUPERSEDED：修正版 V4 已取代本卡。不得執行本卡的 Gate P/G/F1/F2。**
+> 只使用 `P450_OUTDOOR_OFFLINE_OPERATOR_CARD_V4_20260820.md`；真正 PX4 v1.14.3
+> auto-disarm-land reason 是 `6`，reason `7` 必須拒絕。
 
 本卡供筆電沒有 Internet、但透過機載基地台使用 QGC TCP 與 Moonlight/Sunshine 操作 NX
 時使用。所有 ROS 2／PX4 控制皆在 NX 本機與 `/dev/ttyTHS1` 上運行，不依賴 Internet。
@@ -166,7 +167,8 @@ systemd-inhibit --what=sleep --mode=block --who=P450-Ground-Sequence --why='prop
 ```
 
 PASS 必須包含 Offboard、normal Arm、PX4 `AUTO_LAND`、
-`latest_disarming_reason=AUTO_DISARM_LAND(7)`，且腳本 exit 0。不得以 Kill／normal Disarm
+`latest_disarming_reason=AUTO_DISARM_LAND(6)`，且腳本 exit 0。reason `7` 是
+auto-disarm-preflight，必須判 FAIL；不得以 Kill／normal Disarm
 作為 PASS。
 
 ## G. Gate F1：有槳 0.5 m 起降

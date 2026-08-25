@@ -1,0 +1,9 @@
+---
+format: 1.0.0
+library_name: gz-sim-gz
+library_version: 7.9.0
+library_path: /usr/lib/ruby/gz/cmdsim7
+commands:
+  - sim: Run and manage the Gazebo Simulator.
+  - gazebo: Deprecated. Alias for sim.
+---

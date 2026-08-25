@@ -1,2 +1,1 @@
-*.px4 binary
-patches/*.patch -whitespace
+evidence/20260825_desktop_humble_sitl/system/*.log -whitespace

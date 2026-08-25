@@ -1,7 +1,8 @@
 # Document inventory and authority map
 
-Inventory date: 2026-08-18 (Asia/Taipei)
+Inventory date: 2026-08-25 (Asia/Taipei)
 Repository baseline: `DDlic/p450-jetson-handoff`, `main`, commit `54ee3449d6e2cbb65a469a55cf50e0637cc45d42`.
+Latest desktop simulation candidate: `codex/ubuntu22-humble-sitl-20260825`, based on `e6f783f7a0132656cbabf2a897b41a2bc705b3ad`.
 
 ## Classification rules
 
@@ -19,6 +20,8 @@ Repository baseline: `DDlic/p450-jetson-handoff`, `main`, commit `54ee3449d6e2cb
 | Current path | Class | Authority/status |
 |---|---|---|
 | `README.md` | Current index | Kept at root; newest top-level warnings |
+| `docs/runbooks/P450_UBUNTU22_HUMBLE_SITL_HANDOFF_20260825.md` | Runbook | Reproduced Ubuntu 22.04/Humble/Gazebo x500 SITL; software-only authority |
+| `evidence/20260825_desktop_humble_sitl/README.md` | Evidence summary | Desktop baseline/failure-injection CSV, console, ULog and checksum map; not physical-flight evidence |
 | `docs/operations/GIT_HANDOFF_SETUP.md` | Operations | Useful Git setup procedure |
 | `docs/operations/JETSON_HANDOFF_COMMANDS.md` | Operations/history | Mixed command reference; dated state must be checked against current runbooks |
 | `docs/history/JETSON_HANDOFF_HISTORY.md` | History | Historical NX rebuild timeline |

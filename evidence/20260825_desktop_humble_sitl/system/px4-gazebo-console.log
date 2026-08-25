@@ -1,0 +1,478 @@
+[0/1] cd /home/wilson/Documents/Codex/2026-08-25/github-plugin-github-openai-curated-remote/work/PX4-Autopilot/build/px4_sitl_default/src/modules/simulation/gz_bridge && /usr/bin/cmake -E env PX4_SIM_MODEL=gz_x500 /home/wilson/Documents/Codex/2026-08-25/github-plugin-github-openai-curated-remote/work/PX4-Autopilot/build/px4_sitl_default/bin/px4
+
+______  __   __    ___ 
+| ___ \ \ \ / /   /   |
+| |_/ /  \ V /   / /| |
+|  __/   /   \  / /_| |
+| |     / /^\ \ \___  |
+\_|     \/   \/     |_/
+
+px4 starting.
+
+INFO  [px4] startup script: /bin/sh etc/init.d-posix/rcS 0
+INFO  [init] found model autostart file as SYS_AUTOSTART=4001
+INFO  [param] selected parameter default file parameters.bson
+INFO  [param] selected parameter backup file parameters_backup.bson
+  SYS_AUTOCONFIG: curr: 0 -> new: 1
+  SYS_AUTOSTART: curr: 0 -> new: 4001
+  CAL_ACC0_ID: curr: 0 -> new: 1310988
+  CAL_GYRO0_ID: curr: 0 -> new: 1310988
+  CAL_ACC1_ID: curr: 0 -> new: 1310996
+  CAL_GYRO1_ID: curr: 0 -> new: 1310996
+  CAL_ACC2_ID: curr: 0 -> new: 1311004
+  CAL_GYRO2_ID: curr: 0 -> new: 1311004
+  CAL_MAG0_ID: curr: 0 -> new: 197388
+  CAL_MAG0_PRIO: curr: -1 -> new: 50
+  CAL_MAG1_ID: curr: 0 -> new: 197644
+  CAL_MAG1_PRIO: curr: -1 -> new: 50
+* SENS_BOARD_X_OFF: curr: 0.0000 -> new: 0.0000
+* SENS_DPRES_OFF: curr: 0.0000 -> new: 0.0010
+INFO  [dataman] data manager file './dataman' size is 7866640 bytes
+INFO  [init] starting gazebo with world: /home/wilson/Documents/Codex/2026-08-25/github-plugin-github-openai-curated-remote/work/PX4-Autopilot/Tools/simulation/gz/worlds/default.sdf
+WARN  [init] PX4_GZ_MODEL_NAME or PX4_GZ_MODEL not set using PX4_SIM_MODEL.
+INFO  [lockstep_scheduler] setting initial absolute time to 8000 us
+INFO  [gz_bridge] world: default, model name: x500_0, simulation model: x500
+INFO  [commander] LED: open /dev/led0 failed (22)
+INFO  [tone_alarm] home set
+INFO  [uxrce_dds_client] synchronized with time offset 1787640916814442us
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/failsafe_flags data writer, topic id: 80
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/position_setpoint_triplet data writer, topic id: 149
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/sensor_combined data writer, topic id: 168
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/timesync_status data writer, topic id: 191
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_control_mode data writer, topic id: 212
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_gps_position data writer, topic id: 215
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_status data writer, topic id: 229
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_local_position data writer, topic id: 219
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_odometry data writer, topic id: 224
+INFO  [mavlink] mode: Normal, data rate: 4000000 B/s on udp port 18570 remote port 14550
+INFO  [tone_alarm] notify negative
+INFO  [mavlink] mode: Onboard, data rate: 4000000 B/s on udp port 14580 remote port 14540
+INFO  [mavlink] mode: Onboard, data rate: 4000 B/s on udp port 14280 remote port 14030
+INFO  [mavlink] mode: Gimbal, data rate: 400000 B/s on udp port 13030 remote port 13280
+INFO  [logger] logger started (mode=all)
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-08-25/06_55_17.ulg	
+INFO  [logger] Opened full log file: ./log/2026-08-25/06_55_17.ulg
+INFO  [mavlink] MAVLink only on localhost (set param MAV_{i}_BROADCAST = 1 to enable network)
+INFO  [mavlink] MAVLink only on localhost (set param MAV_{i}_BROADCAST = 1 to enable network)
+INFO  [px4] Startup script returned successfully
+pxh> INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_attitude data writer, topic id: 206
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_global_position data writer, topic id: 213
+INFO  [commander] [32mReady for takeoff![0m
+[2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander s[2Kpxh> commander st[2Kpxh> commander sta[2Kpxh> commander stat[2Kpxh> commander statu[2Kpxh> commander status
+INFO  [commander] Arm state: Standby
+INFO  [commander] navigation mode: AUTO_LOITER
+INFO  [commander] user intended navigation mode: AUTO_LOITER
+INFO  [commander] in failsafe: no
+commander: cycle: 4111 events, 0us elapsed, 0.00us avg, min 0us max 0us 0.000us rms
+commander: preflight check: 457 events, 0us elapsed, 0.00us avg, min 0us max 0us 0.000us rms
+pxh> [2Kpxh> l[2Kpxh> li[2Kpxh> lis[2Kpxh> list[2Kpxh> liste[2Kpxh> listen[2Kpxh> listene[2Kpxh> listener[2Kpxh> listener [2Kpxh> listener f[2Kpxh> listener fa[2Kpxh> listener fai[2Kpxh> listener fail[2Kpxh> listener fails[2Kpxh> listener failsa[2Kpxh> listener failsaf[2Kpxh> listener failsafe[2Kpxh> listener failsafe_[2Kpxh> listener failsafe_f[2Kpxh> listener failsafe_fl[2Kpxh> listener failsafe_fla[2Kpxh> listener failsafe_flag[2Kpxh> listener failsafe_flags[2Kpxh> listener failsafe_flags [2Kpxh> listener failsafe_flags -[2Kpxh> listener failsafe_flags -n[2Kpxh> listener failsafe_flags -n [2Kpxh> listener failsafe_flags -n 1
+
+TOPIC: failsafe_flags
+ failsafe_flags
+    timestamp: 49500000 (0.424000 seconds ago)
+    mode_req_angular_velocity: 8311870
+    mode_req_attitude: 8310846
+    mode_req_local_alt: 8261694
+    mode_req_local_position: 8257592
+    mode_req_local_position_relaxed: 4
+    mode_req_global_position: 56
+    mode_req_mission: 8
+    mode_req_offboard_signal: 16384
+    mode_req_home_position: 32
+    mode_req_wind_and_flight_time_compliance: 2621464
+    mode_req_prevent_arming: 3944480
+    mode_req_manual_control: 33799
+    mode_req_other: 0
+    angular_velocity_invalid: False
+    attitude_invalid: False
+    local_altitude_invalid: False
+    local_position_invalid: False
+    local_position_invalid_relaxed: False
+    local_velocity_invalid: False
+    global_position_invalid: False
+    auto_mission_missing: True
+    offboard_control_signal_lost: True
+    home_position_invalid: False
+    manual_control_signal_lost: True
+    gcs_connection_lost: True
+    battery_warning: 0
+    battery_low_remaining_time: False
+    battery_unhealthy: False
+    primary_geofence_breached: False
+    mission_failure: False
+    vtol_fixed_wing_system_failure: False
+    wind_limit_exceeded: False
+    flight_time_limit_exceeded: False
+    local_position_accuracy_low: False
+    fd_critical_failure: False
+    fd_esc_arming_failure: False
+    fd_imbalanced_prop: False
+    fd_motor_failure: False
+
+pxh> [2Kpxh> p[2Kpxh> pa[2Kpxh> par[2Kpxh> para[2Kpxh> param[2Kpxh> param [2Kpxh> param s[2Kpxh> param sh[2Kpxh> param sho[2Kpxh> param show[2Kpxh> param show [2Kpxh> param show C[2Kpxh> param show CO[2Kpxh> param show COM[2Kpxh> param show COM_[2Kpxh> param show COM_R[2Kpxh> param show COM_RC[2Kpxh> param show COM_RC_[2Kpxh> param show COM_RC_I[2Kpxh> param show COM_RC_IN[2Kpxh> param show COM_RC_IN_[2Kpxh> param show COM_RC_IN_M[2Kpxh> param show COM_RC_IN_MO[2Kpxh> param show COM_RC_IN_MOD[2Kpxh> param show COM_RC_IN_MODE
+Symbols: x = used, + = saved, * = unsaved
+x   COM_RC_IN_MODE [292,494] : 1
+
+ 946/1718 parameters used.
+pxh> [2Kpxh> p[2Kpxh> pa[2Kpxh> par[2Kpxh> para[2Kpxh> param[2Kpxh> param [2Kpxh> param s[2Kpxh> param sh[2Kpxh> param sho[2Kpxh> param show[2Kpxh> param show [2Kpxh> param show C[2Kpxh> param show CO[2Kpxh> param show COM[2Kpxh> param show COM_[2Kpxh> param show COM_R[2Kpxh> param show COM_RC[2Kpxh> param show COM_RCL[2Kpxh> param show COM_RCL_[2Kpxh> param show COM_RCL_E[2Kpxh> param show COM_RCL_EX[2Kpxh> param show COM_RCL_EXC[2Kpxh> param show COM_RCL_EXCE[2Kpxh> param show COM_RCL_EXCEP[2Kpxh> param show COM_RCL_EXCEPT
+Symbols: x = used, + = saved, * = unsaved
+x   COM_RCL_EXCEPT [290,492] : 0
+
+ 946/1718 parameters used.
+pxh> [2Kpxh> p[2Kpxh> pa[2Kpxh> par[2Kpxh> para[2Kpxh> param[2Kpxh> param [2Kpxh> param s[2Kpxh> param sh[2Kpxh> param sho[2Kpxh> param show[2Kpxh> param show [2Kpxh> param show N[2Kpxh> param show NA[2Kpxh> param show NAV[2Kpxh> param show NAV_[2Kpxh> param show NAV_D[2Kpxh> param show NAV_DL[2Kpxh> param show NAV_DLL[2Kpxh> param show NAV_DLL_[2Kpxh> param show NAV_DLL_A[2Kpxh> param show NAV_DLL_AC[2Kpxh> param show NAV_DLL_ACT
+Symbols: x = used, + = saved, * = unsaved
+x   NAV_DLL_ACT [622,1066] : 0
+
+ 946/1718 parameters used.
+pxh> INFO  [mavlink] partner IP: 127.0.0.1
+[2Kpxh> l[2Kpxh> li[2Kpxh> lis[2Kpxh> list[2Kpxh> liste[2Kpxh> listen[2Kpxh> listene[2Kpxh> listener[2Kpxh> listener [2Kpxh> listener f[2Kpxh> listener fa[2Kpxh> listener fai[2Kpxh> listener fail[2Kpxh> listener fails[2Kpxh> listener failsa[2Kpxh> listener failsaf[2Kpxh> listener failsafe[2Kpxh> listener failsafe_[2Kpxh> listener failsafe_f[2Kpxh> listener failsafe_fl[2Kpxh> listener failsafe_fla[2Kpxh> listener failsafe_flag[2Kpxh> listener failsafe_flags[2Kpxh> listener failsafe_flags [2Kpxh> listener failsafe_flags -[2Kpxh> listener failsafe_flags -n[2Kpxh> listener failsafe_flags -n [2Kpxh> listener failsafe_flags -n 1
+
+TOPIC: failsafe_flags
+ failsafe_flags
+    timestamp: 102060000 (0.252000 seconds ago)
+    mode_req_angular_velocity: 8311870
+    mode_req_attitude: 8310846
+    mode_req_local_alt: 8261694
+    mode_req_local_position: 8257592
+    mode_req_local_position_relaxed: 4
+    mode_req_global_position: 56
+    mode_req_mission: 8
+    mode_req_offboard_signal: 16384
+    mode_req_home_position: 32
+    mode_req_wind_and_flight_time_compliance: 2621464
+    mode_req_prevent_arming: 3944480
+    mode_req_manual_control: 33799
+    mode_req_other: 0
+    angular_velocity_invalid: False
+    attitude_invalid: False
+    local_altitude_invalid: False
+    local_position_invalid: False
+    local_position_invalid_relaxed: False
+    local_velocity_invalid: False
+    global_position_invalid: False
+    auto_mission_missing: True
+    offboard_control_signal_lost: True
+    home_position_invalid: False
+    manual_control_signal_lost: False
+    gcs_connection_lost: False
+    battery_warning: 0
+    battery_low_remaining_time: False
+    battery_unhealthy: False
+    primary_geofence_breached: False
+    mission_failure: False
+    vtol_fixed_wing_system_failure: False
+    wind_limit_exceeded: False
+    flight_time_limit_exceeded: False
+    local_position_accuracy_low: False
+    fd_critical_failure: False
+    fd_esc_arming_failure: False
+    fd_imbalanced_prop: False
+    fd_motor_failure: False
+
+pxh> INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [commander] Takeoff detected	
+INFO  [commander] Landing at current position	
+INFO  [commander] Landing detected	
+INFO  [commander] Disarmed by landing	
+INFO  [tone_alarm] notify neutral
+INFO  [logger] closed logfile, bytes written: 27073883
+[2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander s[2Kpxh> commander st[2Kpxh> commander sta[2Kpxh> commander stat[2Kpxh> commander statu[2Kpxh> commander status
+INFO  [commander] Arm state: Standby
+INFO  [commander] navigation mode: OFFBOARD
+INFO  [commander] user intended navigation mode: OFFBOARD
+INFO  [commander] in failsafe: no
+commander: cycle: 11887 events, 0us elapsed, 0.00us avg, min 0us max 0us 0.000us rms
+commander: preflight check: 1326 events, 0us elapsed, 0.00us avg, min 0us max 0us 0.000us rms
+pxh> [2Kpxh> l[2Kpxh> li[2Kpxh> lis[2Kpxh> list[2Kpxh> liste[2Kpxh> listen[2Kpxh> listene[2Kpxh> listener[2Kpxh> listener [2Kpxh> listener v[2Kpxh> listener ve[2Kpxh> listener veh[2Kpxh> listener vehi[2Kpxh> listener vehic[2Kpxh> listener vehicl[2Kpxh> listener vehicle[2Kpxh> listener vehicle_[2Kpxh> listener vehicle_s[2Kpxh> listener vehicle_st[2Kpxh> listener vehicle_sta[2Kpxh> listener vehicle_stat[2Kpxh> listener vehicle_statu[2Kpxh> listener vehicle_status[2Kpxh> listener vehicle_status [2Kpxh> listener vehicle_status -[2Kpxh> listener vehicle_status -n[2Kpxh> listener vehicle_status -n [2Kpxh> listener vehicle_status -n 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 142812000 (0.428000 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 131724000
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 4
+    latest_disarming_reason: 6
+    nav_state_user_intention: 14
+    nav_state: 14
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    gcs_connection_lost: False
+    gcs_connection_lost_counter: 0
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: False
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    avoidance_system_required: False
+    avoidance_system_valid: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: False
+
+pxh> WARN  [health_and_arming_checks] Preflight: GPS Vertical Pos Drift too high
+WARN  [health_and_arming_checks] Preflight: GPS Vertical Pos Drift too high
+WARN  [health_and_arming_checks] Preflight: GPS Vertical Pos Drift too high
+[2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander m[2Kpxh> commander mo[2Kpxh> commander mod[2Kpxh> commander mode[2Kpxh> commander mode [2Kpxh> commander mode p[2Kpxh> commander mode po[2Kpxh> commander mode pos[2Kpxh> commander mode posc[2Kpxh> commander mode posct[2Kpxh> commander mode posctl
+pxh> [2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander s[2Kpxh> commander st[2Kpxh> commander sta[2Kpxh> commander stat[2Kpxh> commander statu[2Kpxh> commander status
+INFO  [commander] Arm state: Standby
+INFO  [commander] navigation mode: OFFBOARD
+INFO  [commander] user intended navigation mode: OFFBOARD
+INFO  [commander] in failsafe: no
+commander: cycle: 18639 events, 0us elapsed, 0.00us avg, min 0us max 0us 0.000us rms
+commander: preflight check: 2076 events, 0us elapsed, 0.00us avg, min 0us max 0us 0.000us rms
+pxh> [2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander m[2Kpxh> commander mo[2Kpxh> commander mod[2Kpxh> commander mode[2Kpxh> commander mode [2Kpxh> commander mode a[2Kpxh> commander mode au[2Kpxh> commander mode aut[2Kpxh> commander mode auto[2Kpxh> commander mode auto:[2Kpxh> commander mode auto:l[2Kpxh> commander mode auto:lo[2Kpxh> commander mode auto:loi[2Kpxh> commander mode auto:loit[2Kpxh> commander mode auto:loite[2Kpxh> commander mode auto:loiter
+pxh> [2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander s[2Kpxh> commander st[2Kpxh> commander sta[2Kpxh> commander stat[2Kpxh> commander statu[2Kpxh> commander status
+INFO  [commander] Arm state: Standby
+INFO  [commander] navigation mode: POSCTL
+INFO  [commander] user intended navigation mode: POSCTL
+INFO  [commander] in failsafe: no
+commander: cycle: 19223 events, 0us elapsed, 0.00us avg, min 0us max 0us 0.000us rms
+commander: preflight check: 2141 events, 0us elapsed, 0.00us avg, min 0us max 0us 0.000us rms
+pxh> WARN  [health_and_arming_checks] Preflight: GPS Vertical Pos Drift too high
+INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-08-25/06_59_49.ulg	
+INFO  [logger] Opened full log file: ./log/2026-08-25/06_59_49.ulg
+INFO  [commander] Takeoff detected	
+INFO  [commander] Landing at current position	
+INFO  [commander] Landing detected	
+INFO  [commander] Disarmed by landing	
+INFO  [tone_alarm] notify neutral
+INFO  [logger] closed logfile, bytes written: 1658517
+[2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander m[2Kpxh> commander mo[2Kpxh> commander mod[2Kpxh> commander mode[2Kpxh> commander mode [2Kpxh> commander mode a[2Kpxh> commander mode au[2Kpxh> commander mode aut[2Kpxh> commander mode auto[2Kpxh> commander mode auto:[2Kpxh> commander mode auto:l[2Kpxh> commander mode auto:lo[2Kpxh> commander mode auto:loi[2Kpxh> commander mode auto:loit[2Kpxh> commander mode auto:loite[2Kpxh> commander mode auto:loiter
+pxh> INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-08-25/07_00_24.ulg	
+INFO  [logger] Opened full log file: ./log/2026-08-25/07_00_24.ulg
+INFO  [commander] Takeoff detected	
+INFO  [commander] Landing at current position	
+INFO  [commander] Landing detected	
+INFO  [commander] Disarmed by landing	
+INFO  [tone_alarm] notify neutral
+INFO  [logger] closed logfile, bytes written: 4271596
+[2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander m[2Kpxh> commander mo[2Kpxh> commander mod[2Kpxh> commander mode[2Kpxh> commander mode [2Kpxh> commander mode a[2Kpxh> commander mode au[2Kpxh> commander mode aut[2Kpxh> commander mode auto[2Kpxh> commander mode auto:[2Kpxh> commander mode auto:l[2Kpxh> commander mode auto:lo[2Kpxh> commander mode auto:loi[2Kpxh> commander mode auto:loit[2Kpxh> commander mode auto:loite[2Kpxh> commander mode auto:loiter
+pxh> INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-08-25/07_01_13.ulg	
+INFO  [logger] Opened full log file: ./log/2026-08-25/07_01_13.ulg
+INFO  [commander] Takeoff detected	
+INFO  [commander] Landing at current position	
+INFO  [commander] Landing detected	
+INFO  [commander] Disarmed by landing	
+INFO  [tone_alarm] notify neutral
+INFO  [logger] closed logfile, bytes written: 4975152
+[2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander m[2Kpxh> commander mo[2Kpxh> commander mod[2Kpxh> commander mode[2Kpxh> commander mode [2Kpxh> commander mode a[2Kpxh> commander mode au[2Kpxh> commander mode aut[2Kpxh> commander mode auto[2Kpxh> commander mode auto:[2Kpxh> commander mode auto:l[2Kpxh> commander mode auto:lo[2Kpxh> commander mode auto:loi[2Kpxh> commander mode auto:loit[2Kpxh> commander mode auto:loite[2Kpxh> commander mode auto:loiter
+pxh> INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-08-25/07_03_18.ulg	
+INFO  [logger] Opened full log file: ./log/2026-08-25/07_03_18.ulg
+INFO  [commander] Landing at current position	
+INFO  [commander] Disarmed by auto preflight disarming	
+INFO  [tone_alarm] notify neutral
+INFO  [logger] closed logfile, bytes written: 2375227
+[2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander m[2Kpxh> commander mo[2Kpxh> commander mod[2Kpxh> commander mode[2Kpxh> commander mode [2Kpxh> commander mode a[2Kpxh> commander mode au[2Kpxh> commander mode aut[2Kpxh> commander mode auto[2Kpxh> commander mode auto:[2Kpxh> commander mode auto:l[2Kpxh> commander mode auto:lo[2Kpxh> commander mode auto:loi[2Kpxh> commander mode auto:loit[2Kpxh> commander mode auto:loite[2Kpxh> commander mode auto:loiter
+pxh> INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-08-25/07_04_02.ulg	
+INFO  [logger] Opened full log file: ./log/2026-08-25/07_04_02.ulg
+INFO  [commander] Takeoff detected	
+INFO  [commander] Landing at current position	
+INFO  [commander] Landing detected	
+INFO  [commander] Disarmed by landing	
+INFO  [tone_alarm] notify neutral
+INFO  [logger] closed logfile, bytes written: 3414870
+[2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander m[2Kpxh> commander mo[2Kpxh> commander mod[2Kpxh> commander mode[2Kpxh> commander mode [2Kpxh> commander mode a[2Kpxh> commander mode au[2Kpxh> commander mode aut[2Kpxh> commander mode auto[2Kpxh> commander mode auto:[2Kpxh> commander mode auto:l[2Kpxh> commander mode auto:lo[2Kpxh> commander mode auto:loi[2Kpxh> commander mode auto:loit[2Kpxh> commander mode auto:loite[2Kpxh> commander mode auto:loiter
+pxh> INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-08-25/07_04_53.ulg	
+INFO  [logger] Opened full log file: ./log/2026-08-25/07_04_53.ulg
+INFO  [commander] Takeoff detected	
+INFO  [commander] Landing at current position	
+[2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander m[2Kpxh> commander mo[2Kpxh> commander mod[2Kpxh> commander mode[2Kpxh> commander mode [2Kpxh> commander mode a[2Kpxh> commander mode au[2Kpxh> commander mode aut[2Kpxh> commander mode auto[2Kpxh> commander mode auto:[2Kpxh> commander mode auto:l[2Kpxh> commander mode auto:lo[2Kpxh> commander mode auto:loi[2Kpxh> commander mode auto:loit[2Kpxh> commander mode auto:loite[2Kpxh> commander mode auto:loiter
+pxh> [2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander l[2Kpxh> commander la[2Kpxh> commander lan[2Kpxh> commander land
+pxh> INFO  [commander] Landing at current position	
+INFO  [commander] Landing detected	
+INFO  [commander] Disarmed by landing	
+INFO  [tone_alarm] notify neutral
+INFO  [logger] closed logfile, bytes written: 9334507
+[2Kpxh> c[2Kpxh> co[2Kpxh> com[2Kpxh> comm[2Kpxh> comma[2Kpxh> comman[2Kpxh> command[2Kpxh> commande[2Kpxh> commander[2Kpxh> commander [2Kpxh> commander h[2Kpxh> commander he[2Kpxh> commander hel[2Kpxh> commander help
+
+### Description
+The commander module contains the state machine for mode switching and failsafe behavior.
+
+
+Usage: commander <command> [arguments...]
+ Commands:
+
+   start
+     [-h]        Enable HIL mode
+
+   calibrate     Run sensor calibration
+     mag|baro|accel|gyro|level|esc|airspeed Calibration type
+     quick       Quick calibration (accel only, not recommended)
+
+   check         Run preflight checks
+
+   arm
+     [-f]        Force arming (do not run preflight checks)
+
+   disarm
+     [-f]        Force disarming (disarm in air)
+
+   takeoff
+
+   land
+
+   transition    VTOL transition
+
+   mode          Change flight mode
+     manual|acro|offboard|stabilized|altctl|posctl|auto:mission|auto:loiter|auto:rtl|auto:takeoff|auto:land|auto:precland Flig
+
+   pair
+
+   lockdown
+     on|off      Turn lockdown on or off
+
+   set_ekf_origin
+     lat, lon, alt Origin Latitude, Longitude, Altitude
+
+   lat|lon|alt   Origin latitude longitude altitude
+
+   poweroff      Power off board (if supported)
+
+   stop
+
+   status        print status info
+Command 'commander' failed, returned 1.
+pxh> INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-08-25/07_06_39.ulg	
+INFO  [logger] Opened full log file: ./log/2026-08-25/07_06_39.ulg
+INFO  [commander] Takeoff detected	
+INFO  [commander] Landing at current position	
+INFO  [commander] Landing detected	
+INFO  [commander] Disarmed by landing	
+INFO  [tone_alarm] notify neutral
+INFO  [logger] closed logfile, bytes written: 3244949
+[2Kpxh> p[2Kpxh> pa[2Kpxh> par[2Kpxh> para[2Kpxh> param[2Kpxh> param [2Kpxh> param s[2Kpxh> param sh[2Kpxh> param sho[2Kpxh> param show[2Kpxh> param show [2Kpxh> param show C[2Kpxh> param show CO[2Kpxh> param show COM[2Kpxh> param show COM_[2Kpxh> param show COM_O[2Kpxh> param show COM_OF[2Kpxh> param show COM_OF_[2Kpxh> param show COM_OF_L[2Kpxh> param show COM_OF_LO[2Kpxh> param show COM_OF_LOS[2Kpxh> param show COM_OF_LOSS[2Kpxh> param show COM_OF_LOSS_[2Kpxh> param show COM_OF_LOSS_T
+Symbols: x = used, + = saved, * = unsaved
+x   COM_OF_LOSS_T [281,483] : 1.0000
+
+ 946/1718 parameters used.
+pxh> [2Kpxh> p[2Kpxh> pa[2Kpxh> par[2Kpxh> para[2Kpxh> param[2Kpxh> param [2Kpxh> param s[2Kpxh> param sh[2Kpxh> param sho[2Kpxh> param show[2Kpxh> param show [2Kpxh> param show C[2Kpxh> param show CO[2Kpxh> param show COM[2Kpxh> param show COM_[2Kpxh> param show COM_O[2Kpxh> param show COM_OB[2Kpxh> param show COM_OBL[2Kpxh> param show COM_OBL_[2Kpxh> param show COM_OBL_R[2Kpxh> param show COM_OBL_RC[2Kpxh> param show COM_OBL_RC_[2Kpxh> param show COM_OBL_RC_A[2Kpxh> param show COM_OBL_RC_AC[2Kpxh> param show COM_OBL_RC_ACT
+Symbols: x = used, + = saved, * = unsaved
+x   COM_OBL_RC_ACT [279,481] : 0
+
+ 946/1718 parameters used.
+pxh> [2Kpxh> p[2Kpxh> pa[2Kpxh> par[2Kpxh> para[2Kpxh> param[2Kpxh> param [2Kpxh> param s[2Kpxh> param sh[2Kpxh> param sho[2Kpxh> param show[2Kpxh> param show [2Kpxh> param show C[2Kpxh> param show CO[2Kpxh> param show COM[2Kpxh> param show COM_[2Kpxh> param show COM_O[2Kpxh> param show COM_OB[2Kpxh> param show COM_OBL[2Kpxh> param show COM_OBL_[2Kpxh> param show COM_OBL_A[2Kpxh> param show COM_OBL_AC[2Kpxh> param show COM_OBL_ACT
+Symbols: x = used, + = saved, * = unsaved
+
+ 946/1718 parameters used.
+pxh> INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-08-25/07_07_48.ulg	
+INFO  [logger] Opened full log file: ./log/2026-08-25/07_07_48.ulg
+INFO  [commander] Takeoff detected	
+WARN  [failsafe] Failsafe activated	
+INFO  [tone_alarm] battery warning (fast)
+INFO  [uxrce_dds_client] No ping response, disconnecting
+INFO  [commander] Landing detected	
+INFO  [commander] Disarmed by landing	
+INFO  [tone_alarm] notify neutral
+INFO  [logger] closed logfile, bytes written: 5385343
+INFO  [uxrce_dds_client] synchronized with time offset 1787640922452341us
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/failsafe_flags data writer, topic id: 80
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/sensor_combined data writer, topic id: 168
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/timesync_status data writer, topic id: 191
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_attitude data writer, topic id: 206
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_control_mode data writer, topic id: 212
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_global_position data writer, topic id: 213
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_gps_position data writer, topic id: 215
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_local_position data writer, topic id: 219
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_odometry data writer, topic id: 224
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_status data writer, topic id: 229
+INFO  [commander] Landing at current position	
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/position_setpoint_triplet data writer, topic id: 149
+ERROR [timesync] Time jump detected. Resetting time synchroniser.
+INFO  [commander] Landing at current position	
+INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-08-25/07_09_40.ulg	
+INFO  [logger] Opened full log file: ./log/2026-08-25/07_09_40.ulg
+INFO  [commander] Takeoff detected	
+WARN  [failsafe] Failsafe activated	
+INFO  [tone_alarm] battery warning (fast)
+INFO  [uxrce_dds_client] No ping response, disconnecting
+INFO  [uxrce_dds_client] synchronized with time offset 1787640923174999us
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/failsafe_flags data writer, topic id: 80
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/sensor_combined data writer, topic id: 168
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/timesync_status data writer, topic id: 191
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_attitude data writer, topic id: 206
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_control_mode data writer, topic id: 212
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_global_position data writer, topic id: 213
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_gps_position data writer, topic id: 215
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_local_position data writer, topic id: 219
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_odometry data writer, topic id: 224
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_status data writer, topic id: 229
+INFO  [commander] Landing detected	
+INFO  [commander] Disarmed by landing	
+INFO  [tone_alarm] notify neutral
+INFO  [logger] closed logfile, bytes written: 3809957
+INFO  [commander] Landing at current position	
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/position_setpoint_triplet data writer, topic id: 149
+INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-08-25/07_10_53.ulg	
+INFO  [logger] Opened full log file: ./log/2026-08-25/07_10_53.ulg
+INFO  [commander] Takeoff detected	
+WARN  [failsafe] Failsafe activated	
+INFO  [tone_alarm] battery warning (fast)
+INFO  [uxrce_dds_client] No ping response, disconnecting
+INFO  [uxrce_dds_client] synchronized with time offset 1787640923712649us
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/failsafe_flags data writer, topic id: 80
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/sensor_combined data writer, topic id: 168
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/timesync_status data writer, topic id: 191
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_attitude data writer, topic id: 206
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_control_mode data writer, topic id: 212
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_global_position data writer, topic id: 213
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_gps_position data writer, topic id: 215
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_local_position data writer, topic id: 219
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_odometry data writer, topic id: 224
+INFO  [commander] Landing at current position	
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/vehicle_status data writer, topic id: 229
+INFO  [uxrce_dds_client] successfully created rt/fmu/out/position_setpoint_triplet data writer, topic id: 149
+INFO  [commander] Landing at current position	
+INFO  [commander] Landing detected	
+INFO  [commander] Disarmed by landing	
+INFO  [tone_alarm] notify neutral
+INFO  [logger] closed logfile, bytes written: 3921124
+[2Kpxh> s[2Kpxh> sh[2Kpxh> shu[2Kpxh> shut[2Kpxh> shutd[2Kpxh> shutdo[2Kpxh> shutdow[2Kpxh> shutdown
+Exiting NOW.

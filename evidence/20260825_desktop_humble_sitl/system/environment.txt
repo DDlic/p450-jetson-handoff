@@ -1,0 +1,31 @@
+2026-08-25T15:14:39+08:00
+Ubuntu 22.04.5 LTS
+6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64
+CPU(s): 20
+Model name: Intel(R) Core(TM) i5-14600K
+               total        used        free      shared  buff/cache   available
+Mem:            62Gi       6.4Gi        44Gi       241Mi        11Gi        56Gi
+/dev/nvme0n1p5  393G   69G  305G   19% /
+TARGET                SOURCE                                                                                                           FSTYPE OPTIONS
+/media/p450/P450_DATA /dev/nvme0n1p5[/home/wilson/Documents/Codex/2026-08-25/github-plugin-github-openai-curated-remote/work/sim-data] ext4   rw,relatime,errors=remount-ro
+ROS_DISTRO=humble
+gz-garden=1.0.0-1~jammy
+libgz-sim7-dev=7.9.0-1~jammy
+libgz-transport12-dev=12.2.2-1~jammy
+ros-humble-ros-base=0.10.0-1jammy.20260804.204550
+7.9.0
+12.2.2
+candidate_branch=codex/ubuntu22-humble-sitl-20260825
+candidate_baseline=e6f783f7a0132656cbabf2a897b41a2bc705b3ad
+mission_baseline_sha256=4d42081c1c4e1355bb49b0dcb4c73df6a7816a9872258b1c8e1b35d73746a4ff
+mission_tested_sha256=825966c9e5f978c8cd6c9c39e2367d068187a3d77da10321b62da4b8f1d17f95
+PX4=v1.14.3
+PX4_commit=1dacb4cdef2d7145754fc788fa8dc482eed74b40
+px4_msgs_commit=ffb6e80e1c17e5714395611a020c282a87af8fa4
+Micro_XRCE_Agent=v2.4.2
+Micro_XRCE_Agent_commit=57d086216d01ec43121845d385894a25987f8a2c
+Fast_DDS_commit=092848725b8425e4f05a8ccf7b3b8d513fabf733
+Agent_dependency_pin=v2.12.2
+Python 3.10.12
+Name: empy
+Version: 3.3.4

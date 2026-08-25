@@ -4,9 +4,11 @@
 import importlib.util
 import math
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import time
 import unittest
+from unittest.mock import patch
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/p450_delivery_poc_mission.py"
@@ -80,6 +82,21 @@ class RouteTests(unittest.TestCase):
 
 
 class ArgumentGateTests(unittest.TestCase):
+    def test_same_device_bind_mount_is_detected_from_mountinfo(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / "bind target"
+            target.mkdir()
+            escaped_target = str(target.resolve()).replace(" ", r"\040")
+            mountinfo = root / "mountinfo"
+            mountinfo.write_text(
+                f"36 25 259:5 /source {escaped_target} rw,relatime "
+                "- ext4 /dev/nvme0n1p5 rw\n",
+                encoding="utf-8",
+            )
+
+            self.assertTrue(MISSION.path_is_mounted(target, mountinfo))
+
     def test_dry_run_defaults_are_allowed(self):
         self.assertIsNone(MISSION.validate_args(arguments()))
 
@@ -92,25 +109,28 @@ class ArgumentGateTests(unittest.TestCase):
         self.assertIn("0..5", error)
 
     def test_ground_sequence_requires_props_removed_confirmation(self):
-        error = MISSION.validate_args(
-            arguments(mode="ground-sequence", test_id="P450_GROUND_TEST")
-        )
+        with patch.object(MISSION, "path_is_mounted", return_value=True):
+            error = MISSION.validate_args(
+                arguments(mode="ground-sequence", test_id="P450_GROUND_TEST")
+            )
         self.assertIn(MISSION.GROUND_CONFIRMATION, error)
 
     def test_flight_requires_distinct_operator_confirmation(self):
-        error = MISSION.validate_args(
-            arguments(mode="flight", test_id="P450_FLIGHT_TEST", allow_armed=True)
-        )
+        with patch.object(MISSION, "path_is_mounted", return_value=True):
+            error = MISSION.validate_args(
+                arguments(mode="flight", test_id="P450_FLIGHT_TEST", allow_armed=True)
+            )
         self.assertIn(MISSION.FLIGHT_CONFIRMATION, error)
 
     def test_active_log_root_must_resolve_below_sd_mount(self):
-        error = MISSION.validate_args(
-            arguments(
-                mode="preflight-only",
-                test_id="P450_PREFLIGHT_TEST",
-                log_root="/home/p450/flight-logs",
+        with patch.object(MISSION, "path_is_mounted", return_value=True):
+            error = MISSION.validate_args(
+                arguments(
+                    mode="preflight-only",
+                    test_id="P450_PREFLIGHT_TEST",
+                    log_root="/home/p450/flight-logs",
+                )
             )
-        )
         self.assertIn("below the mounted SD", error)
 
 
@@ -394,6 +414,33 @@ class RuntimeSafetyCoverageTests(unittest.TestCase):
 
         self.assertTrue(mission.land_mode_confirmed)
         self.assertEqual(transitions, [("WAIT_LANDED", "")])
+
+    def test_px4_v114_auto_disarm_land_reason_completes_fallback(self):
+        transitions = []
+        events = []
+        mission = SimpleNamespace(
+            state="WAIT_AUTO_DISARM_FALLBACK",
+            state_entered=time.monotonic(),
+            status=SimpleNamespace(
+                arming_state=MISSION.DISARMED,
+                latest_disarming_reason=6,
+            ),
+            control=SimpleNamespace(flag_armed=False),
+            abort_reason=None,
+            result=None,
+            log_event=lambda event, detail="": events.append((event, detail)),
+            transition=lambda state, detail="": transitions.append((state, detail)),
+        )
+
+        MISSION.DeliveryMission.tick_state(mission)
+
+        self.assertEqual(MISSION.PX4_V114_AUTO_DISARM_LAND_REASON, 6)
+        self.assertEqual(mission.result, 0)
+        self.assertEqual(
+            transitions,
+            [("COMPLETE", "PX4 AUTO_DISARM_LAND confirmed")],
+        )
+        self.assertEqual(events, [])
 
     def test_forward_goal_is_refreshed_from_latest_hold_position_and_heading(self):
         events = []

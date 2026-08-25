@@ -7,6 +7,21 @@
 [`docs/architecture/REPOSITORY_MAP.md`](docs/architecture/REPOSITORY_MAP.md)。整理工作只分類或
 以 Git rename 搬移既有檔案，不刪除實驗證據或歷史交接。
 
+## 2026-08-25 Ubuntu 22.04 Desktop SITL
+
+原生 ROS 2 Humble、PX4 v1.14.3、Gazebo Garden、Micro XRCE-DDS Agent v2.4.2 的
+x500 軟體模擬已完成：SIM-P、SIM-G、0.5 m 垂直飛行與 1 m／前進 5 m／Land 均 PASS。
+最終 5 m 場 exit 0、201 個 heartbeat、最大 gap 105.141 ms、無 active failsafe，並由
+PX4 Land 完成 auto-disarm-land。heartbeat pause、POSCTL takeover、Agent pause 三項
+simulator-only failure injection 也完成預期 fail-closed／控制交還與落地復原。
+
+原始 V4 並非未修改即可通過：桌機 bind mount 偵測與 PX4 v1.14.3 auto-disarm reason
+enum 錯位各需一個窄修正。完整可重現程序、版本 pin、重試紀錄與限制見
+[`P450_UBUNTU22_HUMBLE_SITL_HANDOFF_20260825.md`](docs/runbooks/P450_UBUNTU22_HUMBLE_SITL_HANDOFF_20260825.md)，
+原始 CSV／console／ULog 與 checksum 見
+[`20260825 desktop SITL evidence`](evidence/20260825_desktop_humble_sitl/README.md)。
+這只證明 desktop SITL 行為，不解除下列 NX kernel、UART freshness 或實機飛行禁令。
+
 ## 2026-08-17 當前協作入口
 
 接近交付期的「1 m 起飛／前進 5 m／Land」最小 PoC 決策、`not landed` 根因、601.548 ms
@@ -173,20 +188,22 @@ Offboard 控制流程也必須分別排除，不得概括為雙向控制已通�
 
 ## 閱讀順序
 
-1. `docs/runbooks/P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md`
-2. `docs/runbooks/P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md`
-3. `evidence/20260813_first_principles_offboard_transport/SUMMARY.md`
-4. `evidence/20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md`
-5. `evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md`
-6. `evidence/20260812_outdoor_gps_offboard_ground/SUMMARY.md`
-7. `docs/reports/2026-08-10/P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
-8. `docs/reports/2026-08-10/P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
-9. `docs/reports/2026-08-05/P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
-10. `docs/reports/2026-08-05/P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
-11. `docs/reports/2026-08-04/P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
-12. `docs/reports/2026-07-24/P450_PROGRESS_2026-07-24_NEXT.md`
-13. `docs/history/JETSON_HANDOFF_MASTER.md`
-14. `docs/operations/JETSON_HANDOFF_COMMANDS.md`
+1. `docs/runbooks/P450_UBUNTU22_HUMBLE_SITL_HANDOFF_20260825.md`
+2. `docs/runbooks/P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md`
+3. `docs/runbooks/P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md`
+4. `evidence/20260825_desktop_humble_sitl/README.md`
+5. `evidence/20260813_first_principles_offboard_transport/SUMMARY.md`
+6. `evidence/20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md`
+7. `evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md`
+8. `evidence/20260812_outdoor_gps_offboard_ground/SUMMARY.md`
+9. `docs/reports/2026-08-10/P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
+10. `docs/reports/2026-08-10/P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
+11. `docs/reports/2026-08-05/P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
+12. `docs/reports/2026-08-05/P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
+13. `docs/reports/2026-08-04/P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
+14. `docs/reports/2026-07-24/P450_PROGRESS_2026-07-24_NEXT.md`
+15. `docs/history/JETSON_HANDOFF_MASTER.md`
+16. `docs/operations/JETSON_HANDOFF_COMMANDS.md`
 
 ## 注意
 

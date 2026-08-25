@@ -1,0 +1,1 @@
+SITL_OPERATOR_LINK_READY endpoint=udpout:127.0.0.1:18570 rate_hz=10.0 messages=gcs_heartbeat,neutral_manual_control commands=0

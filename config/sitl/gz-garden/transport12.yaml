@@ -1,0 +1,9 @@
+---
+format: 1.0.0
+library_name: gz-transport
+library_version: 12.2.2
+library_path: /usr/lib/ruby/gz/cmdtransport12
+commands:
+  - topic: Print information about topics.
+  - service: Print information about services.
+---

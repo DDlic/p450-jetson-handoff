@@ -42,12 +42,17 @@ from rclpy.qos import (
 SD_MOUNT = Path("/media/p450/P450_DATA")
 DEFAULT_LOG_ROOT = SD_MOUNT / "builds/NX-user-storage/rosbags"
 TEST_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{5,95}$")
+PROC_MOUNTINFO = Path("/proc/self/mountinfo")
 
 DISARMED = VehicleStatus.ARMING_STATE_STANDBY
 ARMED = VehicleStatus.ARMING_STATE_ARMED
 NAV_OFFBOARD = VehicleStatus.NAVIGATION_STATE_OFFBOARD
 NAV_LAND = VehicleStatus.NAVIGATION_STATE_AUTO_LAND
-AUTO_DISARM_LAND_REASON = VehicleStatus.ARM_DISARM_REASON_AUTO_DISARM_LAND
+# PX4 v1.14.3 Commander stores events::arm_disarm_reason_t in VehicleStatus.
+# That enum assigns auto_disarm_land=6, while the generated v1.14 message
+# constant assigns 7 because it still includes an unused safety_button entry.
+# Keep this exact to the pinned firmware instead of accepting both values.
+PX4_V114_AUTO_DISARM_LAND_REASON = 6
 
 CMD_SET_MODE = VehicleCommand.VEHICLE_CMD_DO_SET_MODE
 CMD_ARM_DISARM = VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM
@@ -136,6 +141,32 @@ def path_is_within(path, parent):
     except ValueError:
         return False
     return True
+
+
+def path_is_mounted(path, mountinfo=PROC_MOUNTINFO):
+    """Return whether *path* is a mount point, including same-device binds.
+
+    pathlib.Path.is_mount() compares device and inode metadata, which cannot
+    identify a bind mount whose source and target are on the same filesystem.
+    Linux mountinfo records the target explicitly and keeps this gate
+    fail-closed for the session-only bind mount used by the desktop SITL.
+    """
+    target = str(path.resolve())
+    try:
+        for line in mountinfo.read_text(encoding="utf-8").splitlines():
+            fields = line.split()
+            if len(fields) < 5:
+                continue
+            mount_point = re.sub(
+                r"\\([0-7]{3})",
+                lambda match: chr(int(match.group(1), 8)),
+                fields[4],
+            )
+            if mount_point == target:
+                return True
+    except OSError:
+        return path.is_mount()
+    return False
 
 
 def shifted_point(point, dx=0.0, dy=0.0, dz=0.0):
@@ -1020,10 +1051,14 @@ class DeliveryMission(Node):
         elif self.state in ("WAIT_AUTO_DISARM", "WAIT_AUTO_DISARM_FALLBACK"):
             timeout = 45.0 if self.state == "WAIT_AUTO_DISARM_FALLBACK" else 15.0
             if self.status.arming_state == DISARMED and not self.control.flag_armed:
-                if self.status.latest_disarming_reason != AUTO_DISARM_LAND_REASON:
+                if (
+                    self.status.latest_disarming_reason
+                    != PX4_V114_AUTO_DISARM_LAND_REASON
+                ):
                     self.log_event(
                         "UNEXPECTED_DISARM_REASON",
-                        f"reason={self.status.latest_disarming_reason} expected={AUTO_DISARM_LAND_REASON}",
+                        f"reason={self.status.latest_disarming_reason} "
+                        f"expected={PX4_V114_AUTO_DISARM_LAND_REASON}",
                     )
                     self.result = 16
                     self.transition("FAILED", "disarm was not PX4 auto-disarm-land")
@@ -1163,7 +1198,7 @@ def validate_args(args):
     if args.mode != "dry-run":
         if not args.test_id or not TEST_ID_RE.fullmatch(args.test_id):
             return "active/preflight modes require a safe --test-id"
-        if not SD_MOUNT.is_mount():
+        if not path_is_mounted(SD_MOUNT):
             return f"SD data volume is not mounted at {SD_MOUNT}"
         resolved_log_root = Path(args.log_root).expanduser().resolve()
         if not path_is_within(resolved_log_root, SD_MOUNT.resolve()):

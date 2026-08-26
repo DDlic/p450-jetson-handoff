@@ -133,6 +133,21 @@ class ArgumentGateTests(unittest.TestCase):
             )
         self.assertIn("below the mounted SD", error)
 
+    def test_existing_log_directory_is_rejected_without_overwrite(self):
+        with TemporaryDirectory() as temporary:
+            log_root = Path(temporary)
+            existing = log_root / "P450_RETRY_TEST"
+            existing.mkdir()
+
+            with self.assertRaisesRegex(
+                FileExistsError,
+                r"choose a new --test-id; existing evidence was not modified",
+            ):
+                MISSION.create_log_dir(log_root, existing.name)
+
+            self.assertTrue(existing.is_dir())
+            self.assertEqual(list(existing.iterdir()), [])
+
 
 class RuntimeSafetyCoverageTests(unittest.TestCase):
     def test_ground_navigation_accepts_finite_yaw_before_final_inflight_alignment(self):
@@ -145,6 +160,71 @@ class RuntimeSafetyCoverageTests(unittest.TestCase):
         self.assertFalse(
             MISSION.position_is_navigation_valid(valid_position(heading=math.nan))
         )
+
+    def test_offboard_waits_for_ekf_settle_before_arm(self):
+        transitions = []
+        mission = SimpleNamespace(
+            state="REQUEST_OFFBOARD",
+            state_entered=time.monotonic(),
+            status=SimpleNamespace(nav_state=MISSION.NAV_OFFBOARD),
+            control=SimpleNamespace(flag_control_offboard_enabled=True),
+            ekf_settle_counters=None,
+            ekf_settle_since=None,
+            EKF_SETTLE_SECONDS=5.0,
+            EKF_SETTLE_TIMEOUT_SECONDS=20.0,
+            log_event=lambda *_args: None,
+            transition=lambda state, detail="": transitions.append((state, detail)),
+        )
+
+        MISSION.DeliveryMission.tick_state(mission)
+
+        self.assertEqual(transitions, [("WAIT_EKF_SETTLE", "")])
+        self.assertIsNone(mission.ekf_settle_counters)
+        self.assertIsNone(mission.ekf_settle_since)
+
+    def test_ekf_settle_requires_stable_reset_counters(self):
+        mission = SimpleNamespace(
+            position=valid_position(),
+            ekf_settle_counters=None,
+            ekf_settle_since=None,
+            EKF_SETTLE_SECONDS=5.0,
+            log_event=lambda *_args: None,
+        )
+        mission.ekf_reset_counter_tuple = lambda: MISSION.DeliveryMission.ekf_reset_counter_tuple(mission)
+
+        with patch.object(MISSION.time, "monotonic", side_effect=[100.0, 100.0, 106.0]):
+            self.assertFalse(MISSION.DeliveryMission.ekf_settle_ready(mission))
+            self.assertFalse(MISSION.DeliveryMission.ekf_settle_ready(mission))
+            self.assertTrue(MISSION.DeliveryMission.ekf_settle_ready(mission))
+
+    def test_prearm_material_z_reset_restarts_settle_without_abort(self):
+        mission = SimpleNamespace(
+            reset_counters={"xy": 0, "z": 0, "vxy": 0, "vz": 0, "heading": 0},
+            start=(1.0, 2.0, -0.2, 0.3),
+            takeoff=(1.0, 2.0, -1.2),
+            goal=(6.0, 2.0, -1.2),
+            target=(1.0, 2.0, -1.2),
+            yaw_target=0.3,
+            position_reset_abort_reason=None,
+            status=SimpleNamespace(arming_state=MISSION.DISARMED),
+            ekf_settle_counters=(0, 0, 0, 0, 0),
+            ekf_settle_since=100.0,
+            XY_RESET_ABORT_METERS=0.25,
+            Z_RESET_ABORT_METERS=0.20,
+            log_event=lambda *_args: None,
+        )
+        mission.vehicle_is_armed = lambda: MISSION.DeliveryMission.vehicle_is_armed(mission)
+        mission.note_prearm_ekf_reset = lambda: MISSION.DeliveryMission.note_prearm_ekf_reset(mission)
+        mission.shift_stored_route = lambda dx=0.0, dy=0.0, dz=0.0: (
+            MISSION.DeliveryMission.shift_stored_route(mission, dx, dy, dz)
+        )
+        reset = valid_position(z_reset_counter=1, delta_z=-0.557)
+
+        MISSION.DeliveryMission.handle_position_resets(mission, reset)
+
+        self.assertIsNone(mission.position_reset_abort_reason)
+        self.assertIsNone(mission.ekf_settle_counters)
+        self.assertIsNone(mission.ekf_settle_since)
 
     def test_preflight_does_not_deadlock_on_px4_inflight_heading_flag(self):
         flags = SimpleNamespace(
@@ -502,6 +582,7 @@ class RuntimeSafetyCoverageTests(unittest.TestCase):
             target=(1.0, 2.0, -1.2),
             yaw_target=0.3,
             position_reset_abort_reason=None,
+            status=SimpleNamespace(arming_state=MISSION.ARMED),
             XY_RESET_ABORT_METERS=0.25,
             Z_RESET_ABORT_METERS=0.20,
             log_event=lambda event, detail="": events.append((event, detail)),
@@ -517,6 +598,9 @@ class RuntimeSafetyCoverageTests(unittest.TestCase):
             heading_reset_counter=1,
             delta_heading=0.02,
         )
+
+        mission.vehicle_is_armed = lambda: MISSION.DeliveryMission.vehicle_is_armed(mission)
+        mission.note_prearm_ekf_reset = lambda: MISSION.DeliveryMission.note_prearm_ekf_reset(mission)
 
         MISSION.DeliveryMission.handle_position_resets(mission, reset)
 

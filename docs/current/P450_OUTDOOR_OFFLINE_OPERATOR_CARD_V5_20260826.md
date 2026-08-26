@@ -25,8 +25,8 @@ systemctl --user is-active sunshine.service
 必須符合：
 
 ```text
-HEAD = 6a044024a37911f9da436228036dfe0e5cb800e6
-SHA256 = 825966c9e5f978c8cd6c9c39e2367d068187a3d77da10321b62da4b8f1d17f95
+BASE FIX = 6a044024a37911f9da436228036dfe0e5cb800e6
+SHA256 = 9402bfa0031f73dfa55f94f8f8ebe8efe65877cf96495cdb61fc919afd9da788
 P450_DATA = /media/p450/P450_DATA（獨立 microSD ext4）
 Agent = active，NRestarts = 0
 Sunshine = active
@@ -40,7 +40,7 @@ Sunshine = active
 python3 -m unittest -v tests/test_p450_delivery_poc_mission.py
 ```
 
-GO：`Ran 29 tests`、`OK`。
+GO：`Ran 33 tests`、`OK`。
 
 此測試特別確認：PX4 v1.14.3 的真正 landing auto-disarm reason 是 `6`；reason `7` 是
 preflight auto-disarm，必須被拒絕。
@@ -51,7 +51,8 @@ preflight auto-disarm，必須被拒絕。
 python3 scripts/p450_delivery_poc_mission.py \
   --preflight-only \
   --test-id P450_20260826_OUTDOOR_V5_PREFLIGHT_D
-echo "PREFLIGHT_EXIT=$?"
+preflight_exit=$?
+echo "PREFLIGHT_EXIT=$preflight_exit"
 ```
 
 GO：`PREFLIGHT_PASS`、`publishes=0 commands=0`、`PREFLIGHT_EXIT=0`。
@@ -71,10 +72,11 @@ systemd-inhibit --what=sleep --mode=block \
     --operator-confirmation PROPS_REMOVED_KILL_READY \
     --takeoff-height 0.5 \
     --forward-distance 0
-echo "GROUND_EXIT=$?"
+ground_exit=$?
+echo "GROUND_EXIT=$ground_exit"
 ```
 
-GO 必須同時看到：
+GO 必須同時看到 `EKF_SETTLE_CONFIRMED stable_for=5.0s`，再看到：
 
 ```text
 LAND_MODE_CONFIRMED nav_state=18
@@ -82,8 +84,8 @@ PX4 AUTO_DISARM_LAND confirmed（reason=6）
 GROUND_EXIT=0
 ```
 
-看到 reason `7`、`UNEXPECTED_DISARM_REASON`、任何非 0 exit、failsafe 或 Agent restart，立即 STOP，
-不得裝槳。
+看到 `EKF_SETTLE_RESET` 持續重置、`EKF reset counters did not settle before Arm`、reason `7`、
+`UNEXPECTED_DISARM_REASON`、任何非 0 exit、failsafe 或 Agent restart，立即 STOP，不得裝槳。
 
 ## 4. F1：0.5 m 垂直飛行
 
@@ -100,10 +102,12 @@ systemd-inhibit --what=sleep --mode=block \
     --operator-confirmation PROPS_INSTALLED_AREA_CLEAR_KILL_READY \
     --takeoff-height 0.5 \
     --forward-distance 0
-echo "F1_EXIT=$?"
+f1_exit=$?
+echo "F1_EXIT=$f1_exit"
 ```
 
-GO：起飛、定高、PX4 Land、`nav_state=18`、reason `6`、`F1_EXIT=0`，且無 active failsafe、
+GO：先看到 `EKF_SETTLE_CONFIRMED stable_for=5.0s`，再起飛、定高、PX4 Land、`nav_state=18`、
+reason `6`、`F1_EXIT=0`，且無 active failsafe、
 Agent restart 或 heartbeat >250 ms。
 
 ## 5. F2：1 m／前進 5 m／Land
@@ -121,10 +125,12 @@ systemd-inhibit --what=sleep --mode=block \
     --operator-confirmation PROPS_INSTALLED_AREA_CLEAR_KILL_READY \
     --takeoff-height 1 \
     --forward-distance 5
-echo "F2_EXIT=$?"
+f2_exit=$?
+echo "F2_EXIT=$f2_exit"
 ```
 
-GO：1 m 定高、前進 5 m、Land、reason `6`、`F2_EXIT=0`。
+GO：先看到 `EKF_SETTLE_CONFIRMED stable_for=5.0s`，再 1 m 定高、前進 5 m、Land、reason `6`、
+`F2_EXIT=0`。
 
 ## 立即停止條件
 

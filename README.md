@@ -21,8 +21,8 @@ enum 錯位各需一個窄修正。完整可重現程序、版本 pin、重試�
 原始 CSV／console／ULog 與 checksum 見
 [`20260825 desktop SITL evidence`](evidence/20260825_desktop_humble_sitl/README.md)。
 這只證明 desktop SITL 行為，不解除下列 NX kernel、UART freshness 或實機飛行禁令。
-NX 後續測試必須使用修正版 mission hash `825966c9e5f978c8cd6c9c39e2367d068187a3d77da10321b62da4b8f1d17f95`，
-並依 [`V4 operator card`](docs/current/P450_OUTDOOR_OFFLINE_OPERATOR_CARD_V4_20260820.md)
+NX 後續測試必須使用已加入 Arm 前 EKF settle gate 的 mission hash `9402bfa0031f73dfa55f94f8f8ebe8efe65877cf96495cdb61fc919afd9da788`，
+並依 [`V5 operator card`](docs/current/P450_OUTDOOR_OFFLINE_OPERATOR_CARD_V5_20260826.md)
 先完成 P_D 與無槳 G_D；reason `7` 不得視為 landing PASS。
 
 ## 2026-08-17 當前協作入口

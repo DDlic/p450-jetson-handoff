@@ -185,6 +185,8 @@ class DeliveryMission(Node):
     HEARTBEAT_HZ = 10.0
     HEARTBEAT_PERIOD = 0.1
     PREROLL_SECONDS = 2.0
+    EKF_SETTLE_SECONDS = 5.0
+    EKF_SETTLE_TIMEOUT_SECONDS = 20.0
     COMMAND_RETRY_SECONDS = 0.5
     COMMAND_MAX_ATTEMPTS = 6
     STATUS_STALE_ABORT_SECONDS = 2.0
@@ -222,6 +224,8 @@ class DeliveryMission(Node):
         self.control_relinquished = False
         self.yaw_target = None
         self.reset_counters = None
+        self.ekf_settle_counters = None
+        self.ekf_settle_since = None
         self.position_reset_abort_reason = None
 
         self.command = None
@@ -514,6 +518,46 @@ class DeliveryMission(Node):
             for name in ("status", "control", "position", "failsafe_flags")
         )
 
+    def vehicle_is_armed(self):
+        status = getattr(self, "status", None)
+        return status is not None and status.arming_state == ARMED
+
+    def ekf_reset_counter_tuple(self):
+        position = getattr(self, "position", None)
+        if position is None:
+            return None
+        return (
+            int(position.xy_reset_counter),
+            int(position.z_reset_counter),
+            int(position.vxy_reset_counter),
+            int(position.vz_reset_counter),
+            int(position.heading_reset_counter),
+        )
+
+    def ekf_settle_ready(self):
+        """Return true only after all observed EKF reset counters are stable."""
+        counters = self.ekf_reset_counter_tuple()
+        if counters is None:
+            return False
+        now = time.monotonic()
+        if self.ekf_settle_counters != counters:
+            self.ekf_settle_counters = counters
+            self.ekf_settle_since = now
+            self.log_event(
+                "EKF_SETTLE_RESET",
+                f"counters={counters}; restart {self.EKF_SETTLE_SECONDS:.1f}s window",
+            )
+            return False
+        return (
+            self.ekf_settle_since is not None
+            and now - self.ekf_settle_since >= self.EKF_SETTLE_SECONDS
+        )
+
+    def note_prearm_ekf_reset(self):
+        if not self.vehicle_is_armed():
+            self.ekf_settle_counters = None
+            self.ekf_settle_since = None
+
     def preflight_reasons(self):
         reasons = []
         if not self.data_ready():
@@ -619,9 +663,11 @@ class DeliveryMission(Node):
                 f"dy={dy:.6f} magnitude={magnitude:.6f}",
             )
             self.reset_counters["xy"] = int(message.xy_reset_counter)
+            self.note_prearm_ekf_reset()
             if (
                 magnitude > self.XY_RESET_ABORT_METERS
                 and self.position_reset_abort_reason is None
+                and self.vehicle_is_armed()
             ):
                 self.position_reset_abort_reason = (
                     f"material EKF XY reset {magnitude:.3f} m exceeded "
@@ -639,9 +685,11 @@ class DeliveryMission(Node):
                 f"magnitude={magnitude:.6f}",
             )
             self.reset_counters["z"] = int(message.z_reset_counter)
+            self.note_prearm_ekf_reset()
             if (
                 magnitude > self.Z_RESET_ABORT_METERS
                 and self.position_reset_abort_reason is None
+                and self.vehicle_is_armed()
             ):
                 self.position_reset_abort_reason = (
                     f"material EKF Z reset {magnitude:.3f} m exceeded "
@@ -655,6 +703,7 @@ class DeliveryMission(Node):
                 f"delta=({message.delta_vxy[0]:.6f},{message.delta_vxy[1]:.6f})",
             )
             self.reset_counters["vxy"] = int(message.vxy_reset_counter)
+            self.note_prearm_ekf_reset()
 
         if int(message.vz_reset_counter) != self.reset_counters["vz"]:
             self.log_event(
@@ -662,6 +711,7 @@ class DeliveryMission(Node):
                 f"counter={message.vz_reset_counter} delta={message.delta_vz:.6f}",
             )
             self.reset_counters["vz"] = int(message.vz_reset_counter)
+            self.note_prearm_ekf_reset()
 
         if int(message.heading_reset_counter) != self.reset_counters["heading"]:
             delta = float(message.delta_heading)
@@ -670,6 +720,7 @@ class DeliveryMission(Node):
                 f"counter={message.heading_reset_counter} delta_rad={delta:.6f}",
             )
             self.reset_counters["heading"] = int(message.heading_reset_counter)
+            self.note_prearm_ekf_reset()
             if finite(delta) and self.yaw_target is not None:
                 self.yaw_target = wrap_pi(self.yaw_target + delta)
                 if self.start is not None:
@@ -856,6 +907,7 @@ class DeliveryMission(Node):
 
         offboard_owned_states = (
             "REQUEST_ARM",
+            "WAIT_EKF_SETTLE",
             "GROUND_ARMED_HOLD",
             "TAKEOFF",
             "HOLD_AFTER_TAKEOFF",
@@ -949,7 +1001,13 @@ class DeliveryMission(Node):
                 self.status.nav_state == NAV_OFFBOARD
                 and self.control.flag_control_offboard_enabled
             ):
-                self.transition("REQUEST_ARM")
+                self.ekf_settle_counters = None
+                self.ekf_settle_since = None
+                self.log_event(
+                    "EKF_SETTLE_WAIT",
+                    f"require reset counters stable for {self.EKF_SETTLE_SECONDS:.1f}s before Arm",
+                )
+                self.transition("WAIT_EKF_SETTLE")
             else:
                 self.begin_command(
                     CMD_SET_MODE,
@@ -960,6 +1018,16 @@ class DeliveryMission(Node):
                 if now > self.command_deadline:
                     self.abort("Offboard request timeout")
 
+        elif self.state == "WAIT_EKF_SETTLE":
+            if self.ekf_settle_ready():
+                self.log_event(
+                    "EKF_SETTLE_CONFIRMED",
+                    f"stable_for={self.EKF_SETTLE_SECONDS:.1f}s counters={self.ekf_settle_counters}",
+                )
+                self.transition("REQUEST_ARM")
+            elif elapsed > self.EKF_SETTLE_TIMEOUT_SECONDS:
+                self.abort("EKF reset counters did not settle before Arm")
+
         elif self.state == "REQUEST_ARM":
             if self.status.arming_state == ARMED and self.control.flag_armed:
                 if self.args.mode == "ground-sequence":
@@ -968,6 +1036,13 @@ class DeliveryMission(Node):
                     self.target = self.takeoff
                     self.transition("TAKEOFF")
             else:
+                if not self.ekf_settle_ready():
+                    self.log_event(
+                        "ARM_GATED",
+                        "EKF reset counters changed before Arm; returning to settle wait",
+                    )
+                    self.transition("WAIT_EKF_SETTLE")
+                    return
                 self.begin_command(CMD_ARM_DISARM, (1, 0, 0, 0, 0, 0, 0), 5.0)
                 self.send_command_if_due()
                 if now > self.command_deadline:
@@ -1241,6 +1316,25 @@ def print_dry_run(args):
     return 0
 
 
+def create_log_dir(log_root, test_id):
+    """Create one immutable mission directory for *test_id*.
+
+    A test ID is an evidence identity, not a reusable session name.  Keep the
+    exclusive mkdir so a retry cannot overwrite or merge with an earlier
+    result, but turn the common collision into an actionable error for the
+    operator instead of exposing a Python traceback.
+    """
+    log_dir = Path(log_root).expanduser().resolve() / test_id
+    try:
+        log_dir.mkdir(parents=True, exist_ok=False)
+    except FileExistsError:
+        raise FileExistsError(
+            f"mission log directory already exists: {log_dir}; "
+            "choose a new --test-id; existing evidence was not modified"
+        ) from None
+    return log_dir
+
+
 def main():
     args = parse_args()
     error = validate_args(args)
@@ -1250,8 +1344,11 @@ def main():
     if args.mode == "dry-run":
         return print_dry_run(args)
 
-    log_dir = Path(args.log_root).expanduser().resolve() / args.test_id
-    log_dir.mkdir(parents=True, exist_ok=False)
+    try:
+        log_dir = create_log_dir(args.log_root, args.test_id)
+    except FileExistsError as error:
+        print(f"REFUSED: {error}", flush=True)
+        return 2
     print(f"MISSION_LOG_DIR={log_dir}", flush=True)
     rclpy.init()
     node = DeliveryMission(args, log_dir)

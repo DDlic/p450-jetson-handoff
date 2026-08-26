@@ -50,7 +50,7 @@ preflight auto-disarm，必須被拒絕。
 ```bash
 python3 scripts/p450_delivery_poc_mission.py \
   --preflight-only \
-  --test-id P450_20260826_OUTDOOR_V5_PREFLIGHT_D
+  --test-id P450_20260826_OUTDOOR_V5_PREFLIGHT_E
 preflight_exit=$?
 echo "PREFLIGHT_EXIT=$preflight_exit"
 ```
@@ -67,7 +67,7 @@ systemd-inhibit --what=sleep --mode=block \
   --why='V5 prop-free ownership and Land gate' \
   python3 scripts/p450_delivery_poc_mission.py \
     --ground-sequence \
-    --test-id P450_20260826_OUTDOOR_V5_GROUND_D \
+    --test-id P450_20260826_OUTDOOR_V5_GROUND_E \
     --allow-armed \
     --operator-confirmation PROPS_REMOVED_KILL_READY \
     --takeoff-height 0.5 \
@@ -97,7 +97,7 @@ systemd-inhibit --what=sleep --mode=block \
   --why='V5 0.5 m outdoor flight gate' \
   python3 scripts/p450_delivery_poc_mission.py \
     --flight \
-    --test-id P450_20260826_OUTDOOR_V5_FLIGHT_05M_D \
+    --test-id P450_20260826_OUTDOOR_V5_FLIGHT_05M_E \
     --allow-armed \
     --operator-confirmation PROPS_INSTALLED_AREA_CLEAR_KILL_READY \
     --takeoff-height 0.5 \
@@ -120,7 +120,7 @@ systemd-inhibit --what=sleep --mode=block \
   --why='V5 1 m 5 m delivery PoC' \
   python3 scripts/p450_delivery_poc_mission.py \
     --flight \
-    --test-id P450_20260826_OUTDOOR_V5_FLIGHT_1M_5M_D \
+    --test-id P450_20260826_OUTDOOR_V5_FLIGHT_1M_5M_E \
     --allow-armed \
     --operator-confirmation PROPS_INSTALLED_AREA_CLEAR_KILL_READY \
     --takeoff-height 1 \

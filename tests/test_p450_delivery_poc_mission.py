@@ -20,6 +20,7 @@ SPEC.loader.exec_module(MISSION)
 def arguments(**overrides):
     values = {
         "mode": "dry-run",
+        "v6_flight": False,
         "test_id": None,
         "allow_armed": False,
         "operator_confirmation": "",
@@ -121,6 +122,29 @@ class ArgumentGateTests(unittest.TestCase):
                 arguments(mode="flight", test_id="P450_FLIGHT_TEST", allow_armed=True)
             )
         self.assertIn(MISSION.FLIGHT_CONFIRMATION, error)
+
+    def test_v6_flight_requires_single_explicit_operator_confirmation(self):
+        with patch.object(MISSION, "path_is_mounted", return_value=True):
+            error = MISSION.validate_args(
+                arguments(
+                    mode="v6-flight",
+                    test_id="P450_V6_FLIGHT_TEST",
+                    allow_armed=True,
+                )
+            )
+        self.assertIn(MISSION.V6_FLIGHT_CONFIRMATION, error)
+
+    def test_v6_flight_accepts_single_explicit_operator_confirmation(self):
+        with patch.object(MISSION, "path_is_mounted", return_value=True):
+            error = MISSION.validate_args(
+                arguments(
+                    mode="v6-flight",
+                    test_id="P450_V6_FLIGHT_TEST",
+                    allow_armed=True,
+                    operator_confirmation=MISSION.V6_FLIGHT_CONFIRMATION,
+                )
+            )
+        self.assertIsNone(error)
 
     def test_active_log_root_must_resolve_below_sd_mount(self):
         with patch.object(MISSION, "path_is_mounted", return_value=True):

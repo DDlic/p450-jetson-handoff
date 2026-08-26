@@ -65,7 +65,9 @@ PX4_CUSTOM_MAIN_MODE_OFFBOARD = 6.0
 
 GROUND_CONFIRMATION = "PROPS_REMOVED_KILL_READY"
 FLIGHT_CONFIRMATION = "PROPS_INSTALLED_AREA_CLEAR_KILL_READY"
+V6_FLIGHT_CONFIRMATION = "V6_PROPS_INSTALLED_AREA_CLEAR_KILL_READY"
 MISSION_ARTIFACT_VERSION = "V4"
+V6_MISSION_ARTIFACT_VERSION = "V6"
 RESULT_CONTROL_RELINQUISHED = 20
 
 FAILSAFE_FLAG_NAMES = (
@@ -349,8 +351,15 @@ class DeliveryMission(Node):
         )
         self.log_event(
             "START",
-            f"artifact={MISSION_ARTIFACT_VERSION} mode={args.mode} "
+            f"artifact={self.artifact_version()} mode={args.mode} "
             f"test_id={args.test_id}",
+        )
+
+    def artifact_version(self):
+        return (
+            V6_MISSION_ARTIFACT_VERSION
+            if self.args.mode == "v6-flight"
+            else MISSION_ARTIFACT_VERSION
         )
 
     def _stamp(self, name, message):
@@ -1231,6 +1240,11 @@ def parse_args():
     modes.add_argument("--preflight-only", action="store_true")
     modes.add_argument("--ground-sequence", action="store_true")
     modes.add_argument("--flight", action="store_true")
+    modes.add_argument(
+        "--v6-flight",
+        action="store_true",
+        help="single-command V6 flight; runtime fail-closed protections remain active",
+    )
     parser.add_argument("--test-id")
     parser.add_argument("--allow-armed", action="store_true")
     parser.add_argument("--operator-confirmation", default="")
@@ -1249,6 +1263,8 @@ def parse_args():
         args.mode = "ground-sequence"
     elif args.flight:
         args.mode = "flight"
+    elif args.v6_flight:
+        args.mode = "v6-flight"
     else:
         args.mode = "dry-run"
     return args
@@ -1292,6 +1308,15 @@ def validate_args(args):
             return (
                 "flight requires --allow-armed and "
                 f"--operator-confirmation {FLIGHT_CONFIRMATION}"
+            )
+    if args.mode == "v6-flight":
+        if (
+            not args.allow_armed
+            or args.operator_confirmation != V6_FLIGHT_CONFIRMATION
+        ):
+            return (
+                "V6 flight requires --allow-armed and "
+                f"--operator-confirmation {V6_FLIGHT_CONFIRMATION}"
             )
     return None
 

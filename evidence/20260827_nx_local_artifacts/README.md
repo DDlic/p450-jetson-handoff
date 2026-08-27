@@ -11,6 +11,7 @@
 - `worktree_snapshots/v6-work/`：V6 工作目錄快照，保留其與最終 Git 版本不同的歷史程式/測試/操作卡。
 - `worktree_snapshots/p450-patch-stage/`：早期修補暫存快照。
 - `config/p450-sd-storage.sh`：NX 使用 SD 儲存的環境設定腳本。
+- `boot/`：目前 NX `/boot` 實際啟用的 R35.6.0 DTB 與 `extlinux.conf`。
 
 ## 排除項目
 

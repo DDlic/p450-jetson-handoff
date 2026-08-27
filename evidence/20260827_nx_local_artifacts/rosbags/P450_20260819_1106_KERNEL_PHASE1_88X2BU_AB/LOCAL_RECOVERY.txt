@@ -1,0 +1,23 @@
+Keep the phone USB cable connected and USB tethering enabled.
+Do not stop or restart p450-micro-xrce-agent.service.
+
+If Codex disconnects but NX remains responsive:
+
+ip -br addr show usb1
+ip route
+curl --interface usb1 --connect-timeout 10 --max-time 20 -I https://github.com/
+
+Then reopen Codex locally. The active goal/evidence TEST_ID is:
+P450_20260819_1106_KERNEL_PHASE1_88X2BU_AB
+
+If phone tether does not work, restore the Wi-Fi module locally:
+
+sudo modprobe 88x2bu
+nmcli device status
+nmcli connection up '油到連不上 1'
+
+If NX hangs or reboots unexpectedly, do not rerun the unload. After reboot run:
+
+sudo find /sys/fs/pstore -maxdepth 1 -type f -printf '%f %s bytes\n' -exec sha256sum {} \;
+
+Then reopen Codex and report that Phase 1 rebooted or hung.

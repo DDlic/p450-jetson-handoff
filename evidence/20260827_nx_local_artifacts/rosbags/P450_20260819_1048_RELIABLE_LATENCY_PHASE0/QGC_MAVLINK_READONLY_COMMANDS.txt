@@ -1,0 +1,17 @@
+TEST_ID: P450_20260819_1048_RELIABLE_LATENCY_PHASE0
+
+Paste the following commands into QGC MAVLink Console one line at a time.
+They are read-only. Do not run trace reset, change parameters, switch mode, or arm.
+
+ver all
+commander status
+uxrce_dds_client status
+param show COM_OF_LOSS_T
+param show COM_OBL_RC_ACT
+param show COM_DISARM_LAND
+param show MPC_LAND_SPEED
+listener vehicle_status 1
+listener vehicle_land_detected 1
+listener vehicle_local_position 1
+
+Preserve the complete raw console output under the same TEST_ID.

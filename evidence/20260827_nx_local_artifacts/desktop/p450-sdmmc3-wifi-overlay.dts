@@ -1,0 +1,59 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "nvidia,tegra194";
+
+	/* P3668-0001 is the eMMC production module.  Do not probe SDMMC1. */
+	fragment@0 {
+		target-path = "/sdhci@3400000";
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* P450's carrier-board microSD path must use SDMMC3. */
+	fragment@1 {
+		target-path = "/sdhci@3440000";
+
+		__overlay__ {
+			status = "okay";
+			bus-width = <4>;
+			mmc-ocr-mask = <0>;
+			no-sdio;
+			no-mmc;
+			non-removable;
+			no-1-8-v;
+			max-clk-limit = <50000000>;
+			nvidia,vmmc-always-on;
+			vmmc-supply = <0x2a>; /* existing always-on 3.3 V rail */
+			/delete-property/ cd-gpios;
+			/delete-property/ nvidia,cd-wakeup-capable;
+			/delete-property/ cd-inverted;
+		};
+	};
+
+	/* NVIDIA's Xavier NX Intel 8265 workaround for active-low WLAN disable. */
+	fragment@2 {
+		target-path = "/gpio@c2f0000";
+
+		__overlay__ {
+			w-disable1 {
+				gpio-hog;
+				output-high;
+				gpios = <0x16 0x01>; /* AON GPIO CC.2, GPIO_ACTIVE_LOW */
+				label = "w-disable1";
+				status = "okay";
+			};
+
+			w-disable2 {
+				gpio-hog;
+				output-high;
+				gpios = <0x14 0x01>; /* AON GPIO CC.0, GPIO_ACTIVE_LOW */
+				label = "w-disable2";
+				status = "okay";
+			};
+		};
+	};
+};

@@ -1,0 +1,1 @@
+sequence,monotonic_ns,elapsed_ms,publish_gap_ms,state,offboard_subscriptions,setpoint_subscriptions,command_subscriptions,arming_state,nav_state,offboard_enabled,failsafe,raw_gcs_lost,active_gcs_lost,heading_good,xy_reset_counter,z_reset_counter,heading_reset_counter,x,y,z,vx,vy,vz

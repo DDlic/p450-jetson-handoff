@@ -1,0 +1,176 @@
+SOURCE: https://github.com/DDlic/p450-jetson-handoff/issues/1#issuecomment-5336966102
+TEST_ID: P450_20260819_1048_RELIABLE_LATENCY_PHASE0
+
+nsh: sysinit: fopen failed: No such file or directory
+
+NuttShell (NSH) NuttX-11.0.0
+nsh> ver all
+HW arch: PX4_FMU_V6C
+HW type: V6C000000
+HW version: 0x000
+HW revision: 0x000
+PX4 git-hash: c7a39478405122a04ef9f10b69f873561751a126
+PX4 version: 1.14.3 0 (17695488)
+PX4 git-branch: p450-xrce-rx-trace
+OS: NuttX
+OS version: Release 11.0.0 (184549631)
+OS git-hash: de41e7feaeffaec3ce65327e9569e8fdb553ca3d
+Build datetime: Aug 14 2026 14:31:09
+Build uri: localhost
+Build variant: default
+Toolchain: GNU GCC, 9.3.1 20200408 (release)
+PX4GUID: 000600000000323534333131510500280019
+MCU: STM32H7[4|5]xxx, rev. V
+nsh> commander status
+INFO  [commander] Arm state: Standby
+INFO  [commander] navigation mode: AUTO_LOITER
+INFO  [commander] user intended navigation mode: AUTO_LOITER
+INFO  [commander] in failsafe: no
+commander: cycle: 75125 events, 4878470us elapsed, 64.94us avg, min 23us max 1748us 96.409us rms
+commander: preflight check: 7521 events, 1702819us elapsed, 226.41us avg, min 130us max 1687us 131.101us rms
+nsh> uxrce_dds_client status
+INFO  [uxrce_dds_client] Running, connected
+INFO  [uxrce_dds_client] Using transport: serial
+INFO  [uxrce_dds_client] Payload tx: 3002 B/s
+INFO  [uxrce_dds_client] Payload rx: 0 B/s
+INFO  [uxrce_dds_client] Serial RX pending samples: 1
+INFO  [uxrce_dds_client] Serial RX pending bytes observed: 20
+INFO  [uxrce_dds_client] Serial RX pending max: 20 B
+INFO  [uxrce_dds_client] Serial RX FIONREAD errors: 0
+INFO  [uxrce_dds_client] Complete payload bytes received: 0
+INFO  [uxrce_dds_client] Serial framing: state 0, buffered 0 B, message 36/36 B
+INFO  [uxrce_dds_client] Offboard RX: count 0, max gap 0 us, >150/250/500 ms 0/0/0
+INFO  [uxrce_dds_client] Offboard RX stream: reliable
+INFO  [uxrce_dds_client] Reliable RX trace: count 18/96, frozen 0, trigger gap 0 us
+nsh> param show COM_OF_LOSS_T
+Symbols: x = used, + = saved, * = unsaved
+x   COM_OF_LOSS_T [285,490] : 1.0000
+
+ 1093/1813 parameters used.
+nsh> param show COM_OBL_RC_ACT
+Symbols: x = used, + = saved, * = unsaved
+x   COM_OBL_RC_ACT [283,488] : 0
+
+ 1093/1813 parameters used.
+nsh> param show COM_DISARM_LAND
+Symbols: x = used, + = saved, * = unsaved
+x   COM_DISARM_LAND [259,464] : 2.0000
+
+ 1093/1813 parameters used.
+nsh> param show MPC_LAND_SPEED
+Symbols: x = used, + = saved, * = unsaved
+x   MPC_LAND_SPEED [611,1017] : 0.7000
+
+ 1093/1813 parameters used.
+nsh> listener vehicle_status 1
+
+TOPIC: vehicle_status
+ vehicle_status
+    timestamp: 826780363 (0.282170 seconds ago)
+    armed_time: 0
+    takeoff_time: 0
+    nav_state_timestamp: 509117
+    failure_detector_status: 0
+    arming_state: 1
+    latest_arming_reason: 0
+    latest_disarming_reason: 0
+    nav_state_user_intention: 4
+    nav_state: 4
+    hil_state: 0
+    vehicle_type: 1
+    failsafe: False
+    failsafe_and_user_took_over: False
+    gcs_connection_lost: False
+    gcs_connection_lost_counter: 0
+    high_latency_data_link_lost: False
+    is_vtol: False
+    is_vtol_tailsitter: False
+    in_transition_mode: False
+    in_transition_to_fw: False
+    system_type: 2
+    system_id: 1
+    component_id: 1
+    safety_button_available: True
+    safety_off: True
+    power_input_valid: True
+    usb_connected: True
+    open_drone_id_system_present: False
+    open_drone_id_system_healthy: False
+    parachute_system_present: False
+    parachute_system_healthy: False
+    avoidance_system_required: False
+    avoidance_system_valid: False
+    rc_calibration_in_progress: False
+    calibration_enabled: False
+    pre_flight_checks_pass: False
+
+nsh> listener vehicle_land_detected 1
+
+TOPIC: vehicle_land_detected
+ vehicle_land_detected
+    timestamp: 827040463 (0.071495 seconds ago)
+    freefall: False
+    ground_contact: True
+    maybe_landed: True
+    landed: True
+    in_ground_effect: True
+    in_descend: True
+    has_low_throttle: True
+    vertical_movement: False
+    horizontal_movement: False
+    rotational_movement: False
+    close_to_ground_or_skipped_check: True
+    at_rest: True
+
+nsh> listener vehicle_local_position 1
+
+TOPIC: vehicle_local_position
+ vehicle_local_position
+    timestamp: 828523455 (0.003245 seconds ago)
+    timestamp_sample: 828522998 (457 us before timestamp)
+    ref_timestamp: 0
+    ref_lat: nan
+    ref_lon: nan
+    x: 0.00024
+    y: 0.00025
+    z: -0.45981
+    delta_xy: [-0.00721, 0.00847]
+    delta_z: -0.00294
+    vx: 0.00029
+    vy: 0.00084
+    vz: 0.00155
+    z_deriv: 0.00436
+    delta_vxy: [-0.02378, 0.02694]
+    delta_vz: -0.01749
+    ax: 0.01555
+    ay: -0.03393
+    az: -0.00276
+    heading: 2.36374
+    delta_heading: 2.34618
+    ref_alt: nan
+    dist_bottom: 0.10273
+    eph: 0.01627
+    epv: 0.27169
+    evh: 0.04399
+    evv: 0.06959
+    vxy_max: inf
+    vz_max: inf
+    hagl_min: inf
+    hagl_max: inf
+    xy_valid: False
+    z_valid: True
+    v_xy_valid: False
+    v_z_valid: True
+    xy_reset_counter: 2
+    z_reset_counter: 2
+    vxy_reset_counter: 2
+    vz_reset_counter: 2
+    heading_reset_counter: 2
+    heading_good_for_control: False
+    xy_global: False
+    z_global: False
+    dist_bottom_valid: False
+    dist_bottom_sensor_bitfield: 0
+    dead_reckoning: True
+
+nsh>

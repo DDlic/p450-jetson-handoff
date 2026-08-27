@@ -1,0 +1,11 @@
+monotonic_ns,elapsed_ms,state,event,detail
+8811337473779,22.653,PRECHECK,START,mode=preflight-only test_id=P450_20260819_1515_DELIVERY_SCRIPT_PREFLIGHT_B
+8811340061791,25.241,PRECHECK,ARMING_STATE,1
+8811340224212,25.404,PRECHECK,NAV_STATE,4
+8811398028758,83.208,PRECHECK,PREFLIGHT_REFUSED,PX4 pre_flight_checks_pass is false
+8811398228008,83.408,PRECHECK,PREFLIGHT_REFUSED,failsafe flag local_position_invalid=true
+8811398289795,83.469,PRECHECK,PREFLIGHT_REFUSED,failsafe flag local_velocity_invalid=true
+8811398341088,83.521,PRECHECK,PREFLIGHT_REFUSED,failsafe flag global_position_invalid=true
+8811398390012,83.570,PRECHECK,PREFLIGHT_REFUSED,failsafe flag home_position_invalid=true
+8811398441529,83.621,PRECHECK,PREFLIGHT_REFUSED,failsafe flag manual_control_signal_lost=true
+8811398492885,83.672,PRECHECK,PREFLIGHT_REFUSED,local/global position or heading is not flight-valid

@@ -1,0 +1,9 @@
+monotonic_ns,elapsed_ms,state,event,detail
+3888044509744,19.005,PRECHECK,START,mode=preflight-only test_id=P450_20260820_INDOOR_BENCH_GATE_PREFLIGHT_B
+3888385025532,359.521,PRECHECK,ARMING_STATE,1
+3888385203623,359.699,PRECHECK,NAV_STATE,15
+3888385559774,360.055,PRECHECK,PREFLIGHT_REFUSED,failsafe flag local_position_invalid=true
+3888385631791,360.127,PRECHECK,PREFLIGHT_REFUSED,failsafe flag local_velocity_invalid=true
+3888385683419,360.179,PRECHECK,PREFLIGHT_REFUSED,failsafe flag global_position_invalid=true
+3888385733672,360.229,PRECHECK,PREFLIGHT_REFUSED,failsafe flag home_position_invalid=true
+3888385780275,360.276,PRECHECK,PREFLIGHT_REFUSED,local/global position or heading is not flight-valid

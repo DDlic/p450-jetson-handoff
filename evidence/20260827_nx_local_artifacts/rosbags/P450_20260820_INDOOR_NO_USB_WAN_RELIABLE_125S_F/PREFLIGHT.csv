@@ -1,0 +1,1 @@
+sequence,monotonic_ns,elapsed_ms,publish_gap_ms,ros_timestamp_us,reliability,subscription_count,arming_state,nav_state,nav_state_user_intention,failsafe

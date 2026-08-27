@@ -1,0 +1,6 @@
+RESULT=STOPPED_FOR_OUTDOOR_DELIVERY_TRANSITION
+START=2026-08-19T14:26:30+08:00
+END=2026-08-19T15:17:06+08:00
+SAMPLES=50
+LAST=2026-08-19T15:16:15+08:00	16254	absent	unknown	active	1670	0	0	0
+DISPOSITION=Supplemental active-runtime evidence only; not a two-hour PASS. Operator must power-cycle NX to move outdoors. No sampled kernel fault, suspend entry, Agent restart, Agent PID change, or 88x2bu reload occurred before the controlled stop.

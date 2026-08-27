@@ -1,0 +1,1 @@
+sequence,monotonic_ns,elapsed_ms,publish_gap_ms,state,offboard_subscriptions,setpoint_subscriptions,command_subscriptions,arming_state,nav_state,failsafe,x,y,z,vx,vy,vz

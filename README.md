@@ -15,6 +15,10 @@ x500 軟體模擬已完成：SIM-P、SIM-G、0.5 m 垂直飛行與 1 m／前進 
 PX4 Land 完成 auto-disarm-land。heartbeat pause、POSCTL takeover、Agent pause 三項
 simulator-only failure injection 也完成預期 fail-closed／控制交還與落地復原。
 
+P450 外型 Gazebo 模型、原生旋轉槳、單一 route-wide 機位，以及 ROS 2／PX4／V4
+狀態同畫面的 2560×1440 60 fps 展示亦已完成；完整報告與影片見
+[`P450_VISUAL_SITL_1440P60_VALIDATION_REPORT_20260827.md`](docs/reports/2026-08-27/P450_VISUAL_SITL_1440P60_VALIDATION_REPORT_20260827.md)。
+
 原始 V4 並非未修改即可通過：桌機 bind mount 偵測與 PX4 v1.14.3 auto-disarm reason
 enum 錯位各需一個窄修正。完整可重現程序、版本 pin、重試紀錄與限制見
 [`P450_UBUNTU22_HUMBLE_SITL_HANDOFF_20260825.md`](docs/runbooks/P450_UBUNTU22_HUMBLE_SITL_HANDOFF_20260825.md)，

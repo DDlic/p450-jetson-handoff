@@ -1,0 +1,187 @@
+<sdf version='1.9'>
+  <world name='p450_visual'>
+    <physics type='ode'>
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+    </physics>
+
+    <plugin name='gz::sim::systems::Physics' filename='gz-sim-physics-system'/>
+    <plugin name='gz::sim::systems::UserCommands' filename='gz-sim-user-commands-system'/>
+    <plugin name='gz::sim::systems::SceneBroadcaster' filename='gz-sim-scene-broadcaster-system'/>
+    <plugin name='gz::sim::systems::Contact' filename='gz-sim-contact-system'/>
+    <plugin name='gz::sim::systems::Imu' filename='gz-sim-imu-system'/>
+    <plugin name='gz::sim::systems::AirPressure' filename='gz-sim-air-pressure-system'/>
+    <plugin name='gz::sim::systems::Sensors' filename='gz-sim-sensors-system'>
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <gui fullscreen='false'>
+      <plugin name='P450 visual flight' filename='GzScene3D'>
+        <gz-gui>
+          <title>P450 visual flight</title>
+          <property type='bool' key='showTitleBar'>0</property>
+          <property type='string' key='state'>docked</property>
+        </gz-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.6 0.6 0.6</ambient_light>
+        <background_color>0.82 0.9 0.98</background_color>
+        <camera_pose>2.5 -4.8 2.3 0 0.32 1.57</camera_pose>
+      </plugin>
+      <plugin name='World control' filename='WorldControl'>
+        <gz-gui>
+          <title>World control</title>
+          <property type='bool' key='showTitleBar'>0</property>
+          <property type='bool' key='resizable'>0</property>
+          <property type='double' key='height'>72</property>
+          <property type='double' key='width'>121</property>
+          <property type='double' key='z'>1</property>
+          <property type='string' key='state'>floating</property>
+          <anchors target='P450 visual flight'>
+            <line own='left' target='left'/>
+            <line own='bottom' target='bottom'/>
+          </anchors>
+        </gz-gui>
+        <play_pause>1</play_pause>
+        <step>1</step>
+        <start_paused>1</start_paused>
+      </plugin>
+      <plugin name='World stats' filename='WorldStats'>
+        <gz-gui>
+          <title>World stats</title>
+          <property type='bool' key='showTitleBar'>0</property>
+          <property type='bool' key='resizable'>0</property>
+          <property type='double' key='height'>110</property>
+          <property type='double' key='width'>290</property>
+          <property type='double' key='z'>1</property>
+          <property type='string' key='state'>floating</property>
+          <anchors target='P450 visual flight'>
+            <line own='right' target='right'/>
+            <line own='bottom' target='bottom'/>
+          </anchors>
+        </gz-gui>
+        <sim_time>1</sim_time>
+        <real_time>1</real_time>
+        <real_time_factor>1</real_time_factor>
+        <iterations>1</iterations>
+      </plugin>
+      <plugin name='Entity tree' filename='EntityTree'/>
+    </gui>
+
+    <gravity>0 0 -9.8</gravity>
+    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
+    <atmosphere type='adiabatic'/>
+    <scene>
+      <grid>true</grid>
+      <ambient>0.45 0.45 0.45 1</ambient>
+      <background>0.7 0.8 0.92 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <model name='ground_plane'>
+      <static>true</static>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction><ode/></friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.68 0.72 0.68 1</ambient>
+            <diffuse>0.68 0.72 0.68 1</diffuse>
+            <specular>0.15 0.15 0.15 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name='start_marker'>
+      <static>true</static>
+      <pose>0 0 0.001 0 0 0</pose>
+      <link name='link'>
+        <visual name='visual'>
+          <geometry><cylinder><radius>0.65</radius><length>0.002</length></cylinder></geometry>
+          <material>
+            <ambient>0.1 0.55 0.95 1</ambient>
+            <diffuse>0.1 0.55 0.95 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name='forward_marker'>
+      <static>true</static>
+      <!-- PX4 local +Y maps to Gazebo world +X for this 90-degree heading. -->
+      <pose>5 0 0.001 0 0 0</pose>
+      <link name='link'>
+        <visual name='visual'>
+          <geometry><cylinder><radius>0.65</radius><length>0.002</length></cylinder></geometry>
+          <material>
+            <ambient>0.95 0.45 0.08 1</ambient>
+            <diffuse>0.95 0.45 0.08 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name='flight_recorder_camera'>
+      <static>true</static>
+      <!-- One route-wide view: both the takeoff point and the 5 m forward goal remain visible. -->
+      <pose>2.5 -5 3.0 0 0.414 1.571</pose>
+      <link name='link'>
+        <sensor name='camera' type='camera'>
+          <camera>
+            <horizontal_fov>1.2</horizontal_fov>
+            <image>
+              <width>1280</width>
+              <height>720</height>
+            </image>
+            <clip>
+              <near>0.1</near>
+              <far>100</far>
+            </clip>
+          </camera>
+          <always_on>true</always_on>
+          <update_rate>60</update_rate>
+          <visualize>false</visualize>
+          <topic>p450_visual_camera</topic>
+          <plugin filename='gz-sim-camera-video-recorder-system'
+                  name='gz::sim::systems::CameraVideoRecorder'>
+            <service>p450_visual_camera/record_video</service>
+            <fps>60</fps>
+            <bitrate>12000000</bitrate>
+          </plugin>
+        </sensor>
+      </link>
+    </model>
+
+    <light name='sun' type='directional'>
+      <pose>0 0 500 0 0 0</pose>
+      <cast_shadows>true</cast_shadows>
+      <intensity>1</intensity>
+      <direction>-0.25 0.35 -0.9</direction>
+      <diffuse>0.95 0.95 0.95 1</diffuse>
+      <specular>0.25 0.25 0.25 1</specular>
+      <attenuation>
+        <range>2000</range>
+        <linear>0</linear>
+        <constant>1</constant>
+        <quadratic>0</quadratic>
+      </attenuation>
+    </light>
+  </world>
+</sdf>

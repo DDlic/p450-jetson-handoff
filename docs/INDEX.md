@@ -26,6 +26,6 @@ This index separates current decision material from dated history and raw eviden
 - [`operations/`](operations/) — setup and command references.
 - [`reports/`](reports/) — dated engineering results and plans, grouped by date.
 - [`history/`](history/) — superseded handoffs and narratives retained for provenance.
-- [`raw/`](raw/) — unstructured notes and captures preserved without promotion to verified conclusions.
+- [`raw/`](raw/) — unstructured notes and captures preserved without promotion to verified conclusions. Later root-level ULog uploads are indexed under [`raw/captures/ULG/`](raw/captures/ULG/README.md).
 
 The structural classification was performed with `git mv`; pre-existing files were not discarded. Root now contains only `README.md` and `AGENTS.md` as Markdown entry points.

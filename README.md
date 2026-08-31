@@ -1,201 +1,109 @@
-# AMOV P450 Jetson Xavier NX Handoff
+<div align="center">
 
-本 repository 保存 P450 Jetson Xavier NX 的系統重建、刷寫與後續 ROS/PX4 整合交接文件。
+# AMOV P450 × Jetson Xavier NX
 
-倉庫導覽、文件權威層級與後續分類位置請先看
-[`docs/INDEX.md`](docs/INDEX.md)；完整技術拓撲與可驗證範圍見
-[`docs/architecture/REPOSITORY_MAP.md`](docs/architecture/REPOSITORY_MAP.md)。整理工作只分類或
-以 Git rename 搬移既有檔案，不刪除實驗證據或歷史交接。
-目前分支用途、未合併成果與 archive tags 見
-[`docs/current/BRANCH_INVENTORY_20260831.md`](docs/current/BRANCH_INVENTORY_20260831.md)。
-未附 TEST_ID 的後補 ULog 已集中到
-[`docs/raw/captures/ULG/`](docs/raw/captures/ULG/README.md)，不在 repository 根目錄展示，
-也不應單獨解讀為測試結論。
+**ROS 2／PX4 整合交接、診斷工具、韌體來源與實驗證據庫**
 
-## 2026-08-17 當前協作入口
+<p>
+  <img src="https://img.shields.io/badge/status-engineering_handoff-2563EB?style=flat-square" alt="Engineering handoff">
+  <img src="https://img.shields.io/badge/NVIDIA_Jetson-Xavier_NX-76B900?style=flat-square&logo=nvidia&logoColor=white" alt="NVIDIA Jetson Xavier NX">
+  <img src="https://img.shields.io/badge/ROS_2-Foxy-22314E?style=flat-square&logo=ros&logoColor=white" alt="ROS 2 Foxy">
+  <img src="https://img.shields.io/badge/autopilot-PX4-111111?style=flat-square" alt="PX4">
+</p>
 
-接近交付期的「1 m 起飛／前進 5 m／Land」最小 PoC 決策、`not landed` 根因、601.548 ms
-gap 風險與 NX CLI 下次實作順序，統一依
-[`P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md`](docs/runbooks/P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md)。
-該文件只提供機主明確接受殘餘風險時的受控 PoC 路徑，不代表 transport freshness 或
-NX kernel gate 已通過，也不授權 CLI 自行裝槳、改參數或解鎖。
+[開始閱讀](docs/INDEX.md) · [系統架構](docs/architecture/REPOSITORY_MAP.md) · [目前分支](docs/current/BRANCH_INVENTORY_20260831.md) · [協作 Issue](https://github.com/DDlic/p450-jetson-handoff/issues/1)
 
-Reliable 已在現有 60 秒／600 秒場消除最終遺失，但 250 ms freshness gate 仍失敗。
-後續解法、命令、判定矩陣、rollback 與逐級飛行 gate 統一依
-[`P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md`](docs/runbooks/P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md)。
-目前 NX kernel gate 為 FAIL，該 runbook 內 Agent stop/start 與 transport A/B 不得跳過
-Phase 1 直接執行。
+</div>
 
-> 使用 QGroundControl／Pixhawk 的筆電 Codex 請先完整閱讀
-> [`QGC_LAPTOP_CODEX_HANDOFF_20260814.md`](docs/current/QGC_LAPTOP_CODEX_HANDOFF_20260814.md)。
-> 該文件包含目前實機真實狀態、已證實的 reliable sequence hole、雙 Codex 分工、
-> 同步測試時序、Git 回傳格式與安全停止條件。下面的長篇「目前狀態」包含歷史版本，
-> 不可取代這份專用交接。
+這不是一個可直接編譯的 ROS package，而是 AMOV P450、Jetson Xavier NX 與
+Pixhawk 6C 整合過程的可稽核工程交接庫。它把「目前能做什麼」、「哪些關卡仍失敗」
+以及「結論來自哪份原始證據」分開保存。
 
-NX Codex 與 QGC 筆電 Codex 的即時交棒統一使用
-[GitHub Issue #1：P450 Codex Coordination](https://github.com/DDlic/p450-jetson-handoff/issues/1)；
-Git repository 僅保存程式碼、文件與完整 evidence，Issue 保存狀態、TEST_ID 與 commit SHA。
+> [!CAUTION]
+> 本 repository **尚未證明系統具備一般飛行安全性**。目前仍有 transport freshness
+> 與 NX kernel panic 關卡未通過。閱讀或修改 repository 不等於授權裝槳、解鎖、刷寫、
+> 改參數或進行實機飛行。
 
-最新雙端結論：NX 端 125 秒／10 Hz publisher 最大 gap 為 120.436 ms，但 PX4 receipt
-最大 gap 為 506.727 ms；RXTRACE 已直接捕捉 seq 61 先到、seq 58–60 缺失，等待補洞
-造成 397.990 ms head-of-line stall。NX 的 `cgroup.memory=nokmem` kernel workaround
-第一輪 A/B 通過，但它沒有修復 XRCE gap。目前 transport gate 仍為 FAIL，禁止有槳
-Offboard 飛行；下一個高資訊量工作是 Agent 端 sequence/send/ACKNACK/retransmit trace。
+## 專案一覽
 
-> **2026-08-17 NX kernel gate 升級為 FAIL**：操作者執行停止 Agent 服務後，NX 發生
-> 第二次與 2026-08-14 完全同 family 的
-> `key_garbage_collector -> key_put()` kernel panic；fault address 再次是
-> `0x0000000200000000`。因此不再視為單次事件，暫停 Agent stop/start 與 Agent trace A/B，
-> 也不進行有槳飛行。原始 ramoops、兩次比對、NVIDIA 35.6.0/35.6.5 source 判讀與下一步
-> software-only A/B 見
-> [`20260817 repeated key GC panic`](evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md)。
-> 同日 eMMC 已由 74% 清理到 64%、可用 4.8 GB；診斷 Agent builds 已搬到 SD 並保留
-> 原路徑 symlink，詳見 [`storage cleanup`](evidence/20260817_storage_cleanup/README.md)。
-> 後續採 SD-first 儲存政策：Codex home/update/session、Git clone、build、log、cache、download
-> 與 temporary output 都移到 `P450_DATA`；離線遷移與失效保護見
-> [`SD_STORAGE_POLICY_20260817.md`](docs/runbooks/SD_STORAGE_POLICY_20260817.md)。
+| 項目 | 內容 |
+| --- | --- |
+| 飛行平台 | AMOV P450 |
+| Companion computer | NVIDIA Jetson Xavier NX，JetPack 5.1.4／L4T R35.6.0 |
+| Flight controller | Pixhawk 6C／PX4 |
+| Middleware | ROS 2 Foxy、Micro XRCE-DDS Agent 2.4.2 |
+| 主要鏈路 | Jetson UART ↔ Pixhawk TELEM2，115200 baud |
+| Repository 角色 | 工程交接、診斷腳本、韌體 provenance、測試報告與原始 evidence |
 
 ## 目前狀態
 
-> **2026-08-14 Agent 50 ms 乾淨短測 FAIL**：前一輪 600 秒結果因混入 21 筆前測而只能
-> 判為 INCONCLUSIVE；重新建立 hb50 XRCE session 後直接執行乾淨 120 秒場，NX 發布
-> 1201 筆、最大 gap 119.042 ms、`>150/250/500 ms=0/0/0`，PX4 收到 1201 筆、最大
-> receipt gap 298.884 ms、`>150/250/500 ms=65/4/0`。Reliable 仍保證零最終遺失，
-> 但 Agent recovery 200→50 ms 沒有達成 250 ms deadline；不必再跑 600 秒，原 200 ms
-> Agent 已恢復。當時的 `key_garbage_collector → key_put()` kernel panic 原先列為單次事件；
-> 2026-08-17 已再次出現完全相同 trace，因此此段「單次監控」判定已失效，現在以頁首
-> 2026-08-17 kernel gate 為準。
-> 詳見 [`Agent 50 ms A/B`](evidence/20260813_first_principles_offboard_transport/AGENT_50MS_AB_RESULT.md)
-> 與 [`kernel panic 證據`](evidence/20260814_nx_kernel_panic_key_gc/README.md)。
+以下是 `main` 目前可由同條件 evidence 支持的最小結論：
 
-> **2026-08-13 Reliable 長測：零遺失但 deadline FAIL**：`50c989f85b` 已證明
-> PX4→NX output 可降至 2874 B/s，但 10 Hz／60 秒 Best-Effort heartbeat 仍是 NX 發
-> 601 筆、PX4 收 586 筆，PX4 最大 gap 307.002 ms；NX 自身最大 gap 119.813 ms。
-> 因此單純頻寬飽和與 Linux publish scheduling 均不足以解釋遺失，責任範圍已縮到
-> ROS 2 publisher 之後、PX4 deserialize 之前。`e6f3d83ff5` 只把 Offboard heartbeat
-> 改成 Reliable；相同 B 組得到 NX 601 筆、PX4 601 筆、最大 receipt gap 207.733 ms，
-> `>250/500 ms=0/0`，短測 PASS；但 10 分鐘為 6001/6001、零最終遺失，PX4 最大
-> gap 601.548 ms、`>250/500 ms=16/2`，所以 250 ms 長測 gate FAIL。Reliable 解決
-> 最終遺失，但預設 200 ms recovery 週期仍未提供足夠 deadline margin；禁止裝槳／飛行。
-> 詳見
-> [`10 分鐘雙端結果`](evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md)
-> 與 [`第一性原理總結`](evidence/20260813_first_principles_offboard_transport/SUMMARY.md)。
+| 關卡 | 狀態 | 已知結果 |
+| --- | :---: | --- |
+| Reliable 最終送達 | **Observed** | 一次 disarmed 600 秒測試為 `6001/6001` 最終送達 |
+| 250 ms freshness | **Fail** | 同一測試最大 receipt gap 為 `601.548 ms` |
+| NX kernel stability | **Fail** | 已保存兩次同 family `key_garbage_collector → key_put()` panic |
+| 一般實機飛行安全 | **Not established** | 尚無證據涵蓋 armed／outdoor worst-case tail 與完整安全關卡 |
 
-> **2026-08-12 最新停止點**：實機目前使用 PX4 v1.14.3 custom
-> `0438dbc6fd`，TELEM2 ↔ NX UART0 固定 115200。115200 已證明能把 NX 的完整 XRCE
-> marker 解碼進 PX4 uORB；室外 GPS／EKF 與 disarmed Offboard 切入切回通過，ROS 2
-> normal Arm 也由 QGC 證實成功。armed 後仍反覆出現 `No offboard signal` 並退回
-> Position；normal Disarm 則因 land detector 誤判 `Takeoff detected/not landed` 被拒絕，
-> 最後由操作者 Kill 安全上鎖。全程無槳，目前所有 ROS 控制 publisher 均為 0，仍禁止
-> 裝槳與飛行。
+詳細條件與限制：
 
-最新根因分析已把「UART full duplex」、「NX publisher 是否真的有當次 send-gap trace」
-與「PX4 output 接近 115200 線速」分開處理。網路與上游原始碼交叉查證顯示：Xavier NX
-高速 UART 確有相似 clock／CRC 案例；PX4 新版也已加入 XRCE 高負載 loop／flush 改善與
-per-topic `rate_limit`。下一步不是繼續輪刷大版本，而是為 heartbeat 建立雙端 gap 證據，
-並製作 v1.14.3 rate-limited minimal firmware，把 PX4→NX payload 壓到 5 KB/s 以下。
-完整證據與官方來源見
-[`evidence/20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md`](evidence/20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md)。
+- [Reliable 10 分鐘測試結果](evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md)
+- [NX kernel panic evidence](evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md)
+- [Delivery PoC runbook](docs/runbooks/P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md)
+- [Reliable latency remediation runbook](docs/runbooks/P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md)
 
-Jetson Xavier NX 已完成 JetPack 5.1.4／L4T R35.6.0 eMMC 完整刷寫，並成功進入 Ubuntu 圖形介面。
+> [!NOTE]
+> 「零最終遺失」不等於「deadline-safe」。`601.548 ms` 雖低於該次設定的
+> `COM_OF_LOSS_T=1.0 s`，仍未通過 repository 的 250 ms engineering gate。
 
-目前硬體判定以 Recovery EEPROM 為準：P3668-0001、eMMC、Board ID 3668、SKU 0001。
+## 從哪裡開始
 
-2026-07-29 最新硬體覆核：系統仍由 eMMC `/dev/mmcblk0p1` 開機；側邊 microSD 已由 SDMMC3 (`3440000.sdhci`) 正常辨識為 `/dev/mmcblk1`。128 GB 卡已清除舊映像並建立單一 ext4 `P450_DATA`；目前以 UUID 固定掛載於 `/media/p450/P450_DATA`，建置完成後仍可用約 108 GB。`rosbags/`、`ulog/`、`builds/` 已建立並交由 `p450` 使用者寫入。啟用的 DTB 為 `/boot/dtb/p450-p3668-0001-p3509-0000-sdmmc3-wifi-uartb460800.dtb`，`extlinux.conf` 預設項目為 `p450-sdmmc3-uartb460800`；舊 `p450-sdmmc3` 保留為 fallback。SD 設定固定 3.3 V、停用 1.8 V 切換，最高時脈 50 MHz；寫讀測試後沒有 CRC 或 I/O error。
+| 如果你是… | 建議入口 |
+| --- | --- |
+| 第一次閱讀 | [Repository index](docs/INDEX.md) → [Architecture map](docs/architecture/REPOSITORY_MAP.md) |
+| 接手目前工作 | [Document inventory](docs/current/DOC_INVENTORY.md) → [Branch inventory](docs/current/BRANCH_INVENTORY_20260831.md) |
+| QGC／Pixhawk 操作者 | [QGC handoff](docs/current/QGC_LAPTOP_CODEX_HANDOFF_20260814.md) → 適用的 runbook |
+| 檢查測試結論 | 先看對應 `evidence/<TEST_ID>/`，再看同條件 summary／report |
+| 開發或審查程式 | `scripts/`、`patches/`、`firmware/`，並先閱讀各區域說明 |
 
-2026-07-28 Wi-Fi 已完成修正：外接 TP-Link USB 無線網卡使用 `wlan1`／`rtl88x2bu`，`rfkill` 顯示沒有 hard/soft block，已能掃描到 AP，且目前網路已由有線切換為 `wlan1`。內建 Intel 8265 的 `wlan0`／`iwlwifi` 持續回報 hard block，會讓 NetworkManager 全域 Wi-Fi 維持 disabled；已以 `/etc/modprobe.d/p450-disable-iwlwifi.conf` 持久停用內建 `iwlwifi`，並重新生成 initramfs。這不影響外接 `wlan1`；若要恢復內建 Wi-Fi，需移除該 blacklist 並重新生成 initramfs。
+## Repository 地圖
 
-2026-07-22 歷史檢查：在 force-probe 啟用前，一般 card-detect 模式下 128 GB 與 512 GB 卡都沒有出現 `/dev/mmcblk1`。512 GB 卡經 USB 讀卡機可辨識為約 500 GB 的 `/dev/sda`，並確認內容是 JetPack 5.1.4／L4T R35.6.0 映像；該卡的 GPT 備份表位置有警告，目前未修復、未寫入。
+```text
+.
+├── docs/       導覽、目前交接、runbooks、reports 與歷史文件
+├── evidence/   依日期／TEST_ID 保存的 summary 與原始觀測
+├── scripts/    ROS 2 診斷、monitor 與受保護的測試工具
+├── firmware/   PX4 artifacts、來源說明與 SHA-256 manifest
+├── patches/    可審查的 PX4／XRCE 修改
+├── config/     NX runtime 與 SD-first 儲存設定
+└── systemd/    Micro XRCE-DDS Agent service 定義
+```
 
-USB 手機網路在最近一次重開機後可快速連線。2026-07-23 已在線完成原生 ROS 2 Foxy、Micro XRCE-DDS Agent v2.4.2、`px4_msgs` 與 `px4_ros_com` 安裝／建置。
+沒有完整 TEST_ID 或測試條件的資料會隔離在 [`docs/raw/`](docs/raw/)，不會被當成
+已驗證結論。大型 build、log、cache 與暫存資料應放在 NX 的
+`/media/p450/P450_DATA`，不要回寫 14 GB eMMC。
 
-2026-07-28 已確認 AMOV AllSpark 外殼 `UART0` 對應 Linux `/dev/ttyTHS1`，並在 Pixhawk `TELEM2` 建立 uXRCE-DDS session；ROS 2 可看到 23 個 `/fmu/*` topics，且能讀取 IMU、姿態與里程計資料。Agent 已安裝為 `p450-micro-xrce-agent.service` 並設為開機啟動。
+## 開發分支
 
-`SER_TEL2_BAUD` 與 Agent 已由 921600 同步降為 460800。這使先前 session 存活時間由約 2.7–4.8 秒改善到約 10–23 秒，但通訊仍不合格。2026-07-29 飛控僅以 USB 供電的 120 秒複測收到 7110 筆 IMU，最大資料空窗 2904.859 ms，10 次超過 1 秒；65 秒詳細 Agent 日誌中 session 建立 10 次、關閉 9 次。USB 供電沒有消除重連，低電壓主電池不是唯一原因。
+| 分支 | 用途 |
+| --- | --- |
+| [`main`](https://github.com/DDlic/p450-jetson-handoff/tree/main) | 經整理的公開交接與權威入口 |
+| [`work/outdoor-v6-nx-evidence`](https://github.com/DDlic/p450-jetson-handoff/tree/work/outdoor-v6-nx-evidence) | 尚未整合的 outdoor V6／NX evidence 工作 |
+| [`work/ubuntu22-humble-visual-sitl`](https://github.com/DDlic/p450-jetson-handoff/tree/work/ubuntu22-humble-visual-sitl) | 尚未整合的 Ubuntu 22.04／Humble visual SITL 工作 |
 
-PX4 v1.14.3 另有官方原始碼缺陷：`VehicleIMU.cpp` 未設定及重置 `delta_angle_clipping`，使 ROS 2 的 `SensorCombined.gyro_clipping` 出現未初始化隨機值；v1.15 已修正。該欄位在目前韌體不可採信，但這與整個 XRCE session 反覆重建是兩個不同問題。
+較新的 branch commit 不會自動覆蓋 `main` 的權威關係。完整保留與整合政策見
+[Branch inventory](docs/current/BRANCH_INVENTORY_20260831.md)。
 
-USB-only 詳細測試結束後，PX4 client 一度沒有自行恢復 DDS entities；由 QGC 重啟 Vehicle 後已恢復 23 個 `/fmu/*` topics，但短時間 discovery 仍出現 `23 → 2 → 16 → 23`，QGC 的 `Running, disconnected` 是重連循環中的瞬間狀態。導航抽樣顯示 GPS `fix_type=0`、0 顆衛星、水平位置／速度無效、航向不適合控制、dead reckoning 啟用，且 45 秒沒有 TimesyncStatus 樣本。測試期間始終未解鎖、未送控制指令。
+## Repository 驗證
 
-2026-07-29 已修正 Jetson UARTB 在 460800 baud 的 device-tree 容差設定；重啟後 kernel 不再回報 baud out-of-range，UARTB clock 為 7,418,181 Hz。但修正後 120 秒測試最大空窗仍為 3129 ms，28 次超過 1 秒；再次重啟後 60 秒測試最大空窗 3382 ms，15 次超過 1 秒。這證明 Jetson 設定錯誤已排除，但 XRCE session 問題仍未解決。
+```bash
+python3 -m compileall -q scripts .agents/skills/p450-repo-curator/scripts
+python3 .agents/skills/p450-repo-curator/scripts/audit_repo.py --base-ref origin/main
+(cd firmware && sha256sum -c SHA256SUMS)
+git diff --check
+git diff --name-status --find-renames origin/main
+```
 
-已從 PX4 官方提交 `a1cce7e961df` 將 session ping 修正最小回補至 v1.14.3，並在 SD 上成功建立 Pixhawk 6C 韌體。成品位於 `/media/p450/P450_DATA/builds/firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`，SHA-256 為 `cb14d73274014385e809645dd3525e1ce0e33cf5d648c7d23324c41b822bf0bd`。
-
-2026-08-03 機主已完成參數完整備份、刷入回補韌體及參數恢復。NX 的 10 分鐘純訂閱測試收到 42,936 筆 IMU，最大 gap 56.263 ms，所有超過 100 ms 的 gap 為 0；Agent 全程 active 且 PID 未變。另一次 120 秒詳細 Agent 測試只有起始 `create_client=1`、`session established=1`，沒有 `delete_client` 或 `session closed`，IMU 最大 gap 35.617 ms。切回 systemd Agent 後 30 秒複驗最大 gap 33.134 ms。原本週期性 XRCE session 重建在目前地面條件下已消除，通訊穩定性關卡通過。
-
-2026-08-04 已改刷官方 PX4 v1.15.4 source build，並完成 `px4_msgs release/1.15`
-對齊。43 個 DDS message types 全部一致，但實機輸出仍週期性同步停約 1 秒；詳細
-Agent 測試沒有 session close/recreate，停用 `UXRCE_DDS_SYNCT` 也沒有改善。2 Hz
-非控制 status 已到達 Agent 仍無效，20 Hz 會使 PX4 輸出停止直到 Agent 重啟。
-已依 PX4 官方 `d12a7dd11d` 建立 v1.15.4 接收排空候選韌體；當時 XRCE continuity
-與 Offboard 在該歷史測試點均為 FAIL。詳見
-[`P450_PX4_V1154_XRCE_TEST_2026-08-04.md`](docs/reports/2026-08-04/P450_PX4_V1154_XRCE_TEST_2026-08-04.md)。
-
-2026-08-05 已刷入上述 `996b1df7a1` 候選版。保留 `UXRCE_DDS_SYNCT=0` 的 60 秒
-純接收仍有 1005.408 ms 最大 gap、22 次超過 500 ms、7 次超過 1 秒；Agent PID
-與 topics 穩定、飛控未解鎖，但第一個 continuity gate 即 FAIL，因此未執行 2 Hz／
-20 Hz 輸入。此最小 receive-drain 候選版不能作為飛行解法。
-
-2026-08-05 已完成 PX4 v1.13.3、v1.14.3、v1.15.4、v1.16.2、v1.17.0 與
-v1.18.0-beta1 的 XRCE client 原始碼對照。v1.15.4 至 v1.17.0 仍每輪只處理一次
-session；v1.18 development 的官方 `3169dc6` 才重新加入 inbound burst draining、
-降低 poll latency 並改善 output buffer。現有 v1.15.4 `d12a7dd` 候選版可作最小
-A/B，但不等於新版完整修正。原因分級、FTDI transport 隔離、候選韌體測試順序與
-NX CLI 停止條件見
-[`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](docs/reports/2026-08-05/P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
-
-2026-08-05 已獲機主授權建立 Phase 4 第二代候選版。以官方 v1.15.4 為單一基底，
-回移植 `3169dc6` 的 serial 共用接收排空／排程修改；clean build `1233/1233` 成功，
-`board_id=56`，image `1,961,772 / 1,966,080` bytes，SHA-256 為
-`cb54e73327c95f2ceb0dbd9d53c5020b9d8c76cf1c045600e6c66106576dd660`。韌體位於
-[`firmware/p450-pixhawk6c-v1.15.4-xrce-full-drain-3f118ef593.px4`](firmware/p450-pixhawk6c-v1.15.4-xrce-full-drain-3f118ef593.px4)，
-目前尚未刷入或實機驗證，不可稱為修復完成。
-
-同日無槳輸入方向測試仍未通過：三段 RC 模式已確認為 STAB／ALTCTL／POSCTL，但移除發射機電池後飛控沒有偵測 RC loss；NX 的 `VehicleCommand` 可切換至 ALTCTL，外部 ARM 則未被接受。Offboard 零推力心跳在 NX 本地、DDS Agent 與 UART 發送端均連續，飛控端卻間歇回報 `offboard_control_signal_lost=true`。2026-08-04 已確認 `COM_OF_LOSS_T=1.0 s`，不是 timeout 過短；PX4 uORB 內最新 heartbeat 曾落後約 0.724 秒，較符合飛控端 XRCE 收件未及時排空。所有實體馬達步驟都被 watchdog 在解鎖前中止，馬達全程未轉；完整數據見 [`P450_POSTFLASH_XRCE_TEST_2026-08-03.md`](docs/reports/2026-08-03/P450_POSTFLASH_XRCE_TEST_2026-08-03.md)。
-
-Git repository 內也保存一份可下載副本：
-[`firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4`](firmware/p450-pixhawk6c-v1.14.3-xrce-ping-fix-f9bc66c6f3.px4)。
-下載後必須先依 [`firmware/SHA256SUMS`](firmware/SHA256SUMS) 驗證；安全狀態與
-刷入前提見 [`firmware/README.md`](firmware/README.md)。
-
-PX4 v1.14 官方文件說明 XRCE-DDS 自動處理 Agent／client 時間同步，因此沒有獨立
-`TimesyncStatus` 樣本不是額外阻塞條件。目前實機是 v1.14.3 ping 回補版；PX4→NX
-輸出與 session continuity 已通過，但 2 Hz NX→PX4 marker 新鮮度失敗，所以整體
-XRCE 雙向關卡仍為 FAIL。RC loss、GPS fix、水平定位／速度、航向、failsafe 與
-Offboard 控制流程也必須分別排除，不得概括為雙向控制已通過。
-
-最新 XRCE 原因分析與下一步指引：
-[`P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`](docs/reports/2026-08-05/P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md)。
-供簡報與答辯使用的完整前因後果工程時間線：
-[`P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`](docs/reports/2026-08-05/P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md)。
-不要重刷系統或直接進行飛行測試。
-
-## 本週目標（2026-07-23）
-
-本週大目標是先使用 Jetson 宿主上的原生 ROS 2 Foxy 完成一次自動飛行實驗，範圍先限定為起飛、短暫停留、降落。
-
-在 ROS 2 與自動飛行之前，必須先完成 Pixhawk 飛控與 NX 的直接通訊驗證。已確認的「筆電／P450 Wi-Fi → TCP/MAVLink → Pixhawk」不能直接視為「Pixhawk ↔ NX」已通訊；NX 仍需先驗證 USB 或明確確認的 UART，再驗證 uXRCE-DDS。
-
-## 閱讀順序
-
-1. `docs/runbooks/P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md`
-2. `docs/runbooks/P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md`
-3. `evidence/20260813_first_principles_offboard_transport/SUMMARY.md`
-4. `evidence/20260812_offboard_heartbeat_root_cause_analysis/SUMMARY.md`
-5. `evidence/20260812_outdoor_offboard_arm_cycle/SUMMARY.md`
-6. `evidence/20260812_outdoor_gps_offboard_ground/SUMMARY.md`
-7. `docs/reports/2026-08-10/P450_PX4_V1143_PING_BIDIRECTIONAL_TEST_2026-08-10.md`
-8. `docs/reports/2026-08-10/P450_PX4_V1143_FINAL_BASELINE_AND_NX_EVIDENCE_REQUEST_2026-08-10.md`
-9. `docs/reports/2026-08-05/P450_COMPLETE_ENGINEERING_TIMELINE_AND_PRESENTATION_2026-08-05.md`
-10. `docs/reports/2026-08-05/P450_PX4_NX_XRCE_ROOT_CAUSE_AND_TEST_PLAN_2026-08-05.md`
-11. `docs/reports/2026-08-04/P450_PX4_V1154_XRCE_TEST_2026-08-04.md`
-12. `docs/reports/2026-07-24/P450_PROGRESS_2026-07-24_NEXT.md`
-13. `docs/history/JETSON_HANDOFF_MASTER.md`
-14. `docs/operations/JETSON_HANDOFF_COMMANDS.md`
-
-## 注意
-
-- 側邊 128 GB microSD 已依機主指示清除舊開機映像，現為單一 ext4 `P450_DATA` 資料碟；不要再把它當開機碟。
-- 不要使用 Orin BSP 或一般 Ubuntu ISO。
-- 不要把 `.img`、BSP archive、log、密碼、token 或 key 提交到 Git。
-- 大型映像與刷寫日志已由 `.gitignore` 排除。
+這些檢查只驗證 repository 結構、連結、Python syntax 與 artifact identity；
+**不代表韌體可安全刷入，也不代表實機可以飛行**。

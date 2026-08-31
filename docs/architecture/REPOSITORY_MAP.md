@@ -8,8 +8,8 @@ Repository identity at inventory time:
 
 - Remote: `https://github.com/DDlic/p450-jetson-handoff.git`
 - Trunk: `main`
-- Baseline: `54ee3449d6e2cbb65a469a55cf50e0637cc45d42`
-- Inventory date: 2026-08-18 (Asia/Taipei)
+- Baseline: `0a9cef5c7e693615ce0551825062bf513e8e807d`
+- Inventory date: 2026-08-31 (Asia/Taipei)
 
 ## System context
 
@@ -45,6 +45,7 @@ The UART is full duplex with a theoretical 11,520 bytes/s in each direction, but
 | `patches/` | Reviewable PX4 XRCE deltas | Preserve; link to firmware and evidence |
 | `firmware/` | Built PX4 artifacts plus SHA-256 manifest | Immutable artifact identity; verify checksum before any authorized use |
 | `evidence/` | Timestamped summaries, CSV, console, trace, and pstore captures | Append-only; never rewrite raw observations |
+| `docs/raw/` | Unverified notes and captures without a complete test context | Preserve bytes; do not promote to evidence-backed conclusions |
 | `config/` | NX storage/runtime helpers and subtree instructions | Preserve eMMC/SD safety policy |
 | `.agents/skills/p450-repo-curator/` | Repeatable repository classification and validation workflow | Validate after edits |
 
@@ -143,7 +144,7 @@ The NX has a 14 GB eMMC that is reserved for system/runtime files; new clones, b
 - No SITL mission package implements and verifies the requested 1 m / 5 m / Land state machine.
 - No CI checks links, Python syntax, checksums, or accidental deletions.
 - Several reports combine historical and current appendices; dates in filenames do not always equal the latest edit date.
-- Raw notes at root have no declared test ID or provenance.
+- Some preserved raw notes and ULog captures have no declared test ID or provenance; they are isolated under `docs/raw/` rather than presented as current authority.
 - Markdown links and authority labels must be updated atomically during structural moves.
 - The precise source of XRCE loss/recovery remains unresolved; a validated evidence map should be created before making a consequential transport redesign claim.
 

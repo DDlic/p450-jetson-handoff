@@ -1,7 +1,7 @@
 # Document inventory and authority map
 
-Inventory date: 2026-08-18 (Asia/Taipei)
-Repository baseline: `DDlic/p450-jetson-handoff`, `main`, commit `54ee3449d6e2cbb65a469a55cf50e0637cc45d42`.
+Inventory date: 2026-08-31 (Asia/Taipei)
+Repository baseline: `DDlic/p450-jetson-handoff`, `main`, commit `0a9cef5c7e693615ce0551825062bf513e8e807d`.
 
 ## Classification rules
 
@@ -42,6 +42,7 @@ Repository baseline: `DDlic/p450-jetson-handoff`, `main`, commit `54ee3449d6e2cb
 | `docs/raw/notes/new point.md` | Raw note | Unstructured working notes; preserved verbatim |
 | `docs/raw/captures/px4_uxrce_dds_console_latest.txt` | Raw capture | Console fragment; context must be supplied by a report/evidence directory |
 | `docs/raw/captures/mav_con` | Raw capture | MAVLink console fragment; extensionless, preserved verbatim |
+| `docs/raw/captures/ULG/root_uploads_20260820_20260826/` | Raw capture | Twelve late root-level ULog uploads; no TEST_ID or verdict; hashes preserved locally |
 | `docs/raw/notes/新增 文字文件.txt` | Raw note | Unstructured note; preserved verbatim |
 | `docs/raw/notes/雙端交接文件.txt` | Raw handoff | Unstructured dual-end handoff; preserved verbatim |
 

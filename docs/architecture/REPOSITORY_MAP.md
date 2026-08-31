@@ -1,30 +1,44 @@
-# P450 repository architecture and evidence map
+# P450 系統與 repository 地圖
 
-## Executive summary
+這份文件說明系統怎麼連接、repository 各區放什麼，以及目前哪些結論有證據支持。
+內容以 2026-08-31 的 `b180a91` 盤點快照為基準；若要查看後續變更，請回到
+[`README.md`](../../README.md) 和[分支清單](../current/BRANCH_INVENTORY_20260831.md)。
 
-This repository is an evidence-backed operations handoff for a Jetson Xavier NX running ROS 2 Foxy, a Micro XRCE-DDS Agent over 115200-baud UART, and a Pixhawk 6C running several evaluated PX4 firmware variants. It is not a self-contained application repository: no package manifest, lockfile, top-level build system, or CI workflow is present. Its executable surface is a small set of Python diagnostics and shell helpers; its main value is the linkage among firmware/patch provenance, timestamped experiment evidence, and current safety/runbook decisions. The immediate architecture problem is therefore information authority and reproducibility, not framework modernization.
+## 盤點基準
 
-Repository identity at inventory time:
+| 項目 | 內容 |
+| --- | --- |
+| Repository | `https://github.com/DDlic/p450-jetson-handoff.git` |
+| 主分支 | `main` |
+| 基準 commit | `b180a91a18d1bd34ed80d63680c50fba0b3842a3` |
+| 盤點日期 | 2026-08-31（Asia/Taipei） |
 
-- Remote: `https://github.com/DDlic/p450-jetson-handoff.git`
-- Trunk: `main`
-- Baseline: `b180a91a18d1bd34ed80d63680c50fba0b3842a3`
-- Inventory date: 2026-08-31 (Asia/Taipei)
+這不是可直接建置的 ROS package。Repository 沒有 package manifest、lockfile、頂層建置系統或
+CI workflow；可執行的內容主要是 Python 診斷程式與 shell 工具。它的用途是把韌體來源、patch、
+測試證據和操作限制放在同一條可追查的路徑上。
 
-## System context
+## 系統怎麼連接
 
-The installed Agent service binds `/dev/ttyTHS1` at 115200 baud and launches MicroXRCEAgent as user `p450` (`systemd/p450-micro-xrce-agent.service:7-16`). The repository states that the NX environment has ROS 2 Foxy, Micro XRCE-DDS Agent 2.4.2, `px4_msgs`, and `px4_ros_com`, and that ROS 2 can discover the PX4 `/fmu/*` graph (`README.md:105-107`). These are environment observations, not dependencies installable from this repository.
+Jetson Xavier NX 使用 ROS 2 Foxy 和 Micro XRCE-DDS Agent 2.4.2；版本與 transport 基準見
+[`P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md`](../runbooks/P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md)。
+Agent service 以 `p450` 使用者執行，透過 `/dev/ttyTHS1`、115200 baud 與 Pixhawk 6C 的 TELEM2 通訊
+（[`systemd/p450-micro-xrce-agent.service`](../../systemd/p450-micro-xrce-agent.service)）。
+NX 的軟體與 UART 基準記錄在
+[`QGC_LAPTOP_CODEX_HANDOFF_20260814.md`](../current/QGC_LAPTOP_CODEX_HANDOFF_20260814.md)；
+PX4 `/fmu/*` topic 的實際發現紀錄則保存在
+[`20260810_163557_px4_v1143_ping_postflash`](../../evidence/20260810_163557_px4_v1143_ping_postflash/SUMMARY.md)。
+這些是特定環境中的觀測，不是能從本 repository 自動安裝的依賴。
 
 ```mermaid
 flowchart LR
-    OP["Operator / QGroundControl"]
-    NODE["NX Python ROS 2 probe or future mission node"]
+    OP["操作者 / QGroundControl"]
+    NODE["NX 上的 ROS 2 診斷或任務程式"]
     DDS["ROS 2 / Fast DDS"]
     AGENT["Micro XRCE-DDS Agent 2.4.2"]
-    UART["TELEM2 to /dev/ttyTHS1, 115200 8N1"]
+    UART["TELEM2 ↔ /dev/ttyTHS1<br>115200 8N1"]
     CLIENT["PX4 uxrce_dds_client"]
     UORB["PX4 uORB / commander / land detector"]
-    EV["CSV + console + pstore evidence"]
+    EV["CSV / console / pstore evidence"]
 
     OP --> NODE
     NODE --> DDS --> AGENT --> UART --> CLIENT --> UORB
@@ -33,68 +47,88 @@ flowchart LR
     OP --> EV
 ```
 
-The UART is full duplex with a theoretical 11,520 bytes/s in each direction, but both directions still share XRCE session state, PX4 task time, and queue/drain behavior (`evidence/20260813_first_principles_offboard_transport/SUMMARY.md:31-46`). This is why “sum both directions as one wire” is wrong while “PX4 output load can delay input work” remains plausible.
+115200 8N1 的理論上限是每方向 11,520 bytes/s。UART 雖然是全雙工，兩個方向仍共用 XRCE
+session 狀態，也會受到 PX4 task 與 queue/drain 行為影響。不能把兩個方向的流量直接相加成
+「同一條 wire 的總量」，但 PX4 輸出負載仍可能拖慢輸入處理。計算與限制詳見
+[`20260813_first_principles_offboard_transport/SUMMARY.md`](../../evidence/20260813_first_principles_offboard_transport/SUMMARY.md)。
 
-## Repository zones
+## 目錄怎麼分工
 
-| Zone | Role | Change policy |
-|---|---|---|
-| `docs/` | Navigation, architecture, current authority map, then classified reports/runbooks | Update with every topology or authority change |
-| `scripts/` | ROS 2 probes/monitors and NX storage helpers | Static-check locally; hardware tests require matching NX environment |
-| `systemd/` | Canonical Agent service unit | Do not install/restart from repository cleanup work |
-| `patches/` | Reviewable PX4 XRCE deltas | Preserve; link to firmware and evidence |
-| `firmware/` | Built PX4 artifacts plus SHA-256 manifest | Immutable artifact identity; verify checksum before any authorized use |
-| `evidence/` | Timestamped summaries, CSV, console, trace, and pstore captures | Append-only; never rewrite raw observations |
-| `docs/raw/` | Unverified notes and captures without a complete test context | Preserve bytes; do not promote to evidence-backed conclusions |
-| `config/` | NX storage/runtime helpers and subtree instructions | Preserve eMMC/SD safety policy |
-| `.agents/skills/p450-repo-curator/` | Repeatable repository classification and validation workflow | Validate after edits |
+| 目錄 | 放置內容 | 修改原則 |
+| --- | --- | --- |
+| `docs/` | 導覽、目前交接、runbook、報告與歷史文件 | 目錄或權威關係改變時一併更新 |
+| `scripts/` | ROS 2 monitor、probe 與 NX 儲存工具 | 本機可做靜態檢查；實機測試需匹配的 NX 環境 |
+| `systemd/` | Micro XRCE-DDS Agent service 定義 | 整理文件時不得安裝或重啟 service |
+| `patches/` | PX4 XRCE 修改 | 保留 patch，並連回對應韌體與證據 |
+| `firmware/` | PX4 韌體與 SHA-256 manifest | 先驗證 checksum；repository 檢查不等於授權刷寫 |
+| `evidence/` | 依時間保存的摘要、CSV、console、trace 與 pstore | 原始觀測只增不改 |
+| `docs/raw/` | 測試條件不完整的筆記與 captures | 保留原文，不拿來支持已驗證結論 |
+| `config/` | NX runtime、SD-first 儲存規則與區域說明 | 保留 eMMC／SD 安全限制 |
+| `.agents/skills/p450-repo-curator/` | Repository 整理與稽核工具 | 文件變更後重新執行稽核 |
 
-At the baseline there are 47 Markdown files, 20 timestamped evidence directories, 10 `.px4` firmware files, 11 patch files, 7 Python files, 7 CSV files, and 10 entries under `scripts/`. Firmware is about 18 MB and evidence about 2 MB; storage pressure and generated test output belong on the NX SD card, not eMMC (`config/AGENTS.md:3-15`).
+基準快照包含 47 個 Markdown 檔、20 個有時間戳的 evidence 目錄、10 個 `.px4` 韌體、
+11 個 patch、7 個 Python 檔、7 個 CSV，以及 `scripts/` 下的 10 個項目。韌體約 18 MB，
+evidence 約 2 MB。NX 上的新 clone、build、log 與測試輸出應放在 SD 卡，不要寫入 14 GB eMMC
+（[`config/AGENTS.md`](../../config/AGENTS.md)）。
 
-Branch intent and preserved former tips are tracked separately in
-[`docs/current/BRANCH_INVENTORY_20260831.md`](../current/BRANCH_INVENTORY_20260831.md).
-Unmerged `work/*` branches are development records, not automatic authority over
-the curated `main` indexes.
+未合併的 `work/*` 分支屬於開發紀錄，不會自動取代 `main` 的索引與結論。分支用途和保留方式見
+[`BRANCH_INVENTORY_20260831.md`](../current/BRANCH_INVENTORY_20260831.md)。
 
-## Runtime and topic surface
+## 程式與 topic
 
-### Read-only observation
+### 唯讀診斷
 
-- `p450_ros2_link_monitor.py` subscribes to `/fmu/out/sensor_combined` with Best-Effort QoS and measures arrival gaps (`scripts/p450_ros2_link_monitor.py:20-35`).
-- `p450_sensor_static_check.py` subscribes to `SensorCombined` and `VehicleAttitude` for stationary plausibility checks (`scripts/p450_sensor_static_check.py:21-48`).
-- `p450_local_position_gap_monitor.py` separates local arrival gaps from source timestamp gaps on `/fmu/out/vehicle_local_position` (`scripts/p450_local_position_gap_monitor.py:16-36`).
+- [`p450_ros2_link_monitor.py`](../../scripts/p450_ros2_link_monitor.py) 訂閱
+  `/fmu/out/sensor_combined`，使用 Best-Effort QoS 計算接收間隔。
+- [`p450_sensor_static_check.py`](../../scripts/p450_sensor_static_check.py) 訂閱
+  `SensorCombined` 和 `VehicleAttitude`，檢查靜止狀態下的數值是否合理。
+- [`p450_local_position_gap_monitor.py`](../../scripts/p450_local_position_gap_monitor.py) 分別計算
+  `/fmu/out/vehicle_local_position` 的本機接收間隔和來源 timestamp 間隔。
 
-### Guarded publication and control diagnostics
+### 有保護條件的發布與控制診斷
 
-- `p450_offboard_heartbeat_probe.py` publishes only `OffboardControlMode`, supports selectable Best-Effort/Reliable publisher QoS, and aborts when armed or entering Offboard (`scripts/p450_offboard_heartbeat_probe.py:1-7`, `scripts/p450_offboard_heartbeat_probe.py:26-63`).
-- `p450_offboard_ground_probe.py` publishes an Offboard heartbeat plus hold-position setpoint, never `VehicleCommand`, and normally exits if the vehicle arms (`scripts/p450_offboard_ground_probe.py:1-6`, `scripts/p450_offboard_ground_probe.py:56-71`).
-- `p450_offboard_arm_cycle.py` can publish normal (never forced) arm/disarm commands only after status, Offboard, failsafe, and preflight prerequisites pass (`scripts/p450_offboard_arm_cycle.py:48-60`, `scripts/p450_offboard_arm_cycle.py:63-76`). It is a propeller-free diagnostic, not the requested autonomous mission implementation.
+- [`p450_offboard_heartbeat_probe.py`](../../scripts/p450_offboard_heartbeat_probe.py) 只發布
+  `OffboardControlMode`，可選 Best-Effort 或 Reliable；偵測到已解鎖或進入 Offboard 時會停止。
+- [`p450_offboard_ground_probe.py`](../../scripts/p450_offboard_ground_probe.py) 發布 heartbeat 與定點
+  setpoint，不發布 `VehicleCommand`；車輛解鎖時通常會退出。
+- [`p450_offboard_arm_cycle.py`](../../scripts/p450_offboard_arm_cycle.py) 只有在 status、Offboard、
+  failsafe 與 preflight 條件通過後，才會發出一般的 arm/disarm 指令。它是無槳診斷工具，
+  不是自主飛行任務。
 
-### Firmware-side XRCE shaping
+### PX4 端的 XRCE 流量控制
 
-The rate-limited patch reduces PX4 output publications to six named topics: local position at 10 Hz and five status/navigation topics at 5 Hz, while removing `position_setpoint_triplet` and `timesync_status` outputs and leaving inputs unchanged (`evidence/20260813_first_principles_offboard_transport/SUMMARY.md:94-125`). The later reliable patch changes only the deadline-critical Offboard heartbeat path to Reliable; the stored 600-second result documents both eventual delivery and the remaining tail (`evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md:26-36`, `evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md:112-121`).
+Rate-limit patch 將 PX4 輸出縮減為六個 topic：local position 為 10 Hz，其餘五個 status／navigation
+topic 為 5 Hz；同時移除 `position_setpoint_triplet` 和 `timesync_status` 輸出，輸入端不變。
+後續 Reliable patch 只把時效敏感的 Offboard heartbeat 改為 Reliable。詳細改動與 600 秒測試結果見
+[`SUMMARY.md`](../../evidence/20260813_first_principles_offboard_transport/SUMMARY.md) 和
+[`TEN_MINUTE_RELIABLE_RESULT.md`](../../evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md)。
 
-## Current decision state
+## 目前有證據支持的結論
 
-### What is directly supported
+| 觀測 | 結果 | 能說明的範圍 |
+| --- | --- | --- |
+| Best-Effort heartbeat，60 秒 | NX 發布 601 筆，PX4 收到 586 筆；最大間隔 307.002 ms | 該測試條件下有漏收，且超過 250 ms 門檻 |
+| Reliable heartbeat，600 秒 | 發布與收到皆為 6001 筆；最大間隔 601.548 ms | 最終送達數相同，但 freshness 仍未通過 |
+| 同一 Reliable 測試 | 16 次超過 250 ms，2 次超過 500 ms | Reliable 送達不等於每筆準時 |
+| NX kernel | 保存兩次同類型 `key_garbage_collector → key_put()` panic | Kernel 關卡未通過 |
 
-- Best-Effort 60-second heartbeat: NX published 601, PX4 received 586, with a 307.002 ms PX4 maximum gap (`evidence/20260813_first_principles_offboard_transport/SUMMARY.md:170-194`).
-- Reliable 600-second heartbeat: 6001/6001 eventual receipt, 601.548 ms maximum receipt gap, and 16/2 occurrences above 250/500 ms (`evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md:5-24`).
-- The 601.548 ms event was below the configured 1.0-second Offboard-loss timeout in that field, while still failing the repository's stricter 250 ms engineering gate (`evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md:18-24`).
-- The long-test interpretation explicitly does not locate the first missing frame among Fast DDS, Agent queues, UART driver/electrical path, or Pixhawk UART, and does not prove armed/outdoor latency stays below one second (`evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md:153-168`).
-- The repository records two same-family NX `key_garbage_collector -> key_put()` panics and therefore marks the kernel gate failed (`README.md:40-46`).
+Best-Effort 數據來自
+[`SUMMARY.md`](../../evidence/20260813_first_principles_offboard_transport/SUMMARY.md)，Reliable 數據來自
+[`TEN_MINUTE_RELIABLE_RESULT.md`](../../evidence/20260813_first_principles_offboard_transport/TEN_MINUTE_RELIABLE_RESULT.md)。
+`601.548 ms` 低於該次測試設定的 `COM_OF_LOSS_T=1.0 s`，但超過本專案的 250 ms 工程門檻。
+兩次同類型 kernel panic 的保存範圍與判讀記錄在
+[`20260817_nx_kernel_panic_key_gc_repeat`](../../evidence/20260817_nx_kernel_panic_key_gc_repeat/README.md)。
 
-### Reconciled statements
+目前證據無法指出第一個遺失 frame 發生在 Fast DDS、Agent queue、UART driver／電氣路徑或 Pixhawk
+UART 的哪一段，也沒有建立解鎖後或室外環境的最差延遲上限。現有結果只能支持以下判讀：
 
-1. **Reliable fixed final loss in the measured fields.** This is supported by equal publish/receipt counts.
-2. **Reliable did not establish a 250 ms deadline guarantee.** Recovery can preserve every sample while introducing head-of-line delay; the recorded 601.548 ms tail proves these properties are distinct.
-3. **The recorded 601.548 ms gap alone does not prove the simple PoC must fail.** It remained under `COM_OF_LOSS_T=1.0 s`, but there is no armed/outdoor tail bound, and the kernel gate is independent.
-4. **A risk-accepted PoC path is not a release claim.** The delivery runbook explicitly limits its scope and requires operator control (`docs/runbooks/P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md:19-29`).
-5. **`not landed` must be handled as a state transition/observation problem.** Automation should wait for PX4 Land and landed confirmation, then issue normal disarm; it must not use forced disarm as a workaround.
+1. Reliable 在這次測試中消除了最終筆數差異。
+2. Reliable 沒有證明 250 ms deadline 能穩定通過。
+3. `601.548 ms` 單一結果不能證明受限 PoC 必然失敗；它也不能支持一般飛行安全結論。
+4. Delivery PoC 仍受 runbook 的範圍、operator control 與停止條件限制。
+5. `not landed` 應按狀態轉換處理：等待 PX4 Land 和 landed confirmation，再正常 disarm，不能用 forced disarm 繞過。
 
-## Commands and verification inventory
-
-### Repository-local checks
+## 本機可以檢查什麼
 
 ```bash
 python3 -m compileall -q scripts .agents/skills/p450-repo-curator/scripts
@@ -104,57 +138,38 @@ git diff --check
 git diff --name-status --find-renames origin/main
 ```
 
-These checks validate syntax, links, artifact bytes, and preservation. They do not import ROS packages, run a PX4 simulator, verify an NX kernel, or authorize hardware activity.
+這些命令能檢查 Python 語法、文件連結、韌體檔案 checksum 和是否誤刪 tracked file。它們不能載入
+ROS package、驗證 NX kernel、模擬 PX4 行為或授權實機操作。
 
-### Environment-bound checks
+ROS 2 程式需要匹配韌體的 `px4_msgs` 與 `rclpy` 環境；Agent 和 UART 檢查需要 NX 的
+`/dev/ttyTHS1`，PX4 接收計數則需要 QGC／PX4 console。基準快照沒有 CI workflow，也沒有可重現
+1 m／5 m／Land 任務的 SITL package，因此目前的自動化上限是靜態檢查與 evidence 一致性檢查。
 
-ROS 2 scripts require Python 3 with `rclpy` and the PX4 message definitions matching the installed firmware. Agent and UART checks require the NX's `/dev/ttyTHS1`; receipt-side counters require QGC/PX4 console access. These conditions are absent from this repository, so the local testability ceiling is static validation plus evidence consistency.
-
-### Testability milestone
-
-- **Repository curation component:** testable now; Python audit, Markdown link validation, firmware checksums, and Git preservation checks can run locally.
-- **ROS 2 diagnostic component:** syntax-testable locally, runtime-testable only on a matching ROS 2 Foxy/`px4_msgs` environment or a future declared container/SITL fixture.
-- **PX4 firmware/transport component:** artifact identity is locally testable; behavioral validity requires the named firmware, Agent, transport, and controlled hardware/SITL setup.
-- **Flight behavior:** not reproducibly testable from this repository alone. Its first safe automated milestone is a checked-in SITL mission test; no such package/test exists at the baseline.
-
-There is no CI workflow at the baseline. Adding a repository curation check is feasible; making it an enforced branch gate would still require repository-admin configuration.
-
-## Subsystem deep dives
-
-### Evidence chain
-
-A defensible claim should follow:
+## 證據怎麼一路連到操作決定
 
 ```text
-raw CSV / console / pstore
-  -> timestamped evidence summary
-  -> firmware + patch + test-condition identity
-  -> current runbook decision
-  -> README/index summary
+原始 CSV / console / pstore
+  -> 同一 TEST_ID 的 evidence summary
+  -> firmware、patch 與測試條件
+  -> current runbook 的許可與停止條件
+  -> README / index 的摘要
 ```
 
-The original root mixed all five layers, which made an older master handoff appear equal to a newer runbook. `docs/current/DOC_INVENTORY.md` now supplies authority metadata, while reports/history retain their content and Git lineage under classified paths.
+[`DOC_INVENTORY.md`](../current/DOC_INVENTORY.md) 記錄文件分類與權威關係。舊報告與 handoff 保留在
+`docs/reports/` 和 `docs/history/`，用來追查當時的判斷，不會因日期較早就被刪除。
 
-### Firmware provenance
+`firmware/SHA256SUMS` 只證明 repository 中的檔案符合 manifest。任何經授權的 reflash 之前，仍須依
+[`firmware/README.md`](../../firmware/README.md) 移除槳葉、備份參數、確認板型並完成地面測試。
 
-`firmware/SHA256SUMS` establishes byte identity, while `firmware/README.md` describes build/source identities and test status. A checksum PASS proves only that the repository copy matches its manifest. The firmware README itself requires propeller removal, parameter backup, board verification, and ground testing before any authorized reflash (`firmware/README.md:390-413`).
+## 尚未補齊的項目
 
-### Storage and operational deployment
+- ROS 2／PX4 Python 環境沒有 lockfile 或 environment manifest。
+- 基準快照沒有執行並驗證 1 m／5 m／Land state machine 的 SITL 任務。
+- 基準快照沒有自動檢查連結、Python 語法、checksum 與誤刪檔案的 CI。
+- 部分歷史報告後來追加內容，檔名日期不一定等於最後編輯日期。
+- 少數 raw note 與 ULog capture 缺少完整 TEST_ID 或來源資訊，因此只放在 `docs/raw/`。
+- XRCE loss／recovery 的確切來源仍未確認；做高風險 transport redesign 前應先建立可驗證的 evidence map。
 
-The NX has a 14 GB eMMC that is reserved for system/runtime files; new clones, builds, logs, caches, and generated evidence belong under `/media/p450/P450_DATA` (`config/AGENTS.md:3-15`). Repository tooling must therefore avoid large temporary trees and must not assume `/tmp` is harmless on the NX.
-
-## Known gaps and risks
-
-- No lockfile or environment manifest reproduces ROS 2/PX4 Python dependencies.
-- No SITL mission package implements and verifies the requested 1 m / 5 m / Land state machine.
-- No CI checks links, Python syntax, checksums, or accidental deletions.
-- Several reports combine historical and current appendices; dates in filenames do not always equal the latest edit date.
-- Some preserved raw notes and ULog captures have no declared test ID or provenance; they are isolated under `docs/raw/` rather than presented as current authority.
-- Markdown links and authority labels must be updated atomically during structural moves.
-- The precise source of XRCE loss/recovery remains unresolved; a validated evidence map should be created before making a consequential transport redesign claim.
-
-## Confidence assessment
-
-- **High confidence:** repository layout/counts, service settings, script topic/QoS behavior, firmware checksums, and recorded CSV/receipt counts. These are directly inspectable.
-- **Medium confidence:** causal interpretation that Reliable recovery creates the observed tail. It fits counts, timing, and implementation, but the evidence explicitly lacks a complete first-loss trace.
-- **Low/unverified:** armed/outdoor maximum gap, actual land-detector behavior during a completed takeoff/landing cycle, and whether the simple autonomous route succeeds. No matching completed flight evidence exists here.
+可以直接檢查 repository layout、service 設定、程式使用的 topic／QoS、firmware checksum 和已保存的
+CSV／receipt count。Reliable recovery 是否造成目前觀測到的 tail 仍是推論；解鎖後的室外最大間隔、
+完整起降時 land detector 的行為，以及自主路線能否成功，目前都沒有相符的完整飛行證據。

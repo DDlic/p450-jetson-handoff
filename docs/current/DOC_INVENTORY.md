@@ -1,7 +1,7 @@
 # Document inventory and authority map
 
 Inventory date: 2026-08-31 (Asia/Taipei)
-Repository baseline: `DDlic/p450-jetson-handoff`, `main`, commit `0a9cef5c7e693615ce0551825062bf513e8e807d`.
+Repository baseline: `DDlic/p450-jetson-handoff`, `main`, commit `b180a91a18d1bd34ed80d63680c50fba0b3842a3`.
 
 ## Classification rules
 
@@ -19,6 +19,7 @@ Repository baseline: `DDlic/p450-jetson-handoff`, `main`, commit `0a9cef5c7e6936
 | Current path | Class | Authority/status |
 |---|---|---|
 | `README.md` | Current index | Kept at root; newest top-level warnings |
+| `docs/current/BRANCH_INVENTORY_20260831.md` | Current index | Live branch purpose and archived-tip map; not technical or flight authority |
 | `docs/operations/GIT_HANDOFF_SETUP.md` | Operations | Useful Git setup procedure |
 | `docs/operations/JETSON_HANDOFF_COMMANDS.md` | Operations/history | Mixed command reference; dated state must be checked against current runbooks |
 | `docs/history/JETSON_HANDOFF_HISTORY.md` | History | Historical NX rebuild timeline |

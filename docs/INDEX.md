@@ -6,9 +6,10 @@ This index separates current decision material from dated history and raw eviden
 
 1. [`README.md`](../README.md) — current top-level state and warnings.
 2. [`current/DOC_INVENTORY.md`](current/DOC_INVENTORY.md) — authority, class, and planned location for every root-level handoff artifact.
-3. [`architecture/REPOSITORY_MAP.md`](architecture/REPOSITORY_MAP.md) — repository architecture, runtime path, verification surface, and known contradictions.
-4. [`P450 delivery PoC runbook`](runbooks/P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md) — narrowly scoped delivery demonstration path and safety boundary.
-5. [`Reliable latency remediation runbook`](runbooks/P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md) — transport diagnosis and staged remediation.
+3. [`current/BRANCH_INVENTORY_20260831.md`](current/BRANCH_INVENTORY_20260831.md) — live branch purpose, archived tips, and branch hygiene policy.
+4. [`architecture/REPOSITORY_MAP.md`](architecture/REPOSITORY_MAP.md) — repository architecture, runtime path, verification surface, and known contradictions.
+5. [`P450 delivery PoC runbook`](runbooks/P450_DELIVERY_POC_OFFBOARD_RUNBOOK_2026-08-17.md) — narrowly scoped delivery demonstration path and safety boundary.
+6. [`Reliable latency remediation runbook`](runbooks/P450_RELIABLE_LATENCY_REMEDIATION_RUNBOOK_2026-08-17.md) — transport diagnosis and staged remediation.
 
 ## Stable technical areas
 

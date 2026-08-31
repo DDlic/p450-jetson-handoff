@@ -8,7 +8,7 @@ Repository identity at inventory time:
 
 - Remote: `https://github.com/DDlic/p450-jetson-handoff.git`
 - Trunk: `main`
-- Baseline: `0a9cef5c7e693615ce0551825062bf513e8e807d`
+- Baseline: `b180a91a18d1bd34ed80d63680c50fba0b3842a3`
 - Inventory date: 2026-08-31 (Asia/Taipei)
 
 ## System context
@@ -50,6 +50,11 @@ The UART is full duplex with a theoretical 11,520 bytes/s in each direction, but
 | `.agents/skills/p450-repo-curator/` | Repeatable repository classification and validation workflow | Validate after edits |
 
 At the baseline there are 47 Markdown files, 20 timestamped evidence directories, 10 `.px4` firmware files, 11 patch files, 7 Python files, 7 CSV files, and 10 entries under `scripts/`. Firmware is about 18 MB and evidence about 2 MB; storage pressure and generated test output belong on the NX SD card, not eMMC (`config/AGENTS.md:3-15`).
+
+Branch intent and preserved former tips are tracked separately in
+[`docs/current/BRANCH_INVENTORY_20260831.md`](../current/BRANCH_INVENTORY_20260831.md).
+Unmerged `work/*` branches are development records, not automatic authority over
+the curated `main` indexes.
 
 ## Runtime and topic surface
 

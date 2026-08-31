@@ -6,6 +6,8 @@
 [`docs/INDEX.md`](docs/INDEX.md)；完整技術拓撲與可驗證範圍見
 [`docs/architecture/REPOSITORY_MAP.md`](docs/architecture/REPOSITORY_MAP.md)。整理工作只分類或
 以 Git rename 搬移既有檔案，不刪除實驗證據或歷史交接。
+目前分支用途、未合併成果與 archive tags 見
+[`docs/current/BRANCH_INVENTORY_20260831.md`](docs/current/BRANCH_INVENTORY_20260831.md)。
 未附 TEST_ID 的後補 ULog 已集中到
 [`docs/raw/captures/ULG/`](docs/raw/captures/ULG/README.md)，不在 repository 根目錄展示，
 也不應單獨解讀為測試結論。
